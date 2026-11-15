@@ -120,6 +120,14 @@ label.f>span{display:block;font-size:13px;color:var(--mute);margin-bottom:5px;fo
 #toast{position:fixed;left:50%;bottom:calc(90px + var(--sab));transform:translateX(-50%);background:#16201c;color:#fff;padding:11px 16px;border-radius:11px;opacity:0;transition:.25s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
 #toast.on{opacity:1}
 .preview{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
+.chat{display:flex;flex-direction:column;gap:10px;max-height:52vh;overflow-y:auto;padding:4px 2px 10px;margin-bottom:12px}
+.msg{max-width:86%;align-self:flex-start;background:#f1f4f3;border-radius:14px 14px 14px 4px;padding:9px 12px;font-size:14px;line-height:1.45}
+.msg.me{align-self:flex-end;background:var(--pri2);border-radius:14px 14px 4px 14px}
+.msg .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-bottom:4px}
+.msg p{margin:0;white-space:pre-wrap;word-break:break-word}
+.msg img{display:block;max-width:100%;max-height:260px;border-radius:9px;margin-top:7px;cursor:zoom-in;border:1px solid var(--line)}
+.msg .actions{margin:8px 0 0}
+.ibtn{position:relative}.ibtn .dot{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:99px;font-size:11px;font-weight:700;min-width:18px;height:18px;line-height:18px;padding:0 4px;text-align:center}
 .boot{padding:70px 24px;text-align:center;color:var(--mute)}
 .qrprev{width:130px;height:130px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
@@ -195,6 +203,7 @@ const IC = {
   pending: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   users: '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  inbox: '<path d="M4 13h4l2 3h4l2-3h4"/><path d="M5.5 5h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
   back: '<path d="M15 18l-6-6 6-6"/>',
@@ -211,7 +220,7 @@ const S = {
   me: null, uid: null, owner: false,
   mode: "loading", // loading | noconfig | login | admin | reader | resident | norole
   settings: null, settingsExists: false, houses: [], housesExists: false,
-  bills: {}, billRuns: {}, billDocs: {}, readings: {}, proofs: [], users: [],
+  bills: {}, billRuns: {}, billDocs: {}, readings: {}, proofs: [], users: [], msgs: [], chat: null,
   ready: { s: false, h: false }, slow: false, writeDenied: false,
   view: "home", q: "", hfilter: "all", rfilter: "pending", billMonth: null, readMonth: curMonth(), bfilter: "all", lfilter: "all",
 };
@@ -270,6 +279,7 @@ function subscribeAdmin() {
   listen(query(collection(fs, "bills"), where("month", ">=", monthsBack(curMonth(), 14))), q => { S.billDocs = docsToMap(q); rebuildBills(); });
   listen(query(collection(fs, "proofs"), where("status", "==", "pending")), q => { S.proofs = q.docs.map(d => Object.assign({ id: d.id }, d.data())); });
   listen(collection(fs, "users"), q => { S.users = q.docs.map(d => Object.assign({ uid: d.id }, d.data())); });
+  listen(query(collection(fs, "messages"), orderBy("at", "desc"), limit(800)), q => { S.msgs = q.docs.map(d => Object.assign({ id: d.id }, d.data())); refreshChat(); });
 }
 function subscribeReader() {
   S.ready = { s: false, h: false }; startSlowTimer(); subscribeCommon();
@@ -282,9 +292,10 @@ function subscribeResident() {
   listen(collection(fs, "billRuns"), q => { S.billRuns = docsToMap(q); rebuildBills(); });
   listen(query(collection(fs, "bills"), where("hid", "==", hid)), q => { S.billDocs = docsToMap(q); rebuildBills(); });
   listen(query(collection(fs, "proofs"), where("hid", "==", hid)), q => { S.proofs = q.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); });
+  listen(query(collection(fs, "messages"), where("hid", "==", hid)), q => { S.msgs = q.docs.map(d => Object.assign({ id: d.id }, d.data())); refreshChat(); });
 }
 async function handleUser(u) {
-  unsubAll(); S.bills = {}; S.billDocs = {}; S.billRuns = {}; S.readings = {}; S.proofs = []; S.users = []; S.houses = []; S.settings = null;
+  unsubAll(); S.bills = {}; S.billDocs = {}; S.billRuns = {}; S.readings = {}; S.proofs = []; S.users = []; S.msgs = []; S.chat = null; S.houses = []; S.settings = null;
   if (!u) {
     S.me = null; S.uid = null; S.owner = false;
     try { const d = await getDoc(doc(fs, "meta", "setup")); S.needsBootstrap = !d.exists(); } catch (e) { S.needsBootstrap = false; }
@@ -353,6 +364,11 @@ const D = {
   updateBill: (m, hid, fields) => updateDoc(doc(fs, "bills", m + "_" + hid), fields),
   async updateBills(m, map) { await D.batched(Object.entries(map).map(([hid, f]) => b => b.update(doc(fs, "bills", m + "_" + hid), f))); },
   createProof: p => setDoc(doc(collection(fs, "proofs")), p),
+  newProofId: () => doc(collection(fs, "proofs")).id,
+  createProofWithId: (id, p) => setDoc(doc(fs, "proofs", id), p),
+  sendMsg: m => setDoc(doc(collection(fs, "messages")), m),
+  updateMsg: (id, f) => updateDoc(doc(fs, "messages", id), f),
+  async markSeen(ids, field) { if (!ids.length) return; const b = writeBatch(fs); ids.slice(0, 450).forEach(id => b.update(doc(fs, "messages", id), { [field]: true })); await b.commit(); },
   async reviewProof(p, approve, note) {
     const b = writeBatch(fs);
     if (approve) {
@@ -445,16 +461,17 @@ function viewLogin() {
 
 /* ---- ADMIN shell ---- */
 const NAV = [["home", "Dashboard", "home"], ["houses", "Plots", "plots"], ["readings", "Readings", "readings"], ["bills", "Bills", "bills"], ["pending", "Pending", "pending"]];
-const TITLES = { home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings", logins: "Logins" };
+const TITLES = { home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings", logins: "Logins", inbox: "Inbox" };
 function viewAdmin() {
   const s = st();
   let body;
   if (!S.settingsExists || !S.housesExists) { if (S.view !== "settings") body = viewSetup(); }
-  if (!body) body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings, logins: vLogins }[S.view] || vHome)();
+  if (!body) body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings, logins: vLogins, inbox: vInbox }[S.view] || vHome)();
   const pc = S.proofs.length;
-  const navBtn = ([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t}${k === "pending" && pc ? ` <span class="badge b-unpaid">${pc}</span>` : ""}</span></button>`;
-  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["logins", "Logins", "users"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
-  <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "logins" ? "on" : ""}" data-a="tab" data-v="logins" aria-label="Logins">${icon("users")}</button><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button></header>
+  const ic = unreadAdmin();
+  const navBtn = ([k, t, i]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(i)}<span>${t}${k === "pending" && pc ? ` <span class="badge b-unpaid">${pc}</span>` : ""}${k === "inbox" && ic ? ` <span class="badge b-unpaid">${ic}</span>` : ""}</span></button>`;
+  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["inbox", "Inbox", "inbox"])}${navBtn(["logins", "Logins", "users"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
+  <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "inbox" ? "on" : ""}" data-a="tab" data-v="inbox" aria-label="Inbox">${icon("inbox")}${ic ? `<span class="dot">${ic}</span>` : ""}</button><button class="ibtn ${S.view === "logins" ? "on" : ""}" data-a="tab" data-v="logins" aria-label="Logins">${icon("users")}</button><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button></header>
   <main><div class="pagehead"><h1>${esc(TITLES[S.view] || "")}</h1></div>${S.slow ? `<div class="note">Some data has not loaded yet; what you see may be out of date.</div>` : ""}${body}</main>
   <nav class="bnav">${NAV.map(([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t === "Dashboard" ? "Home" : t}${k === "pending" && pc ? " (" + pc + ")" : ""}</span></button>`).join("")}</nav>`;
 }
@@ -695,6 +712,92 @@ function proofModal(id) {
   <div class="actions"><button class="btn pri" data-a="approveProof" data-id="${esc(p.id)}">Approve &amp; add payment</button><button class="btn red" data-a="rejectProof" data-id="${esc(p.id)}">Reject</button></div>`, true);
 }
 
+/* ---- Inbox (complaints, messages, payment screenshots) ---- */
+const KINDS = { complaint: ["Complaint", "b-unpaid"], payment: ["Payment", "b-part"], message: ["Message", "b-none"] };
+const byAt = (a, b) => String(a.at).localeCompare(String(b.at));
+const unreadAdmin = () => S.msgs.filter(m => m.from === "resident" && !m.seenByAdmin).length;
+const unreadRes = () => S.msgs.filter(m => m.from === "admin" && !m.seenByResident).length;
+const lastLine = m => m ? (m.from === "admin" ? "Office: " : "You: ") + (m.text || (m.image ? "Photo" : "")) : "";
+function kindBadge(m) { const k = KINDS[m.kind] || KINDS.message; return `<span class="badge ${k[1]}">${k[0]}</span>${m.kind === "complaint" ? ` <span class="badge ${m.status === "resolved" ? "b-paid" : "b-part"}">${m.status === "resolved" ? "Resolved" : "Open"}</span>` : ""}`; }
+function fmtAt(iso) { const d = new Date(iso); if (isNaN(d)) return ""; return fmtDate(iso.slice(0, 10)) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+function msgHtml(m, admin) {
+  const mine = admin ? m.from === "admin" : m.from === "resident";
+  const who = m.from === "admin" ? "Office" : (admin ? "Resident" : "You");
+  const pr = m.proofId && admin ? S.proofs.find(p => p.id === m.proofId) : null;
+  let extra = "";
+  if (admin && m.kind === "complaint") extra = `<div class="actions"><button class="btn sm" data-a="msgStatus" data-id="${esc(m.id)}" data-v="${m.status === "resolved" ? "open" : "resolved"}">${m.status === "resolved" ? "Reopen" : "Mark resolved"}</button></div>`;
+  if (admin && m.proofId) extra = pr ? `<div class="actions"><button class="btn sm pri" data-a="proof" data-id="${esc(pr.id)}">Review payment</button></div>` : `<div class="muted" style="font-size:12px;margin-top:6px">Payment already reviewed (see Pending / bill).</div>`;
+  return `<div class="msg ${mine ? "me" : ""}"><div class="meta"><b>${who}</b>${m.kind && m.kind !== "message" ? kindBadge(m) : ""}<span>${fmtAt(m.at)}</span></div>
+  ${m.amount ? `<p><b>Paid ${money(m.amount)}</b>${m.method ? " · " + esc(m.method) : ""}${m.tid ? " · TID " + esc(m.tid) : ""}</p>` : ""}${m.text ? `<p>${esc(m.text)}</p>` : ""}${m.image ? `<img src="${esc(m.image)}" alt="Attachment" data-a="zoomImg">` : ""}${extra}</div>`;
+}
+function chatList(hid, admin) {
+  const list = S.msgs.filter(m => m.hid === hid).sort(byAt);
+  return list.length ? list.map(m => msgHtml(m, admin)).join("") : `<div class="empty" style="padding:24px">No messages yet.</div>`;
+}
+function refreshChat() {
+  if (!S.chat) return; const el = $("#chatlist"); if (!el) return;
+  const admin = S.mode === "admin"; el.innerHTML = chatList(S.chat, admin); const end = () => { el.scrollTop = el.scrollHeight; }; end(); el.querySelectorAll("img").forEach(i => { i.onload = end; }); markChatSeen();
+}
+function markChatSeen() {
+  if (!S.chat) return; const admin = S.mode === "admin";
+  const ids = S.msgs.filter(m => m.hid === S.chat && (admin ? m.from === "resident" && !m.seenByAdmin : m.from === "admin" && !m.seenByResident)).map(m => m.id);
+  if (ids.length) D.markSeen(ids, admin ? "seenByAdmin" : "seenByResident").catch(e => console.warn(e));
+}
+function composeForm(admin, kind) {
+  const kinds = admin ? "" : `<label class="f"><span>Type</span><select name="kind"><option value="complaint" ${kind === "complaint" ? "selected" : ""}>Complaint</option><option value="payment" ${kind === "payment" ? "selected" : ""}>Payment screenshot</option><option value="message" ${!kind || kind === "message" ? "selected" : ""}>Message</option></select></label>`;
+  return `<form data-f="msg">${kinds}
+  <div id="payf" class="f2" style="${kind === "payment" ? "" : "display:none"}"><label class="f"><span>Amount paid (Rs)</span><input type="number" name="amount" min="1"></label><label class="f"><span>Paid with</span><select name="method"><option>JazzCash</option><option>Bank transfer</option><option>Easypaisa</option><option>Other</option></select></label><label class="f"><span>Transaction ID (TID)</span><input type="text" name="tid"></label><label class="f"><span>Date paid</span><input type="date" name="date" value="${todayISO()}"></label></div>
+  <label class="f"><span>${admin ? "Reply" : "Message"}</span><textarea name="text" rows="3" placeholder="${admin ? "Write a reply…" : "Write your complaint or message…"}"></textarea></label>
+  <label class="f"><span>Photo / screenshot (optional)</span><input type="file" name="shot" accept="image/*"></label>
+  <button class="btn pri block">Send</button></form>`;
+}
+function chatModal(hid, kind) {
+  const admin = S.mode === "admin";
+  const h = admin ? (S.houses.find(x => x.id === hid) || { no: hid }) : S.houses[0];
+  S.chat = null;
+  openModal(`<h3>${admin ? `Plot ${esc(h.no)}${h.owner ? " · " + esc(h.owner) : ""}` : "Inbox · Society office"}<button class="x" data-a="close">×</button></h3>
+  <div class="chat" id="chatlist"></div>${composeForm(admin, kind)}`, true);
+  S.chat = hid; refreshChat();
+}
+function vInbox() {
+  const by = {}; S.msgs.forEach(m => { (by[m.hid] = by[m.hid] || []).push(m); });
+  let rows = Object.entries(by).map(([hid, l]) => { l.sort(byAt); const h = S.houses.find(x => x.id === hid) || { id: hid, no: hid };
+    return { h, last: l[l.length - 1], unread: l.filter(m => m.from === "resident" && !m.seenByAdmin).length, open: l.filter(m => m.kind === "complaint" && m.status !== "resolved").length }; })
+    .sort((a, b) => String(b.last.at).localeCompare(String(a.last.at)));
+  const f = S.ifilter || "all";
+  if (f === "unread") rows = rows.filter(r => r.unread); else if (f === "open") rows = rows.filter(r => r.open);
+  const chip = (k, t) => `<button class="chip ${f === k ? "on" : ""}" data-a="ifilter" data-v="${k}">${t}</button>`;
+  const opts = soldHouses().map(h => `<option value="${esc(h.id)}">${esc(h.no)}${h.owner ? " · " + esc(h.owner) : ""}</option>`).join("");
+  return `<div class="toolbar">${chip("all", "All")}${chip("unread", "Unread")}${chip("open", "Open complaints")}<span class="sp"></span><select id="newchat" style="max-width:220px"><option value="">Message a plot…</option>${opts}</select></div>
+  <div class="list">${rows.map(r => `<div class="item" data-a="chat" data-id="${esc(r.h.id)}"><div class="hno">${esc(r.h.no)}</div><div class="m"><b>${esc(r.h.owner || "—")}</b><small>${esc((r.last.from === "admin" ? "You: " : "") + (r.last.text || (r.last.amount ? "Payment " + money(r.last.amount) : "Photo")))} · ${fmtAt(r.last.at)}</small></div><div style="text-align:right">${r.unread ? `<span class="badge b-unpaid">${r.unread} new</span>` : ""}${r.open ? `<div><span class="badge b-part">${r.open} open</span></div>` : ""}</div></div>`).join("") || `<div class="empty">No messages${f === "all" ? " yet" : ""}.</div>`}</div>`;
+}
+async function sendMsgForm(f) {
+  const admin = S.mode === "admin", hid = S.chat; if (!hid) return;
+  const fd = new FormData(f); const kind = admin ? "message" : String(fd.get("kind") || "message");
+  const text = String(fd.get("text") || "").trim(); const file = f.shot.files[0];
+  const amount = kind === "payment" ? num(fd.get("amount")) : 0, tid = kind === "payment" ? String(fd.get("tid") || "").trim() : "";
+  if (kind === "payment" && amount <= 0) return toast("Enter the amount you paid");
+  if (kind === "payment" && !file && !tid) return toast("Attach the payment screenshot or enter the TID");
+  if (!text && !file && kind !== "payment") return toast("Write a message or attach a photo");
+  const btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Sending…";
+  const image = file ? await shrinkImage(file) : "";
+  const at = new Date().toISOString();
+  const m = { hid, uid: S.uid, from: admin ? "admin" : "resident", kind, text, image, at, seenByAdmin: admin, seenByResident: !admin };
+  if (kind === "complaint") m.status = "open";
+  const ok = await write(async () => {
+    if (kind === "payment") {
+      const method = String(fd.get("method") || "JazzCash"), date = String(fd.get("date") || todayISO());
+      const cur = billMonths().reverse().map(mm => S.bills[mm].b[hid]).find(b => b && !b.carried);
+      const pid = D.newProofId();
+      await D.createProofWithId(pid, { hid, uid: S.uid, month: cur ? cur.month : curMonth(), amount, method, tid, date, note: text, image, status: "pending", createdAt: at });
+      Object.assign(m, { proofId: pid, amount, method, tid });
+    }
+    await D.sendMsg(m);
+  });
+  if (ok) { f.reset(); const pf = $("#payf"); if (pf) pf.style.display = "none"; toast(kind === "payment" ? "Payment sent for confirmation" : "Sent"); }
+  btn.disabled = false; btn.textContent = "Send";
+}
+
 /* ---- RESIDENT portal ---- */
 function viewResident() {
   const h = S.houses[0] || { no: S.me.hid }, s = st();
@@ -703,7 +806,7 @@ function viewResident() {
   const curM = cur ? cur.month : null;
   const pend = S.proofs.filter(p => p.status === "pending");
   const bal = cur ? balance(cur) : 0;
-  return `<header class="appbar mob"><div class="t"><b>Plot ${esc(h.no)}</b><small>${esc(h.owner || s.name)}</small></div><button class="ibtn" data-a="myAccount" aria-label="Account">${icon("lock")}</button><button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button></header>
+  return `<header class="appbar mob"><div class="t"><b>Plot ${esc(h.no)}</b><small>${esc(h.owner || s.name)}</small></div><button class="ibtn" data-a="myInbox" aria-label="Inbox">${icon("inbox")}${unreadRes() ? `<span class="dot">${unreadRes()}</span>` : ""}</button><button class="ibtn" data-a="myAccount" aria-label="Account">${icon("lock")}</button><button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button></header>
   <main>
   ${cur ? `<div class="card" style="border-color:${bal > 0 ? "#efc6c2" : "#bfe3cb"}"><div class="row"><span class="muted">${mLabel(curM)} bill</span><span class="sp"></span>${badge(status(cur))}</div>
     <div style="font-size:34px;font-weight:800;margin:6px 0 2px;color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(Math.max(0, bal))}</div>
@@ -712,6 +815,9 @@ function viewResident() {
   : `<div class="card"><h2>No bills yet</h2><p class="muted" style="margin:0">Your bills will appear here once the society issues them.</p></div>`}
   ${pend.map(p => `<div class="info">Your payment of <b>${money(p.amount)}</b> (${fmtDate(p.date)}) is waiting for confirmation by the office.</div>`).join("")}
   ${S.proofs.filter(p => p.status === "rejected").slice(0, 1).map(p => `<div class="err">Your payment of ${money(p.amount)} (${fmtDate(p.date)}) could not be confirmed${p.reviewNote ? ": " + esc(p.reviewNote) : ""}. Please contact the office.</div>`).join("")}
+  <div class="card"><div class="row"><h2 style="margin:0">Inbox</h2><span class="sp"></span>${unreadRes() ? `<span class="badge b-unpaid">${unreadRes()} new</span>` : ""}</div>
+    <p class="muted" style="margin:6px 0 12px;font-size:14px">${S.msgs.length ? esc(lastLine(S.msgs.slice().sort(byAt).pop())) : "Send a complaint or a message to the society office. You can attach a photo or a payment screenshot."}</p>
+    <div class="actions" style="margin:0"><button class="btn pri" data-a="myInbox">Open inbox</button><button class="btn" data-a="myInbox" data-k="complaint">New complaint</button></div></div>
   <div class="grid"><div class="stat"><span>Area</span><b>${esc(h.marla)} marla</b></div><div class="stat"><span>Street</span><b>${esc(h.street || "—")}</b></div></div>
   <div class="card"><h2>Bill history</h2>${months.length ? `<div class="list" style="border:0">${months.map(m => { const b = S.bills[m].b[h.id]; return b ? `<div class="item" data-a="rbill" data-m="${m}"><div class="m"><b>${mLabel(m)}</b><small>${b.units} units · Paid ${money(b.paid)}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>` : ""; }).join("")}</div>` : `<p class="muted" style="margin:0">No bills yet.</p>`}</div>
   ${S.proofs.length ? `<div class="card"><h2>My payments</h2>${S.proofs.map(p => `<div class="kv"><span>${fmtDate(p.date)} · ${esc(p.method || "")}${p.tid ? " · " + esc(p.tid) : ""}</span><b>${money(p.amount)} <span class="badge ${p.status === "approved" ? "b-paid" : p.status === "rejected" ? "b-unpaid" : "b-part"}">${p.status === "approved" ? "Confirmed" : p.status === "rejected" ? "Rejected" : "Pending"}</span></b></div>`).join("")}</div>` : ""}
@@ -766,7 +872,7 @@ function accountModal() {
 
 /* ============ modal ============ */
 function openModal(html, wide) { const sh = $("#sheet"); sh.className = "sheet" + (wide ? " wide" : ""); sh.innerHTML = html; $("#modal").classList.remove("hidden"); }
-function closeModal() { $("#modal").classList.add("hidden"); $("#sheet").innerHTML = ""; }
+function closeModal() { S.chat = null; $("#modal").classList.add("hidden"); $("#sheet").innerHTML = ""; }
 $("#modal").addEventListener("click", e => { if (e.target.id === "modal") closeModal(); });
 function ask(title, msg, okText = "Yes", danger) {
   return new Promise(res => {
@@ -1183,6 +1289,11 @@ document.addEventListener("click", async e => {
     case "hf": S.hfilter = t.dataset.v; render(true); break;
     case "rf": S.rfilter = t.dataset.v; render(true); break;
     case "bf": S.bfilter = t.dataset.v; render(true); break;
+    case "ifilter": S.ifilter = t.dataset.v; render(true); break;
+    case "chat": chatModal(id); break;
+    case "myInbox": chatModal(S.me.hid, t.dataset.k); break;
+    case "msgStatus": if (await write(() => D.updateMsg(id, { status: t.dataset.v }))) toast(t.dataset.v === "resolved" ? "Complaint marked resolved" : "Complaint reopened"); break;
+    case "zoomImg": window.open().document.write(`<img src="${t.src}" style="max-width:100%">`); break;
     case "toReader": S.mode = "reader"; S.q = ""; S.rfilter = "pending"; render(true); window.scrollTo(0, 0); break;
     case "toAdmin": S.mode = "admin"; S.q = ""; render(true); break;
     case "logout": closeModal(); if (auth) await signOut(auth); break;
@@ -1244,6 +1355,8 @@ document.addEventListener("change", async e => {
   if (t.closest("#app form[data-f]")) S.dirty = true;
   if (t.id === "rm") { if (t.value) { S.readMonth = t.value; render(true); } }
   else if (t.id === "bm") { S.billMonth = t.value; S.q = ""; render(true); }
+  else if (t.id === "newchat") { if (t.value) chatModal(t.value); t.value = ""; }
+  else if (t.name === "kind" && t.closest("form[data-f=msg]")) { const pf = $("#payf"); if (pf) pf.style.display = t.value === "payment" ? "" : "none"; }
   else if (t.id === "qrfile" && t.files[0]) {
     const f = t.files[0]; const url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
     const img = await loadImg(url); if (!img) return toast("Could not open that image");
@@ -1267,6 +1380,7 @@ document.addEventListener("submit", async e => {
   } else if (k === "staffLogin") {
     const btn = f.querySelector("button"); btn.disabled = true;
     try { const c = await D.createLogin(fd.get("role"), fd.get("u"), String(fd.get("p") || ""), null, String(fd.get("name") || "").trim()); credModal([c]); } catch (err) { toast(err.message || "Could not create the login"); btn.disabled = false; }
+  } else if (k === "msg") { sendMsgForm(f);
   } else if (k === "proof") {
     const btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Submitting…";
     const file = f.shot.files[0]; let image = ""; if (file) image = await shrinkImage(file);

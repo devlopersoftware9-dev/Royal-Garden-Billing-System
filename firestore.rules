@@ -77,5 +77,23 @@ service cloud.firestore {
         && request.resource.data.status == 'pending';
       allow update, delete: if isAdmin();
     }
+
+    // Inbox: complaints, messages and payment screenshots between a plot and the office.
+    // Residents only see and write their own plot's messages, and can only mark office replies as read.
+    match /messages/{id} {
+      allow read: if isAdmin() || (isResident() && resource.data.hid == myHid());
+      allow create: if (isAdmin() && request.resource.data.from == 'admin')
+        || (isResident()
+          && request.resource.data.hid == myHid()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.from == 'resident'
+          && request.resource.data.seenByAdmin == false
+          && request.resource.data.kind in ['complaint', 'payment', 'message']
+          && (!('status' in request.resource.data) || request.resource.data.status == 'open'));
+      allow update: if isAdmin()
+        || (isResident() && resource.data.hid == myHid() && resource.data.from == 'admin'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenByResident']));
+      allow delete: if isAdmin();
+    }
   }
 }
