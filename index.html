@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Royal Garden">
 <title>Royal Garden Water Billing</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
 :root{--bg:#f3f5f4;--card:#fff;--ink:#16201c;--mute:#66736e;--line:#e2e7e5;--pri:#0f5c4d;--pri-d:#0b4639;--pri2:#e4f1ed;--red:#b3261e;--red2:#fbe9e7;--amb:#9a5800;--amb2:#fff3dc;--grn:#1b7a3d;--grn2:#e3f4e8;--r:14px;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -158,9 +158,7 @@ const curMonth = () => todayISO().slice(0, 7);
 const addDays = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
 const fmtDate = iso => iso ? iso.slice(8, 10) + "-" + iso.slice(5, 7) + "-" + iso.slice(0, 4) : "";
 const EN_M = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const UR_M = ["جنوری", "فروری", "مارچ", "اپریل", "مئی", "جون", "جولائی", "اگست", "ستمبر", "اکتوبر", "نومبر", "دسمبر"];
 const mLabel = m => m ? EN_M[+m.slice(5, 7) - 1] + " " + m.slice(0, 4) : "";
-const mUr = m => UR_M[+m.slice(5, 7) - 1] + " " + m.slice(0, 4);
 function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 2800); }
 function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) { return null; } }
 function waPhone(p) { let d = String(p || "").trim().split(/[\s,\/]+(?=[0+9])/)[0].replace(/\D/g, ""); if (!d) return ""; if (d.startsWith("00")) d = d.slice(2); if (d.startsWith("920") && d.length === 13) d = "92" + d.slice(3); if (d.startsWith("0")) d = "92" + d.slice(1); else if (d.length === 10 && d.startsWith("3")) d = "92" + d; return d; }
@@ -178,7 +176,7 @@ const IC = {
 };
 const icon = k => `<svg class="i" viewBox="0 0 24 24">${IC[k]}</svg>`;
 
-const DEF = { name: "Royal Garden", nameUr: "رائل گارڈن", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerPin: "1234", adminPin: "", readerShowPrev: true, readerShowOwner: true };
+const DEF = { name: "Royal Garden", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerPin: "1234", adminPin: "", readerShowPrev: true, readerShowOwner: true };
 
 /* ============ state ============ */
 const S = {
@@ -284,7 +282,6 @@ function viewSetup() {
   return `<div class="card"><h2>First-time setup</h2><p class="muted">Create the plot list. You can edit each plot (owner, phone, marla) later from the Plots tab, or import your Excel file.</p>
   <form data-f="setup"><div class="f2">
   <label class="f"><span>Society name</span><input type="text" name="name" value="${esc(st().name)}"></label>
-  <label class="f"><span>Society name in Urdu (for bills)</span><input type="text" name="nameUr" dir="rtl" value="${esc(st().nameUr)}"></label>
   <label class="f"><span>Total houses</span><input type="number" name="total" value="200" min="1" max="2000"></label>
   <label class="f"><span>Default marla per house</span><input type="number" name="marla" value="5" step="0.5" min="0"></label>
   <label class="f"><span>Rate per marla (Rs)</span><input type="number" name="marlaRate" value="${esc(st().marlaRate)}"></label>
@@ -416,7 +413,7 @@ function vSettings() {
   const fld = (k, label, type = "text", extra = "") => `<label class="f"><span>${label}</span><input type="${type}" name="${k}" value="${esc(s[k])}" ${extra}></label>`;
   const tg = (k, label, sub) => `<label class="toggle"><input type="checkbox" name="${k}" ${s[k] !== false ? "checked" : ""}><span><b>${label}</b><small>${sub}</small></span></label>`;
   return `<form data-f="settings"><div class="cols">
-  <div class="card"><h2>Society</h2><div class="f2">${fld("name", "Name")}${fld("nameUr", "Name in Urdu (printed on bills)", "text", 'dir="rtl"')}${fld("address", "Address (Urdu or English)")}${fld("phone", "Contact / WhatsApp number (printed on bills)", "tel")}</div></div>
+  <div class="card"><h2>Society</h2><div class="f2">${fld("name", "Name")}${fld("address", "Address (printed on bills)")}${fld("phone", "Contact / WhatsApp number (printed on bills)", "tel")}</div></div>
   <div class="card"><h2>Rates</h2><div class="f2">${fld("marlaRate", "Rate per marla (Rs)", "number", 'step="0.01" min="0"')}${fld("unitRate", "Water rate per unit (Rs)", "number", 'step="0.01" min="0"')}${fld("fineDefault", "Default late fine (Rs)", "number", 'step="1" min="0"')}${fld("dueDays", "Days until due date", "number", 'min="0"')}</div><p class="muted" style="margin:0;font-size:13px">New rates apply from the next bill run; existing bills are not changed.</p></div>
   <div class="card"><h2>JazzCash</h2><div class="f2">${fld("jazzNumber", "JazzCash number", "tel")}${fld("jazzTitle", "Account title")}</div></div>
   <div class="card"><h2>Bank account</h2><div class="f2">${fld("bankName", "Bank name")}${fld("bankTitle", "Account title")}${fld("bankAcc", "Account number")}${fld("iban", "IBAN")}</div></div>
@@ -565,15 +562,15 @@ function billModal(m, hid) {
 }
 function waLink(m, b) {
   const s = st(), doc = S.bills[m], bal = balance(b);
-  let t = `محترم ${b.owner || "صاحب"}،\n${s.nameUr || s.name}\nپلاٹ نمبر ${b.no} کا ${mUr(m)} کا بل:\n`;
-  t += `مرلہ چارجز: Rs ${Math.round(b.marlaCharge)}\nپانی (${b.units} یونٹ): Rs ${Math.round(b.water)}\n`;
-  if (num(b.arrears)) t += `سابقہ بقایا: Rs ${Math.round(b.arrears)}\n`;
-  if (num(b.fine)) t += `جرمانہ: Rs ${Math.round(b.fine)}\n`;
-  t += `کل رقم: Rs ${Math.round(b.total)}\n`; if (num(b.paid)) t += `ادا شدہ: Rs ${Math.round(b.paid)}\nباقی: Rs ${Math.round(bal)}\n`;
-  t += `آخری تاریخ: ${fmtDate(doc.dueDate)}\n`;
-  if (s.jazzNumber) t += `\nجیز کیش: ${s.jazzNumber}${s.jazzTitle ? " (" + s.jazzTitle + ")" : ""}`;
-  if (s.bankAcc || s.iban) t += `\nبینک: ${s.bankName} ${s.bankTitle ? "- " + s.bankTitle : ""}\nاکاؤنٹ: ${s.bankAcc}${s.iban ? "\nIBAN: " + s.iban : ""}`;
-  t += `\n\nادائیگی کے بعد رسید کا اسکرین شاٹ بھیج دیں۔ شکریہ`;
+  let t = `Dear ${b.owner || "Resident"},\n${s.name} — ${mLabel(m)} bill for Plot ${b.no}:\n`;
+  t += `Maintenance charges: Rs ${Math.round(b.marlaCharge)}\nWater (${b.units} units): Rs ${Math.round(b.water)}\n`;
+  if (num(b.arrears)) t += `Previous balance: Rs ${Math.round(b.arrears)}\n`;
+  if (num(b.fine)) t += `Late fine: Rs ${Math.round(b.fine)}\n`;
+  t += `Total payable: Rs ${Math.round(b.total)}\n`; if (num(b.paid)) t += `Paid: Rs ${Math.round(b.paid)}\nBalance due: Rs ${Math.round(bal)}\n`;
+  t += `Due date: ${fmtDate(doc.dueDate)}\n`;
+  if (s.jazzNumber) t += `\nJazzCash: ${s.jazzNumber}${s.jazzTitle ? " (" + s.jazzTitle + ")" : ""}`;
+  if (s.bankAcc || s.iban) t += `\nBank: ${s.bankName}${s.bankTitle ? " - " + s.bankTitle : ""}\nAccount: ${s.bankAcc}${s.iban ? "\nIBAN: " + s.iban : ""}`;
+  t += `\n\nAfter paying, please send the receipt screenshot. Thank you.`;
   const p = waPhone(b.phone);
   return (p ? "https://wa.me/" + p : "https://wa.me/") + "?text=" + encodeURIComponent(t);
 }
@@ -603,11 +600,10 @@ async function setFine(m, hid, fine) {
   return write(() => S.db.doc("bills/" + m).update({ b: { [hid]: { fine, total } } }));
 }
 
-/* ============ bill canvas (Urdu) ============ */
-const UR = '"Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Noto Naskh Arabic","Urdu Typesetting",serif';
-const LAT = 'Arial,"Helvetica Neue",sans-serif';
+/* ============ bill canvas (English) ============ */
+const LAT = 'Inter,Arial,"Helvetica Neue",sans-serif';
 let fontP = null;
-function fontsReady() { if (!fontP) fontP = Promise.race([Promise.all([document.fonts.load('400 30px "Noto Nastaliq Urdu"', "مکان"), document.fonts.load('700 30px "Noto Nastaliq Urdu"', "مکان")]).catch(() => { }), new Promise(r => setTimeout(r, 4000))]); return fontP; }
+function fontsReady() { if (!fontP) fontP = Promise.race([Promise.all([document.fonts.load('400 30px Inter'), document.fonts.load('700 30px Inter')]).catch(() => { }), new Promise(r => setTimeout(r, 4000))]); return fontP; }
 const imgCache = {};
 function loadImg(src) { if (!src) return Promise.resolve(null); if (!imgCache[src]) imgCache[src] = new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; }); return imgCache[src]; }
 async function billCanvas(m, b) {
@@ -617,70 +613,66 @@ async function billCanvas(m, b) {
   const x = c.getContext("2d"); x.textBaseline = "middle";
   const P = "#0f5c4d", R = W - 70, L = 70;
   x.fillStyle = "#fff"; x.fillRect(0, 0, W, H);
-  const ur = (t, px, y, size, o = {}) => { x.save(); x.direction = "rtl"; x.textAlign = o.align || "right"; x.font = (o.bold ? "700 " : "400 ") + size + "px " + UR; x.fillStyle = o.color || "#17201d"; x.fillText(t, px, y); const w = x.measureText(t).width; x.restore(); return w; };
-  const en = (t, px, y, size, o = {}) => { x.save(); x.direction = "ltr"; x.textAlign = o.align || "left"; x.font = (o.bold ? "700 " : "400 ") + size + "px " + LAT; x.fillStyle = o.color || "#17201d"; x.fillText(String(t), px, y); const w = x.measureText(String(t)).width; x.restore(); return w; };
-  const isUr = t => /[؀-ۿ]/.test(t);
-  const any = (t, px, y, size, o = {}) => isUr(t) ? ur(t, px, y, size, o) : en(t, px, y, size, Object.assign({}, o, { align: o.align === "right" ? "right" : o.align === "center" ? "center" : "left" }));
-  const rs = n => "Rs " + (Math.round(n) || 0).toLocaleString("en-PK");
+  const tx = (t, px, y, size, o = {}) => { x.save(); x.textAlign = o.align || "left"; x.font = (o.bold ? "700 " : "400 ") + size + "px " + LAT; x.fillStyle = o.color || "#16201c"; x.fillText(String(t), px, y); const w = x.measureText(String(t)).width; x.restore(); return w; };
+  const rs = n => (n < 0 ? "- " : "") + "Rs " + Math.abs(Math.round(n) || 0).toLocaleString("en-PK");
   // header
-  x.fillStyle = P; x.fillRect(0, 0, W, 220);
-  any(s.nameUr || s.name, W / 2, 75, 60, { bold: true, color: "#fff", align: "center" });
-  ur("پانی و مینٹیننس بل", W / 2, 150, 34, { color: "#d8efe9", align: "center" });
-  if (s.address) any(s.address, W / 2, 198, 22, { color: "#bfe0d8", align: "center" });
+  x.fillStyle = P; x.fillRect(0, 0, W, 210);
+  tx(s.name, L, 78, 56, { bold: true, color: "#fff" });
+  tx("Water & Maintenance Bill", L, 140, 30, { color: "#d8efe9" });
+  if (s.address) tx(s.address, L, 182, 22, { color: "#bfe0d8" });
+  tx(mLabel(m).toUpperCase(), R, 78, 40, { bold: true, color: "#fff", align: "right" });
+  tx("Billing month", R, 128, 22, { color: "#bfe0d8", align: "right" });
   // info box
-  let y = 262; x.strokeStyle = "#d5dedb"; x.lineWidth = 2; x.strokeRect(L, y - 22, W - 2 * L, 300);
-  const kv = (label, val, right, yy) => { const w = ur(label, right, yy, 28, { color: "#5b6b66" }); any(String(val), right - w - 18, yy, 30, { bold: true, align: "right" }); };
-  kv("پلاٹ نمبر:", b.no, R - 30, y + 18); kv("بل برائے:", mUr(m), W / 2 - 20, y + 18);
-  kv("مالک:", b.owner || "-", R - 30, y + 88); kv("جاری ہونے کی تاریخ:", fmtDate((doc.generatedAt || "").slice(0, 10)), W / 2 - 20, y + 88);
-  kv("رقبہ:", b.marla + " مرلہ", R - 30, y + 158); kv("گلی نمبر:", b.street || "-", W / 2 - 20, y + 158);
-  kv("صارف کوڈ:", b.code || "-", R - 30, y + 228); kv("میٹر نمبر:", b.meter || "-", W / 2 - 20, y + 228);
+  let y = 250; x.strokeStyle = "#d5dedb"; x.lineWidth = 2; x.strokeRect(L, y, W - 2 * L, 290);
+  const kv = (label, val, left, yy) => { tx(label, left, yy, 24, { color: "#66736e" }); tx(String(val), left, yy + 34, 30, { bold: true }); };
+  const c1 = L + 30, c2 = L + 30 + (W - 2 * L) / 3, c3 = L + 30 + 2 * (W - 2 * L) / 3;
+  kv("Plot No.", b.no, c1, y + 40); kv("Street No.", b.street || "-", c2, y + 40); kv("Area", b.marla + " marla", c3, y + 40);
+  kv("Owner", b.owner || "-", c1, y + 130); kv("Subscriber Code", b.code || "-", c2, y + 130); kv("Meter No.", b.meter || "-", c3, y + 130);
+  kv("Issue Date", fmtDate((doc.generatedAt || "").slice(0, 10)), c1, y + 220); kv("Due Date", fmtDate(doc.dueDate), c2, y + 220); kv("Bill Status", status(b).t, c3, y + 220);
   // table
-  y = 590;
-  x.fillStyle = P; x.fillRect(L, y, W - 2 * L, 70);
-  ur("تفصیل", R - 25, y + 36, 30, { bold: true, color: "#fff" }); ur("رقم", L + 25, y + 36, 30, { bold: true, color: "#fff", align: "left" });
-  y += 70;
+  y = 580;
+  x.fillStyle = P; x.fillRect(L, y, W - 2 * L, 66);
+  tx("Description", L + 25, y + 34, 28, { bold: true, color: "#fff" }); tx("Amount", R - 25, y + 34, 28, { bold: true, color: "#fff", align: "right" });
+  y += 66;
+  const line = () => { x.strokeStyle = "#e2e8e6"; x.lineWidth = 1.5; x.beginPath(); x.moveTo(L, y); x.lineTo(W - L, y); x.stroke(); };
   const row = (label, amt, o = {}) => {
     const h = o.h || 68; if (o.bg) { x.fillStyle = o.bg; x.fillRect(L, y, W - 2 * L, h); }
-    ur(label, R - 25, y + h / 2, o.size || 29, { bold: o.bold, color: o.color });
-    if (amt !== null && amt !== undefined) en(rs(amt), L + 25, y + h / 2, o.size || 29, { bold: true, color: o.color });
-    if (o.sub) { ur(o.sub, R - 25, y + h - 2, 21, { color: "#6a7a75" }); }
-    x.strokeStyle = "#e2e8e6"; x.lineWidth = 1.5; x.beginPath(); x.moveTo(L, y + h); x.lineTo(W - L, y + h); x.stroke(); y += h;
+    const w = tx(label, L + 25, y + h / 2, o.size || 28, { bold: o.bold, color: o.color });
+    if (o.detail) tx(o.detail, L + 25 + w + 14, y + h / 2, 23, { color: "#66736e" });
+    if (amt !== null && amt !== undefined) tx(rs(amt), R - 25, y + h / 2, o.size || 28, { bold: true, color: o.color, align: "right" });
+    y += h; line();
   };
-  { const yy = y; row("مرلہ چارجز", b.marlaCharge); x.save(); x.font = "400 29px " + UR; const w = x.measureText("مرلہ چارجز").width; x.restore(); en("(" + b.marla + " × " + b.marlaRate + ")", R - 25 - w - 16, yy + 34, 25, { align: "right", color: "#5b6b66" }); }
-  row("پانی کا بل", b.water);
-  // reading detail line
-  x.fillStyle = "#f6f9f8"; x.fillRect(L, y, W - 2 * L, 64);
-  if (b.noReading) ur("اس ماہ کی ریڈنگ دستیاب نہیں — یونٹس اگلے بل میں شامل ہوں گے", R - 25, y + 32, 23, { color: "#8a5a00" });
-  else {
-    const seg = [["پچھلی ریڈنگ:", b.prev], ["موجودہ ریڈنگ:", b.curr], ["یونٹس:", b.units], ["فی یونٹ:", b.unitRate]];
-    let px = R - 25; seg.forEach(([l, v]) => { const w = ur(l, px, y + 32, 23, { color: "#5b6b66" }); const w2 = en(v, px - w - 10, y + 32, 24, { bold: true, align: "right" }); px -= w + w2 + 50; });
-  }
-  y += 64; x.strokeStyle = "#e2e8e6"; x.beginPath(); x.moveTo(L, y); x.lineTo(W - L, y); x.stroke();
+  row("Maintenance charges", b.marlaCharge, { detail: "(" + b.marla + " marla × Rs " + b.marlaRate + ")" });
+  row("Water charges", b.water, { detail: b.noReading ? "" : "(" + b.units + " units × Rs " + b.unitRate + ")" });
+  x.fillStyle = "#f6f9f8"; x.fillRect(L, y, W - 2 * L, 60);
+  if (b.noReading) tx("No meter reading this month — the units will be billed next month.", L + 25, y + 30, 22, { color: "#8a5a00" });
+  else { let px = L + 25; [["Previous reading", b.prev], ["Current reading", b.curr], ["Units used", b.units]].forEach(([l, v]) => { const w = tx(l + ":", px, y + 30, 22, { color: "#66736e" }); const w2 = tx(v, px + w + 10, y + 30, 23, { bold: true }); px += w + w2 + 60; }); }
+  y += 60; line();
   const arr = num(b.arrears);
-  row(arr < 0 ? "پیشگی ادائیگی (منہا)" : "سابقہ بقایا", arr);
-  row("جرمانہ", num(b.fine));
-  row("کل واجب الادا رقم", b.total, { bg: "#e5f1ee", bold: true, size: 34, h: 82, color: P });
-  if (num(b.paid) > 0) { row("ادا شدہ رقم", b.paid, { color: "#1b7a3d" }); row("باقی رقم", balance(b), { bold: true, color: "#b3261e" }); }
+  row(arr < 0 ? "Advance payment (deducted)" : "Previous balance (arrears)", arr);
+  row("Late fine", num(b.fine));
+  row("Total amount payable", b.total, { bg: "#e4f1ed", bold: true, size: 33, h: 80, color: P });
+  if (num(b.paid) > 0) { row("Amount paid", b.paid, { color: "#1b7a3d" }); row("Balance due", balance(b), { bold: true, color: balance(b) > 0 ? "#b3261e" : "#1b7a3d" }); }
   // due
   y += 24;
-  x.fillStyle = "#fff3dc"; x.fillRect(L, y, W - 2 * L, 80);
-  const w = ur("آخری تاریخ:", R - 25, y + 40, 32, { bold: true, color: "#7a4500" }); en(fmtDate(doc.dueDate), R - 25 - w - 18, y + 40, 32, { bold: true, color: "#7a4500", align: "right" });
-  ur("مقررہ تاریخ کے بعد جرمانہ عائد ہو سکتا ہے", L + 25, y + 40, 23, { color: "#7a4500", align: "left" });
-  y += 110;
+  x.fillStyle = "#fff3dc"; x.fillRect(L, y, W - 2 * L, 76);
+  const w = tx("Due date:", L + 25, y + 38, 30, { bold: true, color: "#7a4500" }); tx(fmtDate(doc.dueDate), L + 25 + w + 14, y + 38, 30, { bold: true, color: "#7a4500" });
+  tx("A late fine may apply after the due date.", R - 25, y + 38, 22, { color: "#7a4500", align: "right" });
+  y += 108;
   // payment section
-  ur("ادائیگی کے طریقے", R, y + 20, 34, { bold: true, color: P }); y += 70;
+  tx("How to pay", L, y + 16, 32, { bold: true, color: P }); y += 64;
   const qr = await loadImg(s.qr); const qs = 270;
   const lines = [];
-  if (s.jazzNumber) { lines.push(["جیز کیش نمبر:", s.jazzNumber]); if (s.jazzTitle) lines.push(["اکاؤنٹ ٹائٹل:", s.jazzTitle]); }
-  if (s.bankName || s.bankAcc) { lines.push(["بینک:", s.bankName || "-"]); if (s.bankTitle) lines.push(["اکاؤنٹ ٹائٹل:", s.bankTitle]); if (s.bankAcc) lines.push(["اکاؤنٹ نمبر:", s.bankAcc]); if (s.iban) lines.push(["IBAN:", s.iban]); }
-  if (!lines.length) lines.push(["رابطہ کریں:", s.phone || "-"]);
-  let ly = y + 10; lines.forEach(([l, v]) => { const w = isUr(l) ? ur(l, R, ly, 26, { color: "#5b6b66" }) : en(l, R, ly, 24, { color: "#5b6b66", align: "right" }); any(String(v), R - w - 16, ly, 28, { bold: true, align: "right" }); ly += 50; });
-  if (qr) { const sc = Math.min(qs / qr.width, qs / qr.height); const dw = qr.width * sc, dh = qr.height * sc; x.drawImage(qr, L + (qs - dw) / 2, y - 10 + (qs - dh) / 2, dw, dh); x.strokeStyle = "#d5dedb"; x.strokeRect(L - 6, y - 16, qs + 12, qs + 12); ur("QR کوڈ اسکین کریں", L + qs / 2, y + qs + 30, 22, { color: "#5b6b66", align: "center" }); }
-  // stamp
-  if (balance(b) <= 0) { x.save(); x.translate(W - 300, 1000); x.rotate(-0.25); x.strokeStyle = "rgba(27,122,61,.75)"; x.lineWidth = 6; x.strokeRect(-130, -55, 260, 110); ur("ادا شدہ", 0, 0, 52, { bold: true, color: "rgba(27,122,61,.8)", align: "center" }); x.restore(); }
+  if (s.jazzNumber) { lines.push(["JazzCash number", s.jazzNumber]); if (s.jazzTitle) lines.push(["Account title", s.jazzTitle]); }
+  if (s.bankName || s.bankAcc) { lines.push(["Bank", s.bankName || "-"]); if (s.bankTitle) lines.push(["Account title", s.bankTitle]); if (s.bankAcc) lines.push(["Account number", s.bankAcc]); if (s.iban) lines.push(["IBAN", s.iban]); }
+  if (!lines.length) lines.push(["Contact", s.phone || "-"]);
+  let ly = y + 8; lines.forEach(([l, v]) => { tx(l + ":", L, ly, 24, { color: "#66736e" }); tx(String(v), L + 230, ly, 27, { bold: true }); ly += 48; });
+  if (qr) { const sc = Math.min(qs / qr.width, qs / qr.height); const dw = qr.width * sc, dh = qr.height * sc, qx = R - qs; x.drawImage(qr, qx + (qs - dw) / 2, y - 14 + (qs - dh) / 2, dw, dh); x.strokeStyle = "#d5dedb"; x.strokeRect(qx - 6, y - 20, qs + 12, qs + 12); tx("Scan to pay", qx + qs / 2, y + qs + 24, 22, { color: "#66736e", align: "center" }); }
+  // paid stamp
+  if (balance(b) <= 0) { x.save(); x.translate(700, 908); x.rotate(-0.18); x.strokeStyle = "rgba(27,122,61,.7)"; x.lineWidth = 5; x.strokeRect(-105, -40, 210, 80); tx("PAID", 0, 2, 44, { bold: true, color: "rgba(27,122,61,.8)", align: "center" }); x.restore(); }
   // footer
-  x.fillStyle = "#f1f5f4"; x.fillRect(0, H - 110, W, 110);
-  { const ft = "ادائیگی کے بعد رسید یا اسکرین شاٹ واٹس ایپ کریں" + (s.phone ? ":" : "۔"); x.save(); x.font = "400 26px " + UR; const wu = x.measureText(ft).width; x.font = "700 28px " + LAT; const wp = s.phone ? x.measureText(s.phone).width + 20 : 0; x.restore(); const rr = W / 2 + (wu + wp) / 2; ur(ft, rr, H - 58, 26, { color: "#3b4a45" }); if (s.phone) en(s.phone, rr - wu - 20, H - 58, 28, { bold: true, align: "right" }); }
+  x.fillStyle = "#f1f5f4"; x.fillRect(0, H - 100, W, 100);
+  tx("After paying, please send the receipt or a screenshot on WhatsApp" + (s.phone ? ": " + s.phone : "."), W / 2, H - 50, 24, { color: "#3b4a45", align: "center" });
   return c;
 }
 function canvasJpeg(c) { return new Promise(r => c.toBlob(bl => bl.arrayBuffer().then(ab => r({ bytes: new Uint8Array(ab), w: c.width, h: c.height })), "image/jpeg", 0.85)); }
@@ -840,12 +832,12 @@ document.addEventListener("submit", async e => {
     const total = Math.min(2000, Math.max(1, Math.round(num(fd.get("total"))))), marla = num(fd.get("marla"));
     const sold = parseRanges(fd.get("sold"));
     const list = []; for (let i = 1; i <= total; i++) list.push({ id: String(i), no: String(i), owner: "", phone: "", marla, meter: "", opening: 0, sold: sold.has(String(i)) });
-    const s = Object.assign({}, st(), { name: String(fd.get("name") || DEF.name), nameUr: String(fd.get("nameUr") || ""), marlaRate: num(fd.get("marlaRate")), unitRate: num(fd.get("unitRate")), readerPin: String(fd.get("readerPin") || "1234") });
+    const s = Object.assign({}, st(), { name: String(fd.get("name") || DEF.name), marlaRate: num(fd.get("marlaRate")), unitRate: num(fd.get("unitRate")), readerPin: String(fd.get("readerPin") || "1234") });
     const ok = await write(async () => { await S.db.doc("society/settings").set(s); if (!S.housesExists) await S.db.doc("society/houses").set({ list }); });
     if (ok) { toast("Setup complete"); S.view = "houses"; render(true); }
   } else if (k === "settings") {
     const s = Object.assign({}, st());
-    ["name", "nameUr", "address", "phone", "jazzNumber", "jazzTitle", "bankName", "bankTitle", "bankAcc", "iban", "readerPin", "adminPin"].forEach(n => s[n] = String(fd.get(n) || "").trim());
+    ["name", "address", "phone", "jazzNumber", "jazzTitle", "bankName", "bankTitle", "bankAcc", "iban", "readerPin", "adminPin"].forEach(n => s[n] = String(fd.get(n) || "").trim());
     ["marlaRate", "unitRate", "fineDefault", "dueDays"].forEach(n => s[n] = num(fd.get(n)));
     s.readerShowPrev = !!fd.get("readerShowPrev"); s.readerShowOwner = !!fd.get("readerShowOwner");
     if (!s.readerPin) return toast("The reader PIN can't be empty");
