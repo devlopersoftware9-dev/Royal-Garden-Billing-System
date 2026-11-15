@@ -201,7 +201,10 @@ const IC = {
 };
 const icon = k => `<svg class="i" viewBox="0 0 24 24">${IC[k]}</svg>`;
 
-const DEF = { name: "Royal Garden", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerShowPrev: true, readerShowOwner: true };
+const DEF = { name: "Royal Garden", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerShowPrev: true, readerShowOwner: true, btns: {} };
+/* Which buttons show on a bill, per login type (Settings → Bill buttons). Missing = shown. */
+const BTNS = [["pay", "Record payment", 1, 0], ["fine", "Add fine", 1, 0], ["unfine", "Remove fine", 1, 0], ["delPay", "Delete a payment (×)", 1, 0], ["payNow", "Pay now", 0, 1], ["print", "Print", 1, 1], ["pdf", "Download PDF", 1, 1], ["img", "Download image", 1, 1], ["wa", "Send picture on WhatsApp", 1, 0]];
+const bOn = (role, k) => { const b = st().btns || {}; return !(b[role] && b[role][k] === false); };
 
 /* ============ state ============ */
 const S = {
@@ -600,6 +603,9 @@ function vSettings() {
   ${tg("readerShowPrev", "Show previous reading to the reader", "When off, the reader only sees the plot number and enters the new reading.")}
   ${tg("readerShowOwner", "Show owner name to the reader", "Helps the reader find the right house.")}
   <div class="row" style="margin-top:10px"><button type="button" class="btn" data-a="tab" data-v="logins">Manage logins (residents, readers, admins)</button></div></div>
+  <div class="card"><h2>Bill buttons</h2><p class="muted" style="margin:0 0 10px;font-size:13px">Choose which buttons show on a bill for each login type. Untick a box to hide that button.</p>
+  <table class="tbl" style="accent-color:var(--pri)"><tr><th>Button</th><th style="text-align:center">Admin</th><th style="text-align:center">Resident</th></tr>${BTNS.map(([k, label, a, r]) => `<tr><td>${label}</td><td style="text-align:center">${a ? `<input type="checkbox" name="btn_admin_${k}" ${bOn("admin", k) ? "checked" : ""}>` : "—"}</td><td style="text-align:center">${r ? `<input type="checkbox" name="btn_resident_${k}" ${bOn("resident", k) ? "checked" : ""}>` : "—"}</td></tr>`).join("")}</table>
+  <p class="muted" style="margin:10px 0 0;font-size:13px">Admin settings apply to every admin login. You can always turn a button back on here.</p></div>
   </div><div class="row" style="margin-bottom:14px"><button class="btn pri">Save settings</button></div></form>
   <div class="card"><h2>Backup</h2><p class="muted" style="margin-top:0">Download all data (plots, readings, bills) as one JSON file.</p><button class="btn" data-a="backup">Download backup</button></div>`;
 }
@@ -702,7 +708,7 @@ function viewResident() {
   ${cur ? `<div class="card" style="border-color:${bal > 0 ? "#efc6c2" : "#bfe3cb"}"><div class="row"><span class="muted">${mLabel(curM)} bill</span><span class="sp"></span>${badge(status(cur))}</div>
     <div style="font-size:34px;font-weight:800;margin:6px 0 2px;color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(Math.max(0, bal))}</div>
     <div class="muted" style="margin-bottom:14px">${bal > 0 ? "Amount due · Due date " + fmtDate((S.bills[curM] || {}).dueDate) : "Nothing due. Thank you!"}</div>
-    <div class="actions">${bal > 0 ? `<button class="btn pri" data-a="payNow">Pay now</button>` : ""}<button class="btn" data-a="rbill" data-m="${curM}">View bill</button></div></div>`
+    <div class="actions">${bal > 0 && bOn("resident", "payNow") ? `<button class="btn pri" data-a="payNow">Pay now</button>` : ""}<button class="btn" data-a="rbill" data-m="${curM}">View bill</button></div></div>`
   : `<div class="card"><h2>No bills yet</h2><p class="muted" style="margin:0">Your bills will appear here once the society issues them.</p></div>`}
   ${pend.map(p => `<div class="info">Your payment of <b>${money(p.amount)}</b> (${fmtDate(p.date)}) is waiting for confirmation by the office.</div>`).join("")}
   ${S.proofs.filter(p => p.status === "rejected").slice(0, 1).map(p => `<div class="err">Your payment of ${money(p.amount)} (${fmtDate(p.date)}) could not be confirmed${p.reviewNote ? ": " + esc(p.reviewNote) : ""}. Please contact the office.</div>`).join("")}
@@ -718,7 +724,7 @@ function residentBillModal(m) {
   openModal(`<h3>${mLabel(m)} bill ${badge(status(bill))}<button class="x" data-a="close">×</button></h3>
   <div class="kv"><span>Total bill</span><b>${money(bill.total)}</b></div><div class="kv"><span>Paid</span><b style="color:var(--grn)">${money(bill.paid)}</b></div><div class="kv"><span>Balance</span><b>${money(Math.max(0, balance(bill)))}</b></div>
   ${bill.carried ? `<div class="info" style="margin-top:12px">This balance was carried into your ${mLabel(bill.carriedTo)} bill.</div>` : ""}
-  <div class="actions" style="margin-top:12px"><button class="btn" data-a="print1" data-m="${m}" data-id="${esc(h.id)}">Print</button><button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(h.id)}">Download PDF</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(h.id)}">Download image</button>${!bill.carried && balance(bill) > 0 ? `<button class="btn pri" data-a="payNow">Pay now</button>` : ""}</div>
+  ${acts([bOn("resident", "print") && `<button class="btn" data-a="print1" data-m="${m}" data-id="${esc(h.id)}">Print</button>`, bOn("resident", "pdf") && `<button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(h.id)}">Download PDF</button>`, bOn("resident", "img") && `<button class="btn" data-a="img1" data-m="${m}" data-id="${esc(h.id)}">Download image</button>`, !bill.carried && balance(bill) > 0 && bOn("resident", "payNow") && `<button class="btn pri" data-a="payNow">Pay now</button>`], "margin-top:12px")}
   ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th></tr>${pays}</table>` : ""}
   <div id="bprev" class="muted" style="text-align:center;padding:30px">Preparing bill…</div>`, true);
   billCanvas(m, bill).then(c => { const el = $("#bprev"); if (el) el.outerHTML = `<img class="preview" id="bimg" src="${c.toDataURL("image/jpeg", 0.85)}" alt="Bill">`; }).catch(e => console.error(e));
@@ -864,15 +870,16 @@ async function generateBills(m, dueDate) {
   });
   if (ok) { S.billMonth = m; toast(Object.keys(b).length + " bills generated"); }
 }
+function acts(list, style) { const b = list.filter(Boolean); return b.length ? `<div class="actions" style="${style}">${b.join("")}</div>` : ""; }
 function billModal(m, hid) {
   const bill = S.bills[m] && S.bills[m].b && S.bills[m].b[hid]; if (!bill) return;
   const s = status(bill), bal = balance(bill), isLatest = m === latestBillMonth();
-  const pays = (bill.payments || []).map((p, i) => `<tr><td>${fmtDate(p.date)}</td><td>${esc(p.method)}</td><td>${money(p.amt)}</td><td>${esc(p.note || "")}</td><td>${isLatest && !bill.carried ? `<button class="btn sm red" data-a="delPay" data-m="${m}" data-id="${esc(hid)}" data-i="${i}">×</button>` : ""}</td></tr>`).join("");
+  const pays = (bill.payments || []).map((p, i) => `<tr><td>${fmtDate(p.date)}</td><td>${esc(p.method)}</td><td>${money(p.amt)}</td><td>${esc(p.note || "")}</td><td>${isLatest && !bill.carried && bOn("admin", "delPay") ? `<button class="btn sm red" data-a="delPay" data-m="${m}" data-id="${esc(hid)}" data-i="${i}">×</button>` : ""}</td></tr>`).join("");
   openModal(`<h3>Plot ${esc(bill.no)} · ${mLabel(m)} ${badge(s)}<button class="x" data-a="close">×</button></h3>
   <div class="kv"><span>Total bill</span><b>${money(bill.total)}</b></div><div class="kv"><span>Paid</span><b style="color:var(--grn)">${money(bill.paid)}</b></div><div class="kv"><span>Balance</span><b style="color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(bal)}</b></div>
   ${bill.carried ? `<div class="info" style="margin-top:12px">This balance has been carried into the ${mLabel(bill.carriedTo)} bill. Record payments there. <button class="btn sm" data-a="bill" data-m="${bill.carriedTo}" data-id="${esc(hid)}">Open ${mLabel(bill.carriedTo)} bill</button></div>` : ""}
-  ${isLatest && !bill.carried ? `<div class="actions" style="margin-top:14px"><button class="btn pri" data-a="pay" data-m="${m}" data-id="${esc(hid)}">Record payment</button><button class="btn" data-a="fine" data-m="${m}" data-id="${esc(hid)}">Add fine</button>${num(bill.fine) ? `<button class="btn red" data-a="unfine" data-m="${m}" data-id="${esc(hid)}">Remove fine</button>` : ""}</div>` : ""}
-  <div class="actions" style="margin-top:6px"><button class="btn" data-a="print1" data-m="${m}" data-id="${esc(hid)}">Print</button><button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">Download PDF</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Download image</button><button class="btn grn" data-a="waOne" data-m="${m}" data-id="${esc(hid)}">Send picture on WhatsApp</button></div>
+  ${acts((isLatest && !bill.carried ? [bOn("admin", "pay") && `<button class="btn pri" data-a="pay" data-m="${m}" data-id="${esc(hid)}">Record payment</button>`, bOn("admin", "fine") && `<button class="btn" data-a="fine" data-m="${m}" data-id="${esc(hid)}">Add fine</button>`, num(bill.fine) && bOn("admin", "unfine") && `<button class="btn red" data-a="unfine" data-m="${m}" data-id="${esc(hid)}">Remove fine</button>`] : []), "margin-top:14px")}
+  ${acts([bOn("admin", "print") && `<button class="btn" data-a="print1" data-m="${m}" data-id="${esc(hid)}">Print</button>`, bOn("admin", "pdf") && `<button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">Download PDF</button>`, bOn("admin", "img") && `<button class="btn" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Download image</button>`, bOn("admin", "wa") && `<button class="btn grn" data-a="waOne" data-m="${m}" data-id="${esc(hid)}">Send picture on WhatsApp</button>`], "margin-top:6px")}
   ${bill.phone ? "" : `<p class="muted" style="font-size:13px;margin:0 0 12px"><b>No mobile number is saved for this plot.</b></p>`}
   ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th><th>Note</th><th></th></tr>${pays}</table>` : ""}
   <div id="bprev" class="muted" style="text-align:center;padding:30px">Preparing bill…</div>`, true);
@@ -1291,6 +1298,7 @@ document.addEventListener("submit", async e => {
     ["name", "address", "phone", "jazzNumber", "jazzTitle", "bankName", "bankTitle", "bankAcc", "iban"].forEach(n => s[n] = String(fd.get(n) || "").trim());
     ["marlaRate", "unitRate", "fineDefault", "dueDays"].forEach(n => s[n] = num(fd.get(n)));
     s.readerShowPrev = !!fd.get("readerShowPrev"); s.readerShowOwner = !!fd.get("readerShowOwner");
+    s.btns = { admin: {}, resident: {} }; BTNS.forEach(([k, , a, r]) => { if (a) s.btns.admin[k] = !!fd.get("btn_admin_" + k); if (r) s.btns.resident[k] = !!fd.get("btn_resident_" + k); });
     if (await write(() => D.saveSettings(s))) toast("Settings saved");
   } else if (k === "house") saveHouse(f);
   else if (k === "reading") saveReading(f, (e.submitter && e.submitter.value) || "next");
