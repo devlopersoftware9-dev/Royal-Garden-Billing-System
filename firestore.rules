@@ -1,0 +1,81 @@
+rules_version = '2';
+// Royal Garden Water Billing — Firestore security rules
+// Paste this whole file into: Firebase console → Firestore Database → Rules → Publish
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function userPath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function hasRole() { return signedIn() && exists(userPath()); }
+    function me() { return get(userPath()).data; }
+    function isAdmin() { return hasRole() && me().role == 'admin'; }
+    function isReader() { return hasRole() && me().role == 'reader'; }
+    function isResident() { return hasRole() && me().role == 'resident'; }
+    function myHid() { return me().hid; }
+    function setupPath() { return /databases/$(database)/documents/meta/setup; }
+    // true only inside the one-time "create first admin" batch
+    function bootstrapping() { return signedIn() && !exists(setupPath()) && existsAfter(setupPath()); }
+
+    // One-time setup marker. Created together with the first admin; never changed.
+    match /meta/setup {
+      allow read: if true;
+      allow create: if signedIn() && !exists(setupPath())
+        && getAfter(userPath()).data.role == 'admin';
+    }
+
+    // Role of each login: admin / reader / resident (+ the plot it belongs to)
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if isAdmin()
+        || (bootstrapping() && request.auth.uid == uid && request.resource.data.role == 'admin');
+      allow update, delete: if isAdmin();
+    }
+
+    // username -> internal login email (needed before sign-in, holds nothing private)
+    match /logins/{username} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin() || bootstrapping();
+    }
+
+    match /settings/{id} {
+      allow read: if hasRole();
+      allow write: if isAdmin();
+    }
+
+    // Plots: residents can only read their own plot
+    match /houses/{hid} {
+      allow read: if isAdmin() || isReader() || (isResident() && myHid() == hid);
+      allow write: if isAdmin();
+    }
+
+    // Meter readings: admin + meter readers only
+    match /readings/{month} {
+      allow read: if isAdmin() || isReader();
+      allow create, update: if isAdmin() || isReader();
+      allow delete: if isAdmin();
+    }
+
+    // Bill run info (month, due date) — no personal data
+    match /billRuns/{month} {
+      allow read: if hasRole();
+      allow write: if isAdmin();
+    }
+
+    // One document per plot per month. Residents can only read their own.
+    match /bills/{id} {
+      allow read: if isAdmin() || (isResident() && resource.data.hid == myHid());
+      allow write: if isAdmin();
+    }
+
+    // Payment proofs sent by residents; only the admin can approve/reject
+    match /proofs/{id} {
+      allow read: if isAdmin() || (isResident() && resource.data.hid == myHid());
+      allow create: if isResident()
+        && request.resource.data.hid == myHid()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
+    }
+  }
+}

@@ -144,8 +144,14 @@ label.f>span{display:block;font-size:13px;color:var(--mute);margin-bottom:5px;fo
 <div id="app"><div class="boot">Loading…</div></div>
 <div id="modal" class="modal hidden"><div class="sheet" id="sheet"></div></div>
 <div id="toast"></div>
-<script>
-"use strict";
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeFirestore, doc, collection, query, where, orderBy, limit, onSnapshot, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, FieldPath, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ====== PASTE YOUR FIREBASE CONFIG BETWEEN THE MARKERS (see README) ====== */
+const FIREBASE_CONFIG = /*CONFIG-START*/null/*CONFIG-END*/;
+
 /* ============ helpers ============ */
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -159,33 +165,38 @@ const addDays = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d
 const fmtDate = iso => iso ? iso.slice(8, 10) + "-" + iso.slice(5, 7) + "-" + iso.slice(0, 4) : "";
 const EN_M = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const mLabel = m => m ? EN_M[+m.slice(5, 7) - 1] + " " + m.slice(0, 4) : "";
-function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 2800); }
-function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) { return null; } }
+const monthsBack = (m, n) => { let y = +m.slice(0, 4), mo = +m.slice(5, 7) - n; while (mo <= 0) { mo += 12; y--; } return y + "-" + pad(mo); };
+function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 3000); }
 function waPhone(p) { let d = String(p || "").trim().split(/[\s,\/]+(?=[0+9])/)[0].replace(/\D/g, ""); if (!d) return ""; if (d.startsWith("00")) d = d.slice(2); if (d.startsWith("920") && d.length === 13) d = "92" + d.slice(3); if (d.startsWith("0")) d = "92" + d.slice(1); else if (d.length === 10 && d.startsWith("3")) d = "92" + d; return d; }
 function parseRanges(t) { const out = new Set(); String(t || "").split(/[,\s]+/).forEach(p => { if (!p) return; const m = p.match(/^(\d+)-(\d+)$/); if (m) { for (let i = +m[1]; i <= +m[2] && i - +m[1] < 5000; i++) out.add(String(i)); } else out.add(p); }); return out; }
+function genPassword() { const ch = "abcdefghjkmnpqrstuvwxyz23456789"; const a = new Uint32Array(8); crypto.getRandomValues(a); return Array.from(a, v => ch[v % ch.length]).join(""); }
+const cleanUser = u => String(u || "").trim().toLowerCase().replace(/\s+/g, "");
+const validUser = u => /^[a-z0-9][a-z0-9._-]{0,30}$/.test(u) && !/\.\./.test(u) && !u.endsWith(".");
+const appLink = () => location.href.split("#")[0].split("?")[0];
 const IC = {
   home: '<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
   plots: '<path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M8 8h3M8 12h3M8 16h3M3 21h18"/>',
   readings: '<path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/>',
   bills: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3"/>',
   pending: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  users: '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
   back: '<path d="M15 18l-6-6 6-6"/>',
-  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
 };
 const icon = k => `<svg class="i" viewBox="0 0 24 24">${IC[k]}</svg>`;
 
-const DEF = { name: "Royal Garden", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerPin: "1234", adminPin: "", readerShowPrev: true, readerShowOwner: true };
+const DEF = { name: "Royal Garden", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerShowPrev: true, readerShowOwner: true };
 
 /* ============ state ============ */
 const S = {
-  db: null, user: null, dl: null, owner: false,
-  mode: "loading", // loading | admin | reader | pin | nodb
+  me: null, uid: null, owner: false,
+  mode: "loading", // loading | noconfig | login | admin | reader | resident | norole
   settings: null, settingsExists: false, houses: [], housesExists: false,
-  bills: {}, readings: {},
-  ready: { s: false, h: false, b: false, r: false }, slow: false, writeDenied: false,
-  view: "home", q: "", hfilter: "all", rfilter: "pending", billMonth: null, readMonth: curMonth(), bfilter: "all",
+  bills: {}, billRuns: {}, billDocs: {}, readings: {}, proofs: [], users: [],
+  ready: { s: false, h: false }, slow: false, writeDenied: false,
+  view: "home", q: "", hfilter: "all", rfilter: "pending", billMonth: null, readMonth: curMonth(), bfilter: "all", lfilter: "all",
 };
 const st = () => Object.assign({}, DEF, S.settings || {});
 const soldHouses = () => S.houses.filter(h => h.sold).sort(hsort);
@@ -210,31 +221,180 @@ const badge = s => `<span class="badge b-${s.k}">${s.t}</span>`;
 const isReaderUI = () => S.mode === "reader";
 const showPrev = () => !isReaderUI() || st().readerShowPrev !== false;
 const showOwner = () => !isReaderUI() || st().readerShowOwner !== false;
+const userOfHouse = hid => S.users.find(u => u.role === "resident" && u.hid === hid);
 
-/* ============ boot ============ */
-async function boot() {
-  const C = window.claude;
-  if (!C || !C.use) { S.mode = "nodb"; render(true); return; }
-  const [db, user, dl] = await Promise.all([C.use("db"), C.use("user"), C.use("downloads")].map(p => Promise.resolve(p).catch(() => null)));
-  S.db = db; S.user = user; S.dl = dl;
-  if (!db) { S.mode = "nodb"; render(true); return; }
-  try { S.owner = user ? !!(await user.isOwner()) : false; } catch (e) { S.owner = false; }
-  S.mode = S.owner ? "admin" : (ss("rg_mode") || "pin");
-  const slowT = setTimeout(() => { S.slow = true; render(); }, 10000);
-  const done = k => { S.ready[k] = true; if (Object.values(S.ready).every(Boolean)) { clearTimeout(slowT); S.slow = false; } render(); };
-  const fail = k => e => { console.warn(k, e); done(k); };
-  db.doc("society/settings").onSnapshot(s => { S.settingsExists = s.exists; S.settings = s.exists ? s.data() : null; if (!s.metadata.fromCache) done("s"); else render(); }, fail("s"));
-  db.doc("society/houses").onSnapshot(s => { S.housesExists = s.exists; S.houses = s.exists ? (s.data().list || []).slice() : []; if (!s.metadata.fromCache) done("h"); else render(); }, fail("h"));
-  db.collection("bills").orderBy("month", "desc").limit(36).onSnapshot(q => { const o = {}; q.docs.forEach(d => { if (d.exists) o[d.id] = d.data(); }); S.bills = o; if (!q.metadata.fromCache) done("b"); else render(); }, fail("b"));
-  db.collection("readings").orderBy("month", "desc").limit(36).onSnapshot(q => { const o = {}; q.docs.forEach(d => { if (d.exists) o[d.id] = d.data(); }); S.readings = o; if (!q.metadata.fromCache) done("r"); else render(); }, fail("r"));
+/* ============ Firebase ============ */
+let app = null, auth = null, fs = null, auth2 = null;
+let unsubs = [];
+const unsubAll = () => { unsubs.forEach(f => { try { f(); } catch (e) { } }); unsubs = []; };
+const emailFor = (u, v) => u + "." + v + "@" + (FIREBASE_CONFIG.authDomain || "royalgarden.app");
+function rebuildBills() {
+  const o = {};
+  Object.values(S.billDocs).forEach(b => { if (!o[b.month]) o[b.month] = Object.assign({ month: b.month, b: {} }, S.billRuns[b.month] || {}, { b: {} }); o[b.month].b[b.hid] = b; });
+  S.bills = o;
 }
+function listen(ref, onData, key) {
+  const f = onSnapshot(ref, snap => { onData(snap); if (key) done(key); else render(); }, err => { console.warn(key, err); if (key) done(key); });
+  unsubs.push(f);
+}
+let slowT = null;
+function done(k) { S.ready[k] = true; if (Object.values(S.ready).every(Boolean)) { clearTimeout(slowT); S.slow = false; } render(); }
+function startSlowTimer() { clearTimeout(slowT); slowT = setTimeout(() => { S.slow = true; render(); }, 10000); }
+const docsToMap = (snap) => { const o = {}; snap.forEach(d => { o[d.id] = d.data(); }); return o; };
+
+function subscribeCommon() {
+  listen(doc(fs, "settings", "main"), s => { S.settingsExists = s.exists(); S.settings = s.exists() ? s.data() : null; }, "s");
+}
+function subscribeAdmin() {
+  S.ready = { s: false, h: false }; startSlowTimer(); subscribeCommon();
+  listen(collection(fs, "houses"), q => { S.housesExists = !q.empty; S.houses = q.docs.map(d => Object.assign({ id: d.id }, d.data())); }, "h");
+  listen(query(collection(fs, "readings"), orderBy("month", "desc"), limit(24)), q => { S.readings = docsToMap(q); });
+  listen(query(collection(fs, "billRuns"), orderBy("month", "desc"), limit(24)), q => { S.billRuns = docsToMap(q); rebuildBills(); });
+  listen(query(collection(fs, "bills"), where("month", ">=", monthsBack(curMonth(), 14))), q => { S.billDocs = docsToMap(q); rebuildBills(); });
+  listen(query(collection(fs, "proofs"), where("status", "==", "pending")), q => { S.proofs = q.docs.map(d => Object.assign({ id: d.id }, d.data())); });
+  listen(collection(fs, "users"), q => { S.users = q.docs.map(d => Object.assign({ uid: d.id }, d.data())); });
+}
+function subscribeReader() {
+  S.ready = { s: false, h: false }; startSlowTimer(); subscribeCommon();
+  listen(collection(fs, "houses"), q => { S.housesExists = !q.empty; S.houses = q.docs.map(d => Object.assign({ id: d.id }, d.data())); }, "h");
+  listen(query(collection(fs, "readings"), orderBy("month", "desc"), limit(6)), q => { S.readings = docsToMap(q); });
+}
+function subscribeResident() {
+  const hid = S.me.hid; S.ready = { s: false, h: false }; startSlowTimer(); subscribeCommon();
+  listen(doc(fs, "houses", hid), d => { S.housesExists = d.exists(); S.houses = d.exists() ? [Object.assign({ id: d.id }, d.data())] : []; }, "h");
+  listen(collection(fs, "billRuns"), q => { S.billRuns = docsToMap(q); rebuildBills(); });
+  listen(query(collection(fs, "bills"), where("hid", "==", hid)), q => { S.billDocs = docsToMap(q); rebuildBills(); });
+  listen(query(collection(fs, "proofs"), where("hid", "==", hid)), q => { S.proofs = q.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); });
+}
+async function handleUser(u) {
+  unsubAll(); S.bills = {}; S.billDocs = {}; S.billRuns = {}; S.readings = {}; S.proofs = []; S.users = []; S.houses = []; S.settings = null;
+  if (!u) {
+    S.me = null; S.uid = null; S.owner = false;
+    try { const d = await getDoc(doc(fs, "meta", "setup")); S.needsBootstrap = !d.exists(); } catch (e) { S.needsBootstrap = false; }
+    S.mode = "login"; render(true); return;
+  }
+  S.uid = u.uid;
+  let me = null; try { const d = await getDoc(doc(fs, "users", u.uid)); me = d.exists() ? d.data() : null; } catch (e) { console.warn(e); }
+  if (!me) { S.mode = "norole"; render(true); return; }
+  S.me = me; S.owner = me.role === "admin"; S.view = "home"; S.q = "";
+  if (me.role === "admin") { S.mode = "admin"; subscribeAdmin(); }
+  else if (me.role === "reader") { S.mode = "reader"; subscribeReader(); }
+  else if (me.role === "resident" && me.hid) { S.mode = "resident"; subscribeResident(); }
+  else S.mode = "norole";
+  render(true);
+}
+async function boot() {
+  if (!FIREBASE_CONFIG) { S.mode = "noconfig"; render(true); return; }
+  try {
+    app = initializeApp(FIREBASE_CONFIG); auth = getAuth(app); fs = initializeFirestore(app, { ignoreUndefinedProperties: true });
+    auth2 = getAuth(initializeApp(FIREBASE_CONFIG, "secondary"));
+  } catch (e) { console.error(e); S.mode = "noconfig"; render(true); return; }
+  onAuthStateChanged(auth, u => { if (S.bootstrapping) return; handleUser(u); });
+}
+async function login(username, password) {
+  const u = cleanUser(username);
+  let email = null;
+  try { const d = await getDoc(doc(fs, "logins", u)); if (d.exists()) email = d.data().email; } catch (e) { console.warn(e); }
+  if (!email) throw new Error("Username not found");
+  try { await signInWithEmailAndPassword(auth, email, password); }
+  catch (e) { throw new Error(/too-many/.test(e.code || "") ? "Too many attempts. Please wait a few minutes." : "Incorrect password"); }
+}
+async function bootstrapAdmin(username, password, name) {
+  const u = cleanUser(username); if (!validUser(u)) throw new Error("Username can use letters, numbers, dot, dash and underscore");
+  if (password.length < 6) throw new Error("Password must be at least 6 characters");
+  S.bootstrapping = true;
+  try {
+    const email = emailFor(u, Date.now().toString(36));
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const b = writeBatch(fs);
+    b.set(doc(fs, "users", cred.user.uid), { role: "admin", username: u, name: name || "", hid: null, createdAt: new Date().toISOString() });
+    b.set(doc(fs, "meta", "setup"), { at: new Date().toISOString(), by: cred.user.uid });
+    b.set(doc(fs, "logins", u), { email, uid: cred.user.uid });
+    await b.commit();
+    S.bootstrapping = false; await handleUser(cred.user);
+  } catch (e) { S.bootstrapping = false; throw e; }
+}
+
+/* ============ data layer ============ */
+const D = {
+  async batched(ops) { for (let i = 0; i < ops.length; i += 400) { const b = writeBatch(fs); ops.slice(i, i + 400).forEach(f => f(b)); await b.commit(); } },
+  async saveHouses(list) {
+    const old = new Map(S.houses.map(h => [h.id, h])); const ops = [];
+    list.forEach(h => { const o = old.get(h.id); const { id, ...data } = h; if (!o || JSON.stringify(Object.assign({ id: o.id }, o)) !== JSON.stringify(Object.assign({ id }, h))) ops.push(b => b.set(doc(fs, "houses", id), data)); old.delete(h.id); });
+    old.forEach((h, id) => ops.push(b => b.delete(doc(fs, "houses", id))));
+    await D.batched(ops);
+  },
+  saveSettings: s => setDoc(doc(fs, "settings", "main"), s),
+  saveReading: (m, hid, entry) => setDoc(doc(fs, "readings", m), { month: m, r: { [hid]: entry } }, { merge: true }),
+  deleteReading: (m, hid) => updateDoc(doc(fs, "readings", m), new FieldPath("r", hid), deleteField()),
+  async saveBillRun(m, meta, bills, prevM, prevIds) {
+    const ops = [b => b.set(doc(fs, "billRuns", m), meta)];
+    Object.values(bills).forEach(x => ops.push(b => b.set(doc(fs, "bills", m + "_" + x.hid), Object.assign({ month: m }, x))));
+    (prevIds || []).forEach(hid => ops.push(b => b.update(doc(fs, "bills", prevM + "_" + hid), { carried: true, carriedTo: m })));
+    await D.batched(ops);
+  },
+  updateBill: (m, hid, fields) => updateDoc(doc(fs, "bills", m + "_" + hid), fields),
+  async updateBills(m, map) { await D.batched(Object.entries(map).map(([hid, f]) => b => b.update(doc(fs, "bills", m + "_" + hid), f))); },
+  createProof: p => setDoc(doc(collection(fs, "proofs")), p),
+  async reviewProof(p, approve, note) {
+    const b = writeBatch(fs);
+    if (approve) {
+      const bill = S.billDocs[p.month + "_" + p.hid];
+      let m = p.month, target = bill;
+      if (!target || target.carried) { const lm = billMonths().reverse().find(mm => S.bills[mm].b[p.hid] && !S.bills[mm].b[p.hid].carried); if (lm) { m = lm; target = S.bills[lm].b[p.hid]; } }
+      if (!target) throw new Error("No bill found for this plot");
+      const payments = (target.payments || []).concat([{ amt: num(p.amount), date: p.date || todayISO(), method: p.method || "JazzCash", note: (p.tid ? "TID " + p.tid : "") + (note ? " " + note : ""), proof: p.id, at: new Date().toISOString() }]);
+      b.update(doc(fs, "bills", m + "_" + p.hid), { payments, paid: r2(payments.reduce((s, x) => s + num(x.amt), 0)) });
+    }
+    b.update(doc(fs, "proofs", p.id), { status: approve ? "approved" : "rejected", reviewNote: note || "", reviewedAt: new Date().toISOString() });
+    await b.commit();
+  },
+  async createLogin(role, username, password, hid, name) {
+    const u = cleanUser(username);
+    if (!validUser(u)) throw new Error("Username can use letters, numbers, dot, dash and underscore");
+    if (String(password).length < 6) throw new Error("Password must be at least 6 characters");
+    const ex = await getDoc(doc(fs, "logins", u)); if (ex.exists()) throw new Error("Username \"" + u + "\" is already taken");
+    const email = emailFor(u, Date.now().toString(36));
+    const cred = await createUserWithEmailAndPassword(auth2, email, password); const uid = cred.user.uid; await signOut(auth2).catch(() => { });
+    const b = writeBatch(fs);
+    b.set(doc(fs, "users", uid), { role, username: u, hid: hid || null, name: name || "", createdAt: new Date().toISOString() });
+    b.set(doc(fs, "logins", u), { email, uid });
+    await b.commit();
+    return { username: u, password };
+  },
+  async resetLogin(user, password) {
+    const email = emailFor(user.username, Date.now().toString(36));
+    const cred = await createUserWithEmailAndPassword(auth2, email, password); const uid = cred.user.uid; await signOut(auth2).catch(() => { });
+    const { uid: oldUid, ...data } = user;
+    const b = writeBatch(fs);
+    b.set(doc(fs, "users", uid), Object.assign({}, data, { resetAt: new Date().toISOString() }));
+    b.set(doc(fs, "logins", user.username), { email, uid });
+    b.delete(doc(fs, "users", oldUid));
+    await b.commit();
+    return { username: user.username, password };
+  },
+  async removeLogin(user) { const b = writeBatch(fs); b.delete(doc(fs, "users", user.uid)); b.delete(doc(fs, "logins", user.username)); await b.commit(); },
+  async changeOwnPassword(oldPw, newPw) {
+    const u = auth.currentUser; await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, oldPw)); await updatePassword(u, newPw);
+  },
+  async importBackup(data) {
+    const ops = [];
+    if (data.settings) { const s = Object.assign({}, data.settings); if (!String(s.qr || "").startsWith("data:")) delete s.qr; delete s.readerPin; delete s.adminPin; delete s.nameUr; ops.push(b => b.set(doc(fs, "settings", "main"), Object.assign({}, st(), s))); }
+    (data.houses || []).forEach(h => { const { id, ...d } = h; ops.push(b => b.set(doc(fs, "houses", id), d)); });
+    Object.entries(data.readings || {}).forEach(([m, d]) => ops.push(b => b.set(doc(fs, "readings", m), { month: m, r: d.r || {} })));
+    Object.entries(data.bills || {}).forEach(([m, run]) => {
+      ops.push(b => b.set(doc(fs, "billRuns", m), { month: m, dueDate: run.dueDate || "", generatedAt: run.generatedAt || "" }));
+      Object.values(run.b || {}).forEach(x => ops.push(b => b.set(doc(fs, "bills", m + "_" + x.hid), Object.assign({ month: m }, x))));
+    });
+    await D.batched(ops); return ops.length;
+  },
+};
 async function write(fn) {
   try { await fn(); return true; }
   catch (e) {
     console.warn(e);
-    if (e && e.code === "invalid_argument") { toast("Not saved: you don't have permission. Ask the admin for access."); S.writeDenied = true; }
-    else if (e && e.code === "quota_exceeded") toast("Storage is full. Please remove old data.");
-    else toast("Could not save. Please try again.");
+    if (e && /permission/i.test(e.code || e.message || "")) { toast("Not saved: you don't have permission for this."); S.writeDenied = true; }
+    else toast((e && e.message && !/firebase|firestore/i.test(e.message)) ? e.message : "Could not save. Check your internet and try again.");
     return false;
   }
 }
@@ -247,39 +407,44 @@ function render(force) {
   const app = $("#app");
   document.body.classList.toggle("reader", S.mode !== "admin");
   if (S.mode === "loading") app.innerHTML = `<div class="boot">Loading…</div>`;
-  else if (S.mode === "nodb") app.innerHTML = `<div class="boot"><b>Could not connect to the data.</b><br>Please open this page while signed in to Claude. If you are a meter reader, ask the admin to share this link with you.</div>`;
+  else if (S.mode === "noconfig") app.innerHTML = `<div class="boot"><b>Firebase is not connected yet.</b><br>Paste your Firebase config into index.html (see README).</div>`;
+  else if (S.mode === "login") app.innerHTML = viewLogin();
+  else if (S.mode === "norole") app.innerHTML = `<div class="login"><div class="card"><h2>No access</h2><p class="muted">This account has no access. Please contact the society admin.</p><button class="btn block" data-a="logout">Log out</button></div></div>`;
   else if (!S.ready.s || !S.ready.h) app.innerHTML = `<div class="boot">Loading data…${S.slow ? "<br><br>The data is taking too long. Please check your internet connection." : ""}</div>`;
-  else if (S.mode === "pin") app.innerHTML = viewPin();
   else if (S.mode === "reader") app.innerHTML = viewReader();
+  else if (S.mode === "resident") app.innerHTML = viewResident();
   else app.innerHTML = viewAdmin();
   if (aid) { const el = document.getElementById(aid); if (el) { el.focus(); try { if (sel != null) el.setSelectionRange(sel, sel); } catch (e) { } } }
 }
 
-/* ---- PIN ---- */
-function viewPin() {
-  const s = st();
-  if (!S.settingsExists) return `<div class="boot">The admin has not set up the system yet.</div>`;
-  return `<div class="login"><div class="logo">${icon("readings")}</div><h2 style="text-align:center;margin:0 0 4px">${esc(s.name)}</h2><p class="muted" style="text-align:center;margin:0 0 24px">Meter Reader Login</p>
-  <form data-f="pin" class="card"><label class="f"><span>Enter your PIN</span><input id="pin" class="pinin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••"></label><button class="btn pri block">Log in</button></form></div>`;
+/* ---- Login ---- */
+function viewLogin() {
+  if (S.needsBootstrap) return `<div class="login"><div class="logo">${icon("lock")}</div><h2 style="text-align:center;margin:0 0 4px">Create the admin account</h2><p class="muted" style="text-align:center;margin:0 0 20px">First-time setup. This account will manage the whole system.</p>
+  <form data-f="bootstrap" class="card"><label class="f"><span>Your name</span><input type="text" name="name" autocomplete="name"></label><label class="f"><span>Admin username</span><input type="text" name="u" autocapitalize="none" autocomplete="username" placeholder="e.g. admin" required></label><label class="f"><span>Password (at least 6 characters)</span><input type="password" name="p" autocomplete="new-password" required></label><button class="btn pri block">Create admin account</button></form></div>`;
+  return `<div class="login"><div class="logo">${icon("readings")}</div><h2 style="text-align:center;margin:0 0 4px">Royal Garden</h2><p class="muted" style="text-align:center;margin:0 0 24px">Water &amp; Maintenance Billing</p>
+  <form data-f="login" class="card"><label class="f"><span>Username</span><input id="lu" type="text" name="u" autocapitalize="none" autocomplete="username" placeholder="e.g. your plot number" required></label><label class="f"><span>Password</span><input type="password" name="p" autocomplete="current-password" required></label><div id="lerr"></div><button class="btn pri block">Log in</button></form>
+  <p class="muted" style="text-align:center;font-size:13px">Forgot your password? Contact the society office.</p></div>`;
 }
 
 /* ---- ADMIN shell ---- */
 const NAV = [["home", "Dashboard", "home"], ["houses", "Plots", "plots"], ["readings", "Readings", "readings"], ["bills", "Bills", "bills"], ["pending", "Pending", "pending"]];
-const TITLES = { home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings" };
+const TITLES = { home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings", logins: "Logins" };
 function viewAdmin() {
   const s = st();
   let body;
   if (!S.settingsExists || !S.housesExists) { if (S.view !== "settings") body = viewSetup(); }
-  if (!body) body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings }[S.view] || vHome)();
-  const navBtn = ([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t}</span></button>`;
-  const lock = !S.owner ? `<button data-a="logout">${icon("lock")}<span>Lock</span></button>` : "";
-  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button>${lock}</nav></aside>
-  <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button>${!S.owner ? `<button class="ibtn" data-a="logout" aria-label="Lock">${icon("lock")}</button>` : ""}</header>
+  if (!body) body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings, logins: vLogins }[S.view] || vHome)();
+  const pc = S.proofs.length;
+  const navBtn = ([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t}${k === "pending" && pc ? ` <span class="badge b-unpaid">${pc}</span>` : ""}</span></button>`;
+  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["logins", "Logins", "users"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
+  <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "logins" ? "on" : ""}" data-a="tab" data-v="logins" aria-label="Logins">${icon("users")}</button><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button></header>
   <main><div class="pagehead"><h1>${esc(TITLES[S.view] || "")}</h1></div>${S.slow ? `<div class="note">Some data has not loaded yet; what you see may be out of date.</div>` : ""}${body}</main>
-  <nav class="bnav">${NAV.map(([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t === "Dashboard" ? "Home" : t}</span></button>`).join("")}</nav>`;
+  <nav class="bnav">${NAV.map(([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t === "Dashboard" ? "Home" : t}${k === "pending" && pc ? " (" + pc + ")" : ""}</span></button>`).join("")}</nav>`;
 }
 function viewSetup() {
-  return `<div class="card"><h2>First-time setup</h2><p class="muted">Create the plot list. You can edit each plot (owner, phone, marla) later from the Plots tab, or import your Excel file.</p>
+  return `<div class="card"><h2>Welcome — let's set up the system</h2><p class="muted">Bring in your plots first. The quickest way is to import your Excel profile file (or a backup file from the old app). You can also create a simple numbered list.</p>
+  <div class="actions"><button class="btn pri" data-a="importXl">Import Excel file</button><button class="btn" data-a="importBackup">Import backup (.json)</button></div></div>
+  <div class="card"><h2>Or create a numbered list</h2>
   <form data-f="setup"><div class="f2">
   <label class="f"><span>Society name</span><input type="text" name="name" value="${esc(st().name)}"></label>
   <label class="f"><span>Total houses</span><input type="number" name="total" value="200" min="1" max="2000"></label>
@@ -288,8 +453,7 @@ function viewSetup() {
   <label class="f"><span>Water rate per unit (Rs)</span><input type="number" name="unitRate" value="${esc(st().unitRate || "")}" step="0.01" placeholder="e.g. 25"></label>
   </div>
   <label class="f"><span>Sold house numbers (commas or ranges, e.g. 1-50, 61, 70-99)</span><textarea name="sold" rows="2" placeholder="1-80"></textarea></label>
-  <label class="f"><span>Meter reader PIN</span><input type="text" name="readerPin" value="${esc(st().readerPin)}" inputmode="numeric"></label>
-  <button class="btn pri">Complete setup</button></form></div>`;
+  <button class="btn pri">Create list</button></form></div>`;
 }
 
 /* ---- Dashboard ---- */
@@ -307,14 +471,14 @@ function vHome() {
   <div class="stat"><span>Readings · ${mLabel(cm)}</span><b>${done}/${sold.length}</b><em>${sold.length - done} remaining</em></div>
   <div class="stat"><span>Collected${lm ? " · " + mLabel(lm) : ""}</span><b style="color:var(--grn)">${money(coll)}</b><em>${pct}% of ${money(billed)}</em></div>
   <div class="stat"><span>Total outstanding</span><b style="color:var(--red)">${money(allPend)}</b><em>${pendN} unpaid bills</em></div>
-  </div>
+  </div>${S.proofs.length ? `<div class="note row"><span class="sp">${S.proofs.length} payment(s) submitted by residents are waiting for your approval.</span><button class="btn sm" data-a="tab" data-v="pending">Review</button></div>` : ""}
   <div class="actions"><button class="btn pri" data-a="tab" data-v="bills">${icon("bills")} Bills</button><button class="btn" data-a="tab" data-v="readings">${icon("readings")} Readings</button><button class="btn" data-a="tab" data-v="pending">${icon("pending")} Pending</button><button class="btn" data-a="toReader">Reader view</button></div>
   <div class="cols">
   ${lb ? `<div class="card"><h2>Latest bill run · ${mLabel(lm)}</h2><div class="bar" style="margin-bottom:12px"><i style="width:${pct}%"></i></div><div class="kv"><span>Total billed</span><b>${money(billed)}</b></div><div class="kv"><span>Collected</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="kv"><span>Outstanding</span><b style="color:var(--red)">${money(pend)}</b></div><div class="kv"><span>Paid / unpaid bills</span><b>${paidN} / ${pendN}</b></div><div class="kv"><span>Due date</span><b>${fmtDate(lb.dueDate)}</b></div></div>`
     : `<div class="card"><h2>No bills yet</h2><p class="muted" style="margin:0 0 12px">Once this month's readings are in, generate the bills from the Bills tab.</p><button class="btn pri" data-a="tab" data-v="bills">Go to Bills</button></div>`}
-  <div class="card"><h2>Meter readings · ${mLabel(cm)}</h2><div class="bar" style="margin-bottom:12px"><i style="width:${sold.length ? done / sold.length * 100 : 0}%"></i></div><div class="kv"><span>Completed</span><b>${done}</b></div><div class="kv"><span>Remaining</span><b>${sold.length - done}</b></div><div class="kv"><span>Reader PIN</span><b>${esc(s.readerPin || "-")}</b></div><div class="kv"><span>Reader sees previous reading</span><b>${s.readerShowPrev !== false ? "Yes" : "No"}</b></div></div>
+  <div class="card"><h2>Meter readings · ${mLabel(cm)}</h2><div class="bar" style="margin-bottom:12px"><i style="width:${sold.length ? done / sold.length * 100 : 0}%"></i></div><div class="kv"><span>Completed</span><b>${done}</b></div><div class="kv"><span>Remaining</span><b>${sold.length - done}</b></div><div class="kv"><span>Reader sees previous reading</span><b>${s.readerShowPrev !== false ? "Yes" : "No"}</b></div></div>
   <div class="card"><h2>Rates</h2><div class="kv"><span>Per marla</span><b>${money(s.marlaRate)}</b></div><div class="kv"><span>Water per unit</span><b>${s.unitRate ? "Rs " + s.unitRate : '<span style="color:var(--red)">Not set</span>'}</b></div><div class="kv"><span>Total marla (sold)</span><b>${r2(marla)}</b></div><div class="kv"><span>Monthly marla charges</span><b>${money(marla * num(s.marlaRate))}</b></div></div>
-  <div class="card"><h2>Sharing with the meter reader</h2><p class="muted" style="margin:0 0 12px">Share this page from claude.ai (Share button) with the reader's email, with Contributor or Editor access so they can save readings. The reader opens the link on their phone, enters the PIN, and sees only the reading screen.</p><button class="btn" data-a="toReader">Preview reader view</button></div>
+  <div class="card"><h2>Logins</h2><div class="kv"><span>Residents with a login</span><b>${S.users.filter(u => u.role === "resident").length} / ${sold.length}</b></div><div class="kv"><span>Meter readers</span><b>${S.users.filter(u => u.role === "reader").length}</b></div><div class="row" style="margin-top:12px"><button class="btn" data-a="tab" data-v="logins">Manage logins</button><button class="btn" data-a="toReader">Preview reader view</button></div></div>
   </div>`;
 }
 
@@ -403,7 +567,7 @@ function pendingList() {
 }
 function vPending() {
   const list = pendingList(), tot = list.reduce((s, x) => s + x.bal, 0);
-  return `<div class="grid"><div class="stat"><span>Plots with dues</span><b>${list.length}</b></div><div class="stat"><span>Total outstanding</span><b style="color:var(--red)">${money(tot)}</b></div></div>
+  return proofsBlock() + `<div class="grid"><div class="stat"><span>Plots with dues</span><b>${list.length}</b></div><div class="stat"><span>Total outstanding</span><b style="color:var(--red)">${money(tot)}</b></div></div>
   <div class="list">${list.map(x => `<div class="item" data-a="bill" data-m="${x.m}" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>${mLabel(x.m)} · Due ${fmtDate(S.bills[x.m].dueDate)}${num(x.b.arrears) > 0 ? " · includes arrears" : ""}</small></div><div><div class="amt" style="color:var(--red)">${money(x.bal)}</div><div style="text-align:right">${badge(status(x.b))}</div></div></div>`).join("") || `<div class="empty">No pending bills 🎉</div>`}</div>`;
 }
 
@@ -418,9 +582,10 @@ function vSettings() {
   <div class="card"><h2>JazzCash</h2><div class="f2">${fld("jazzNumber", "JazzCash number", "tel")}${fld("jazzTitle", "Account title")}</div></div>
   <div class="card"><h2>Bank account</h2><div class="f2">${fld("bankName", "Bank name")}${fld("bankTitle", "Account title")}${fld("bankAcc", "Account number")}${fld("iban", "IBAN")}</div></div>
   <div class="card"><h2>Payment QR code</h2><div class="row" style="align-items:flex-start;gap:14px"><img class="qrprev" id="qrimg" src="${s.qr ? esc(s.qr) : "data:image/gif;base64,R0lGODlhAQABAAAAACw="}" alt=""><div style="flex:1;min-width:180px"><input type="file" id="qrfile" accept="image/*"><p class="muted" style="font-size:13px">Upload a photo or screenshot of your JazzCash / Raast QR code. It is printed on every bill.</p>${s.qr ? '<button type="button" class="btn sm red" data-a="qrdel">Remove QR</button>' : ""}</div></div></div>
-  <div class="card"><h2>Meter reader access</h2><div class="f2">${fld("readerPin", "Meter reader PIN", "text", 'inputmode="numeric"')}${fld("adminPin", "Admin PIN for a second admin (leave blank to disable)")}</div>
+  <div class="card"><h2>Meter reader screen</h2>
   ${tg("readerShowPrev", "Show previous reading to the reader", "When off, the reader only sees the plot number and enters the new reading.")}
-  ${tg("readerShowOwner", "Show owner name to the reader", "Helps the reader find the right house.")}</div>
+  ${tg("readerShowOwner", "Show owner name to the reader", "Helps the reader find the right house.")}
+  <div class="row" style="margin-top:10px"><button type="button" class="btn" data-a="tab" data-v="logins">Manage logins (residents, readers, admins)</button></div></div>
   </div><div class="row" style="margin-bottom:14px"><button class="btn pri">Save settings</button></div></form>
   <div class="card"><h2>Backup</h2><p class="muted" style="margin-top:0">Download all data (plots, readings, bills) as one JSON file.</p><button class="btn" data-a="backup">Download backup</button></div>`;
 }
@@ -428,11 +593,155 @@ function vSettings() {
 /* ---- READER ---- */
 function viewReader() {
   const m = S.readMonth, { sold, list, doneN } = readingRows(m);
-  return `<header class="appbar mob">${S.owner || S.adminViaPin ? `<button class="ibtn" data-a="toAdmin" aria-label="Back">${icon("back")}</button>` : ""}<div class="t"><b>Meter Reading</b><small>${esc(st().name)}</small></div>${!S.owner ? `<button class="ibtn" data-a="logout" aria-label="Log out">${icon("lock")}</button>` : ""}</header>
-  <main>${S.writeDenied ? `<div class="err">Your readings are not being saved. Ask the admin to share this page with you with Contributor or Editor access.</div>` : ""}
+  return `<header class="appbar mob">${S.owner ? `<button class="ibtn" data-a="toAdmin" aria-label="Back">${icon("back")}</button>` : ""}<div class="t"><b>Meter Reading</b><small>${esc(st().name)}</small></div>${!S.owner ? `<button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button>` : ""}</header>
+  <main>${S.writeDenied ? `<div class="err">Your readings are not being saved. Please contact the admin.</div>` : ""}
   ${progressCard(m, doneN, sold.length)}
   <div class="toolbar"><input id="q" type="search" inputmode="search" placeholder="Search plot number…" value="${esc(S.q)}" style="font-size:18px">${rChips()}</div>
   <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${showOwner() ? esc(x.h.owner || "Plot " + x.h.no) : "Plot " + esc(x.h.no)}</b><small>${x.h.street ? "Street " + esc(x.h.street) : ""}${x.h.meter ? (x.h.street ? " · " : "") + "Meter " + esc(x.h.meter) : ""}${showPrev() ? ((x.h.street || x.h.meter) ? " · " : "") + "Previous: " + x.prev : ""}${x.cur != null ? " · Entered: " + x.cur : ""}</small></div>${x.cur != null ? '<span class="badge b-paid">✓ Done</span>' : '<span class="badge b-no">Remaining</span>'}</div>`).join("") || `<div class="empty">${S.rfilter === "pending" && sold.length ? "All readings are done ✓" : "No plots found"}</div>`}</div></main>`;
+}
+
+
+/* ---- Logins (admin) ---- */
+function vLogins() {
+  const sold = soldHouses(), q = S.q.trim().toLowerCase();
+  const staff = S.users.filter(u => u.role !== "resident").sort((a, b) => String(a.role).localeCompare(b.role) || String(a.username).localeCompare(b.username));
+  let list = sold.map(h => ({ h, u: userOfHouse(h.id) }));
+  const withN = list.filter(x => x.u).length;
+  if (S.lfilter === "none") list = list.filter(x => !x.u); else if (S.lfilter === "has") list = list.filter(x => x.u);
+  if (q) list = list.filter(x => (x.h.no + " " + (x.h.owner || "") + " " + (x.u ? x.u.username : "")).toLowerCase().includes(q));
+  return `<div class="grid"><div class="stat"><span>Resident logins</span><b>${withN} / ${sold.length}</b><em>sold plots with a login</em></div><div class="stat"><span>Staff logins</span><b>${staff.length}</b><em>admins and readers</em></div></div>
+  <div class="info">Each resident logs in with their username and password and sees <b>only their own plot's bills</b>. Passwords are shown only once, when created or reset — send them straight away.</div>
+  <div class="actions"><button class="btn pri" data-a="bulkLogins" ${withN < sold.length ? "" : "disabled"}>Create logins for all (${sold.length - withN})</button><button class="btn" data-a="addStaff">+ Reader / admin login</button></div>
+  <div class="card"><h2>Staff</h2>${staff.map(u => `<div class="kv"><span><b>${esc(u.username)}</b> · ${u.role === "admin" ? "Admin" : "Meter reader"}${u.name ? " · " + esc(u.name) : ""}${u.uid === S.uid ? " (you)" : ""}</span><span class="row">${u.uid === S.uid ? "" : `<button class="btn sm" data-a="resetLogin" data-id="${esc(u.uid)}">Reset password</button><button class="btn sm red" data-a="removeLogin" data-id="${esc(u.uid)}">Remove</button>`}</span></div>`).join("") || `<p class="muted">No staff logins yet.</p>`}</div>
+  <div class="toolbar"><input id="q" type="search" placeholder="Search plot, owner or username…" value="${esc(S.q)}"><div class="chips">${[["all", "All"], ["none", "No login"], ["has", "Has login"]].map(([k, t]) => `<button class="chip ${S.lfilter === k ? "on" : ""}" data-a="lf" data-v="${k}">${t}</button>`).join("")}</div></div>
+  <div class="list">${list.map(({ h, u }) => `<div class="item" data-a="loginItem" data-id="${esc(h.id)}"><div class="hno">${esc(h.no)}</div><div class="m"><b>${esc(h.owner || "—")}</b><small>${u ? "Username: " + esc(u.username) + (u.resetAt ? " · reset " + fmtDate(u.resetAt.slice(0, 10)) : "") : "No login yet"}${h.phone ? " · " + esc(h.phone) : ""}</small></div>${u ? '<span class="badge b-paid">Active</span>' : '<span class="badge b-no">None</span>'}</div>`).join("") || `<div class="empty">No plots</div>`}</div>`;
+}
+function credText(c, h) {
+  const s = st();
+  return `${s.name} — online bill portal\n${h ? "Plot " + h.no + (h.owner ? " (" + h.owner + ")" : "") + "\n" : ""}Link: ${appLink()}\nUsername: ${c.username}\nPassword: ${c.password}\n\nPlease keep your password private. You can change it after logging in.`;
+}
+function credModal(items) {
+  // items: [{username,password,h}]
+  S.lastCreds = items;
+  const rows = items.map((c, i) => `<tr><td>${c.h ? esc(c.h.no) : ""}</td><td><b>${esc(c.username)}</b></td><td><code>${esc(c.password)}</code></td><td>${c.h && c.h.phone ? `<a class="btn sm grn" target="_blank" rel="noopener" href="https://wa.me/${waPhone(c.h.phone)}?text=${encodeURIComponent(credText(c, c.h))}">WhatsApp</a>` : `<button class="btn sm" data-a="copyCred" data-i="${i}">Copy</button>`}</td></tr>`).join("");
+  openModal(`<h3>${items.length === 1 ? "Login ready" : items.length + " logins created"}<button class="x" data-a="close">×</button></h3>
+  <div class="note">Passwords are shown only now. Send them, or download the list, before closing.</div>
+  <table class="tbl" style="margin-bottom:14px"><tr><th>Plot</th><th>Username</th><th>Password</th><th></th></tr>${rows}</table>
+  <div class="actions"><button class="btn" data-a="credCsv">Download list (CSV)</button><button class="btn" data-a="copyAllCred">Copy all</button></div>`, true);
+}
+function loginItemModal(hid) {
+  const h = S.houses.find(x => x.id === hid), u = userOfHouse(hid);
+  openModal(`<h3>Login · Plot ${esc(h.no)}<button class="x" data-a="close">×</button></h3>
+  <div class="kv"><span>Owner</span><b>${esc(h.owner || "—")}</b></div><div class="kv"><span>Mobile</span><b>${esc(h.phone || "—")}</b></div>
+  ${u ? `<div class="kv"><span>Username</span><b>${esc(u.username)}</b></div><div class="kv"><span>Created</span><b>${fmtDate((u.createdAt || "").slice(0, 10))}</b></div>
+  <p class="muted" style="font-size:13px">For security, passwords are not stored. If the resident forgot it, reset it to create a new one.</p>
+  <div class="actions"><button class="btn pri" data-a="resetLogin" data-id="${esc(u.uid)}">Reset password</button><button class="btn red" data-a="removeLogin" data-id="${esc(u.uid)}">Remove login</button></div>`
+  : `<form data-f="newLogin" data-id="${esc(hid)}" style="margin-top:12px"><div class="f2"><label class="f"><span>Username</span><input type="text" name="u" value="${esc(cleanUser(h.no))}" autocapitalize="none"></label><label class="f"><span>Password</span><input type="text" name="p" value="${genPassword()}"></label></div><button class="btn pri block">Create login</button></form>`}`);
+}
+async function bulkLogins() {
+  const todo = soldHouses().filter(h => !userOfHouse(h.id));
+  if (!todo.length) return;
+  if (!(await ask("Create " + todo.length + " logins?", "A login will be created for every sold plot that doesn't have one. The username is the plot number and the password is random. You'll get the full list at the end.", "Create"))) return;
+  openModal(`<h3>Creating logins…</h3><div class="bar"><i id="pbar" style="width:0"></i></div><p class="muted" id="ptxt">0 / ${todo.length}</p>`);
+  const out = [], fails = [];
+  for (let i = 0; i < todo.length; i++) {
+    const h = todo[i];
+    try { const c = await D.createLogin("resident", cleanUser(h.no), genPassword(), h.id, h.owner); out.push(Object.assign(c, { h })); }
+    catch (e) { fails.push(h.no + ": " + (e.message || e.code)); if (/too-many/.test(e.code || "")) { fails.push("Stopped: Firebase limit reached. Try the rest again in an hour."); break; } }
+    const pb = $("#pbar"); if (pb) { pb.style.width = ((i + 1) / todo.length * 100) + "%"; $("#ptxt").textContent = (i + 1) + " / " + todo.length; }
+    await new Promise(r => setTimeout(r, 250));
+  }
+  if (out.length) credModal(out); else closeModal();
+  if (fails.length) toast(fails.length + " failed: " + fails[0]);
+}
+function csvOf(items) { const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"'; return "Plot,Owner,Mobile,Username,Password\n" + items.map(c => [c.h ? c.h.no : "", c.h ? c.h.owner : "", c.h ? c.h.phone : "", c.username, c.password].map(q).join(",")).join("\n"); }
+
+/* ---- Payment proofs (admin) ---- */
+function proofsBlock() {
+  if (!S.proofs.length) return "";
+  return `<div class="card"><h2>Payments to verify (${S.proofs.length})</h2><div class="list" style="border:0">${S.proofs.slice().sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt))).map(p => { const h = S.houses.find(x => x.id === p.hid) || { no: p.hid }; return `<div class="item" data-a="proof" data-id="${esc(p.id)}"><div class="hno">${esc(h.no)}</div><div class="m"><b>${money(p.amount)} · ${esc(p.method || "")}</b><small>${esc(h.owner || "")}${p.tid ? " · TID " + esc(p.tid) : ""} · ${fmtDate(p.date)}</small></div><span class="badge b-part">Review</span></div>`; }).join("")}</div></div>`;
+}
+function proofModal(id) {
+  const p = S.proofs.find(x => x.id === id); if (!p) return;
+  const h = S.houses.find(x => x.id === p.hid) || { no: p.hid };
+  const lm = billMonths().reverse().find(mm => S.bills[mm].b[p.hid] && !S.bills[mm].b[p.hid].carried);
+  const bill = lm ? S.bills[lm].b[p.hid] : null;
+  openModal(`<h3>Payment from Plot ${esc(h.no)}<button class="x" data-a="close">×</button></h3>
+  <div class="kv"><span>Owner</span><b>${esc(h.owner || "—")}</b></div><div class="kv"><span>Amount</span><b>${money(p.amount)}</b></div><div class="kv"><span>Method</span><b>${esc(p.method || "")}</b></div><div class="kv"><span>Transaction ID</span><b>${esc(p.tid || "—")}</b></div><div class="kv"><span>Paid on</span><b>${fmtDate(p.date)}</b></div><div class="kv"><span>For bill</span><b>${mLabel(p.month)}</b></div>
+  ${bill ? `<div class="kv"><span>Current balance (${mLabel(lm)})</span><b style="color:var(--red)">${money(balance(bill))}</b></div>` : ""}
+  ${p.note ? `<p><b>Note:</b> ${esc(p.note)}</p>` : ""}
+  ${p.image ? `<img class="preview" style="margin:12px 0" src="${esc(p.image)}" alt="Payment screenshot">` : `<p class="muted">No screenshot attached.</p>`}
+  <label class="f"><span>Note (optional, e.g. reason for rejecting)</span><input type="text" id="pnote"></label>
+  <div class="actions"><button class="btn pri" data-a="approveProof" data-id="${esc(p.id)}">Approve &amp; add payment</button><button class="btn red" data-a="rejectProof" data-id="${esc(p.id)}">Reject</button></div>`, true);
+}
+
+/* ---- RESIDENT portal ---- */
+function viewResident() {
+  const h = S.houses[0] || { no: S.me.hid }, s = st();
+  const months = billMonths().reverse();
+  const cur = months.map(m => S.bills[m].b[h.id]).find(b => b && !b.carried);
+  const curM = cur ? cur.month : null;
+  const pend = S.proofs.filter(p => p.status === "pending");
+  const bal = cur ? balance(cur) : 0;
+  return `<header class="appbar mob"><div class="t"><b>Plot ${esc(h.no)}</b><small>${esc(h.owner || s.name)}</small></div><button class="ibtn" data-a="myAccount" aria-label="Account">${icon("lock")}</button><button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button></header>
+  <main>
+  ${cur ? `<div class="card" style="border-color:${bal > 0 ? "#efc6c2" : "#bfe3cb"}"><div class="row"><span class="muted">${mLabel(curM)} bill</span><span class="sp"></span>${badge(status(cur))}</div>
+    <div style="font-size:34px;font-weight:800;margin:6px 0 2px;color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(Math.max(0, bal))}</div>
+    <div class="muted" style="margin-bottom:14px">${bal > 0 ? "Amount due · Due date " + fmtDate((S.bills[curM] || {}).dueDate) : "Nothing due. Thank you!"}</div>
+    <div class="actions">${bal > 0 ? `<button class="btn pri" data-a="payNow">Pay now</button>` : ""}<button class="btn" data-a="rbill" data-m="${curM}">View bill</button></div></div>`
+  : `<div class="card"><h2>No bills yet</h2><p class="muted" style="margin:0">Your bills will appear here once the society issues them.</p></div>`}
+  ${pend.map(p => `<div class="info">Your payment of <b>${money(p.amount)}</b> (${fmtDate(p.date)}) is waiting for confirmation by the office.</div>`).join("")}
+  ${S.proofs.filter(p => p.status === "rejected").slice(0, 1).map(p => `<div class="err">Your payment of ${money(p.amount)} (${fmtDate(p.date)}) could not be confirmed${p.reviewNote ? ": " + esc(p.reviewNote) : ""}. Please contact the office.</div>`).join("")}
+  <div class="grid"><div class="stat"><span>Area</span><b>${esc(h.marla)} marla</b></div><div class="stat"><span>Street</span><b>${esc(h.street || "—")}</b></div></div>
+  <div class="card"><h2>Bill history</h2>${months.length ? `<div class="list" style="border:0">${months.map(m => { const b = S.bills[m].b[h.id]; return b ? `<div class="item" data-a="rbill" data-m="${m}"><div class="m"><b>${mLabel(m)}</b><small>${b.units} units · Paid ${money(b.paid)}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>` : ""; }).join("")}</div>` : `<p class="muted" style="margin:0">No bills yet.</p>`}</div>
+  ${S.proofs.length ? `<div class="card"><h2>My payments</h2>${S.proofs.map(p => `<div class="kv"><span>${fmtDate(p.date)} · ${esc(p.method || "")}${p.tid ? " · " + esc(p.tid) : ""}</span><b>${money(p.amount)} <span class="badge ${p.status === "approved" ? "b-paid" : p.status === "rejected" ? "b-unpaid" : "b-part"}">${p.status === "approved" ? "Confirmed" : p.status === "rejected" ? "Rejected" : "Pending"}</span></b></div>`).join("")}</div>` : ""}
+  <div class="card"><h2>Contact</h2><p class="muted" style="margin:0">${esc(s.name)}${s.phone ? " · " + esc(s.phone) : ""}</p></div>
+  </main>`;
+}
+function residentBillModal(m) {
+  const h = S.houses[0]; const bill = S.bills[m] && S.bills[m].b[h.id]; if (!bill) return;
+  const pays = (bill.payments || []).map(p => `<tr><td>${fmtDate(p.date)}</td><td>${esc(p.method)}</td><td>${money(p.amt)}</td></tr>`).join("");
+  openModal(`<h3>${mLabel(m)} bill ${badge(status(bill))}<button class="x" data-a="close">×</button></h3>
+  <div class="kv"><span>Total bill</span><b>${money(bill.total)}</b></div><div class="kv"><span>Paid</span><b style="color:var(--grn)">${money(bill.paid)}</b></div><div class="kv"><span>Balance</span><b>${money(Math.max(0, balance(bill)))}</b></div>
+  ${bill.carried ? `<div class="info" style="margin-top:12px">This balance was carried into your ${mLabel(bill.carriedTo)} bill.</div>` : ""}
+  <div class="actions" style="margin-top:12px"><button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(h.id)}">Download PDF</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(h.id)}">Download image</button>${!bill.carried && balance(bill) > 0 ? `<button class="btn pri" data-a="payNow">Pay now</button>` : ""}</div>
+  ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th></tr>${pays}</table>` : ""}
+  <div id="bprev" class="muted" style="text-align:center;padding:30px">Preparing bill…</div>`, true);
+  billCanvas(m, bill).then(c => { const el = $("#bprev"); if (el) el.outerHTML = `<img class="preview" id="bimg" src="${c.toDataURL("image/jpeg", 0.85)}" alt="Bill">`; }).catch(e => console.error(e));
+}
+function payNowModal() {
+  const h = S.houses[0], s = st();
+  const cur = billMonths().reverse().map(m => S.bills[m].b[h.id]).find(b => b && !b.carried);
+  if (!cur) return;
+  const lines = [];
+  if (s.jazzNumber) lines.push(["JazzCash number", s.jazzNumber], ["Account title", s.jazzTitle]);
+  if (s.bankName || s.bankAcc) lines.push(["Bank", s.bankName], ["Account title", s.bankTitle], ["Account number", s.bankAcc], ["IBAN", s.iban]);
+  openModal(`<h3>Pay your bill<button class="x" data-a="close">×</button></h3>
+  <div class="info">Amount due: <b>${money(balance(cur))}</b> · ${mLabel(cur.month)}</div>
+  <h3 style="font-size:15px">1. Send the payment</h3>
+  ${lines.filter(l => l[1]).map(([l, v]) => `<div class="kv"><span>${l}</span><b>${esc(v)}</b></div>`).join("") || `<p class="muted">Please contact the office for payment details.</p>`}
+  ${s.qr ? `<div style="text-align:center;margin:12px 0"><img src="${esc(s.qr)}" alt="QR code" style="width:220px;max-width:100%;border:1px solid var(--line);border-radius:12px"><div class="muted" style="font-size:13px">Scan to pay</div></div>` : ""}
+  <h3 style="font-size:15px;margin-top:16px">2. Tell us you've paid</h3>
+  <form data-f="proof" data-m="${cur.month}"><div class="f2">
+  <label class="f"><span>Amount paid (Rs)</span><input type="number" name="amount" value="${Math.max(0, Math.round(balance(cur)))}" min="1" required></label>
+  <label class="f"><span>Paid with</span><select name="method"><option>JazzCash</option><option>Bank transfer</option><option>Easypaisa</option><option>Other</option></select></label>
+  <label class="f"><span>Transaction ID (TID)</span><input type="text" name="tid" required></label>
+  <label class="f"><span>Date paid</span><input type="date" name="date" value="${todayISO()}"></label></div>
+  <label class="f"><span>Payment screenshot</span><input type="file" name="shot" accept="image/*"></label>
+  <label class="f"><span>Note (optional)</span><input type="text" name="note"></label>
+  <button class="btn pri block">Submit payment</button></form>`, true);
+}
+async function shrinkImage(file, mx = 1100, q = 0.72) {
+  const url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(file); });
+  const img = await loadImg(url); if (!img) return "";
+  const sc = Math.min(1, mx / Math.max(img.width, img.height)); const c = document.createElement("canvas"); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+  const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+  let d = c.toDataURL("image/jpeg", q); if (d.length > 700000) d = c.toDataURL("image/jpeg", 0.5);
+  return d;
+}
+function accountModal() {
+  openModal(`<h3>Change password<button class="x" data-a="close">×</button></h3><p class="muted">Logged in as <b>${esc(S.me.username)}</b></p>
+  <form data-f="chpw"><label class="f"><span>Current password</span><input type="password" name="old" autocomplete="current-password" required></label><label class="f"><span>New password (at least 6 characters)</span><input type="password" name="n1" autocomplete="new-password" required></label><label class="f"><span>Repeat new password</span><input type="password" name="n2" autocomplete="new-password" required></label><button class="btn pri block">Change password</button></form>`);
 }
 
 /* ============ modal ============ */
@@ -474,7 +783,7 @@ async function saveHouse(form) {
   const rec = { no, street: String(fd.get("street") || "").trim(), code: String(fd.get("code") || "").trim(), phone2: String(fd.get("phone2") || "").trim(), prevBal: num(fd.get("prevBal")), owner: String(fd.get("owner") || "").trim(), phone: String(fd.get("phone") || "").trim(), marla: num(fd.get("marla")), meter: String(fd.get("meter") || "").trim(), opening: num(fd.get("opening")), sold: !!fd.get("sold") };
   if (id) { const i = list.findIndex(x => x.id === id); list[i] = Object.assign({}, list[i], rec); }
   else { let nid = hidFor(no); while (list.some(x => x.id === nid)) nid += "_"; list.push(Object.assign({ id: nid }, rec)); }
-  if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); toast("Saved"); }
+  if (await write(() => D.saveHouses(list))) { closeModal(); toast("Saved"); }
 }
 
 /* ---- reading entry ---- */
@@ -507,11 +816,7 @@ async function saveReading(form, go) {
   const v = num(raw); const h = S.houses.find(x => x.id === hid); const prev = prevReading(h, m);
   if (v < prev && !form.dataset.ok) { form.dataset.ok = "1"; toast("The reading is lower than expected. Tap Save again if it is correct."); return; }
   const entry = { v, at: new Date().toISOString(), by: S.mode === "reader" ? "reader" : "admin" };
-  const ref = S.db.doc("readings/" + m);
-  const ok = await write(async () => {
-    if (S.readings[m]) await ref.update({ r: { [hid]: entry } });
-    else { const s = await ref.get(); if (s.exists) await ref.update({ r: { [hid]: entry } }); else await ref.set({ month: m, r: { [hid]: entry } }); }
-  });
+  const ok = await write(() => D.saveReading(m, hid, entry));
   if (!ok) return;
   toast("Plot " + h.no + ": " + v + " saved");
   if (go === "next") {
@@ -541,8 +846,7 @@ async function generateBills(m, dueDate) {
     b[h.id] = { hid: h.id, no: h.no, street: h.street || "", code: h.code || "", owner: h.owner || "", phone: h.phone || "", marla: num(h.marla), meter: h.meter || "", marlaRate, unitRate, marlaCharge, prev: prevR, curr: noReading ? null : cur, units, water, arrears, fine, total: r2(marlaCharge + water + arrears + fine), paid: e ? num(e.paid) : 0, payments: e ? (e.payments || []) : [], noReading };
   });
   const ok = await write(async () => {
-    await S.db.doc("bills/" + m).set({ month: m, generatedAt: (ex && ex.generatedAt) || new Date().toISOString(), dueDate, b });
-    if (prev) { const u = {}; Object.keys(b).forEach(id => { if (prev.b[id]) u[id] = { carried: true, carriedTo: m }; }); if (Object.keys(u).length) await S.db.doc("bills/" + prevM).update({ b: u }); }
+    await D.saveBillRun(m, { month: m, generatedAt: (ex && ex.generatedAt) || new Date().toISOString(), dueDate }, b, prevM, prev ? Object.keys(b).filter(id => prev.b[id]) : []);
   });
   if (ok) { S.billMonth = m; toast(Object.keys(b).length + " bills generated"); }
 }
@@ -588,7 +892,7 @@ async function savePay(form) {
   const amt = num(fd.get("amt")); if (amt <= 0) return toast("Enter an amount");
   const payments = (b.payments || []).concat([{ amt, date: fd.get("date") || todayISO(), method: fd.get("method"), note: String(fd.get("note") || "").trim(), at: new Date().toISOString() }]);
   const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0));
-  if (await write(() => S.db.doc("bills/" + m).update({ b: { [hid]: { payments, paid } } }))) { toast("Payment recorded"); billModal(m, hid); }
+  if (await write(() => D.updateBill(m, hid, { payments, paid }))) { toast("Payment recorded"); setTimeout(() => billModal(m, hid), 150); }
 }
 function fineModal(m, hid) {
   const b = S.bills[m].b[hid];
@@ -597,7 +901,7 @@ function fineModal(m, hid) {
 async function setFine(m, hid, fine) {
   const b = S.bills[m].b[hid]; fine = Math.max(0, r2(fine));
   const total = r2(num(b.total) - num(b.fine) + fine);
-  return write(() => S.db.doc("bills/" + m).update({ b: { [hid]: { fine, total } } }));
+  return write(() => D.updateBill(m, hid, { fine, total }));
 }
 
 /* ============ bill canvas (English) ============ */
@@ -698,9 +1002,9 @@ function makePdf(imgs) {
 }
 
 async function saveFile(name, blob) {
-  if (!S.dl) { toast("Downloads are not available here. Long-press the bill image to save it."); return; }
-  try { await S.dl.save({ filename: name, data: blob }); toast("File saved"); }
-  catch (e) { if (e && e.code !== "declined") toast("Download failed (" + (e.code || "error") + ")"); }
+  const b = blob instanceof Blob ? blob : new Blob([blob]);
+  const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000); toast("Downloaded " + name);
 }
 async function pdfFor(m, list, name) {
   if (!list.length) return toast("No bills to export");
@@ -762,7 +1066,7 @@ async function applyImport(mode) {
     if (i >= 0) list[i] = Object.assign({}, list[i], rec);
     else { const old = S.houses.find(h => String(h.no) === r.no); let id = old ? old.id : hidFor(r.no); while (list.some(h => h.id === id)) id += "_"; list.push(Object.assign({ id, meter: "", opening: 0 }, rec)); }
   });
-  if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); S.pendingImport = null; toast(rows.length + " plots imported"); }
+  if (await write(async () => { await D.saveHouses(list); if (!S.settingsExists) await D.saveSettings(st()); })) { closeModal(); S.pendingImport = null; toast(rows.length + " plots imported"); }
 }
 
 /* ============ events ============ */
@@ -778,15 +1082,30 @@ document.addEventListener("click", async e => {
     case "bf": S.bfilter = t.dataset.v; render(true); break;
     case "toReader": S.mode = "reader"; S.q = ""; S.rfilter = "pending"; render(true); window.scrollTo(0, 0); break;
     case "toAdmin": S.mode = "admin"; S.q = ""; render(true); break;
-    case "logout": ss("rg_mode", null); S.adminViaPin = false; S.mode = "pin"; render(true); break;
+    case "logout": closeModal(); if (auth) await signOut(auth); break;
+    case "lf": S.lfilter = t.dataset.v; render(true); break;
+    case "loginItem": loginItemModal(id); break;
+    case "bulkLogins": bulkLogins(); break;
+    case "addStaff": openModal(`<h3>Add staff login<button class="x" data-a="close">×</button></h3><form data-f="staffLogin"><div class="f2"><label class="f"><span>Role</span><select name="role"><option value="reader">Meter reader</option><option value="admin">Admin</option></select></label><label class="f"><span>Name</span><input type="text" name="name"></label><label class="f"><span>Username</span><input type="text" name="u" autocapitalize="none" placeholder="e.g. reader1" required></label><label class="f"><span>Password</span><input type="text" name="p" value="${genPassword()}" required></label></div><button class="btn pri block">Create login</button></form>`); break;
+    case "resetLogin": { const u = S.users.find(x => x.uid === id); if (!u) break; if (!(await ask("Reset password?", "A new password will be created for <b>" + esc(u.username) + "</b>. The old password will stop working.", "Reset"))) break; try { const c = await D.resetLogin(u, genPassword()); credModal([Object.assign(c, { h: u.hid ? S.houses.find(h => h.id === u.hid) : null })]); } catch (e) { toast(e.message || "Could not reset"); } break; }
+    case "removeLogin": { const u = S.users.find(x => x.uid === id); if (!u) break; if (await ask("Remove login?", "<b>" + esc(u.username) + "</b> will no longer be able to log in.", "Remove", true)) { if (await write(() => D.removeLogin(u))) { closeModal(); toast("Login removed"); } } break; }
+    case "copyCred": { const c = S.lastCreds[+t.dataset.i]; try { await navigator.clipboard.writeText(credText(c, c.h)); toast("Copied"); } catch (e) { toast("Copy failed"); } break; }
+    case "copyAllCred": { try { await navigator.clipboard.writeText(S.lastCreds.map(c => credText(c, c.h)).join("\n\n----\n\n")); toast("Copied"); } catch (e) { toast("Copy failed"); } break; }
+    case "credCsv": saveFile("logins-" + todayISO() + ".csv", new Blob([csvOf(S.lastCreds)], { type: "text/csv" })); break;
+    case "proof": proofModal(id); break;
+    case "approveProof": case "rejectProof": { const p = S.proofs.find(x => x.id === id); if (!p) break; t.disabled = true; if (await write(() => D.reviewProof(p, a === "approveProof", ($("#pnote") || {}).value || ""))) { closeModal(); toast(a === "approveProof" ? "Payment approved and added to the bill" : "Payment rejected"); } else t.disabled = false; break; }
+    case "rbill": residentBillModal(m); break;
+    case "payNow": payNowModal(); break;
+    case "myAccount": accountModal(); break;
+    case "importBackup": { const fi = document.createElement("input"); fi.type = "file"; fi.accept = ".json,application/json"; fi.onchange = async () => { const f = fi.files[0]; if (!f) return; let data; try { data = JSON.parse(await f.text()); } catch (e) { toast("That is not a valid backup file"); return; } if (!(await ask("Import backup?", "Plots, readings and bills from the backup will be written into the system.", "Import"))) return; let n = 0; if (await write(async () => { n = await D.importBackup(data); if (!data.settings && !S.settingsExists) await D.saveSettings(st()); })) toast("Backup imported (" + n + " records)"); }; fi.click(); break; }
     case "addHouse": houseModal(null); break;
     case "importXl": { const fi = document.createElement("input"); fi.type = "file"; fi.accept = ".xlsx,.xlsm,.xls,.csv"; fi.onchange = () => { if (fi.files[0]) importExcel(fi.files[0]); }; fi.click(); break; }
     case "importGo": { const md = (document.querySelector("input[name=imode]:checked") || {}).value || "merge"; if (md === "replace" && !(await ask("Replace the plot list?", "Plots that are not in the Excel file will be removed from the list.", "Replace", true))) break; applyImport(md); break; }
     case "editHouse": houseModal(S.houses.find(h => h.id === id)); break;
-    case "delHouse": { const h = S.houses.find(x => x.id === id); if (await ask("Delete this plot?", "Plot " + esc(h.no) + " will be removed from the list. Existing bills are kept.", "Delete", true)) { if (await write(() => S.db.doc("society/houses").set({ list: S.houses.filter(x => x.id !== id) }))) toast("Plot deleted"); } break; }
+    case "delHouse": { const h = S.houses.find(x => x.id === id); if (await ask("Delete this plot?", "Plot " + esc(h.no) + " will be removed from the list. Existing bills are kept.", "Delete", true)) { if (await write(() => D.saveHouses(S.houses.filter(x => x.id !== id)))) toast("Plot deleted"); } break; }
     case "bulkSold": openModal(`<h3>Mark several plots<button class="x" data-a="close">×</button></h3><form data-f="bulkSold"><label class="f"><span>Plot numbers, separated by commas (e.g. 4.10, 4.11, 5.02)</span><textarea name="nos" rows="3"></textarea></label><label class="toggle"><input type="radio" name="v" value="1" checked><span><b>Sold</b></span></label><label class="toggle" style="margin-bottom:12px"><input type="radio" name="v" value="0"><span><b>Unsold</b></span></label><button class="btn pri block">Apply</button></form>`); break;
     case "reading": readingModal(id); break;
-    case "delReading": { if (await ask("Delete this reading?", "This plot's reading for this month will be removed.", "Delete", true)) { const d = S.readings[S.readMonth]; const r = Object.assign({}, d.r); delete r[id]; if (await write(() => S.db.doc("readings/" + S.readMonth).set({ month: S.readMonth, r }))) toast("Reading deleted"); } break; }
+    case "delReading": { if (await ask("Delete this reading?", "This plot's reading for this month will be removed.", "Delete", true)) { if (await write(() => D.deleteReading(S.readMonth, id))) toast("Reading deleted"); } break; }
     case "otherMonth": openModal(`<h3>Choose a month<button class="x" data-a="close">×</button></h3><input type="month" id="om" value="${S.billMonth || curMonth()}"><div style="height:12px"></div><button class="btn pri block" data-a="omGo">Open</button>`); break;
     case "omGo": { const v = $("#om").value; if (v) { S.billMonth = v; closeModal(); render(true); } break; }
     case "gen": { const due = $("#due").value || addDays(todayISO(), 10); if (!num(st().unitRate) && !(await ask("Water rate not set", "The water rate per unit is 0, so every water charge will be 0. Generate anyway?", "Generate"))) break; t.disabled = true; t.textContent = "Generating…"; await generateBills(S.billMonth, due); render(true); break; }
@@ -794,12 +1113,12 @@ document.addEventListener("click", async e => {
     case "bill": billModal(m, id); break;
     case "pay": payModal(m, id); break;
     case "fine": fineModal(m, id); break;
-    case "unfine": if (await setFine(m, id, 0)) { toast("Fine removed"); billModal(m, id); } break;
-    case "delPay": { if (!(await ask("Delete this payment?", "This payment record will be removed.", "Delete", true))) { billModal(m, id); break; } const b = S.bills[m].b[id]; const payments = (b.payments || []).filter((_, i) => i !== +t.dataset.i); const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0)); if (await write(() => S.db.doc("bills/" + m).update({ b: { [id]: { payments, paid } } }))) toast("Payment deleted"); billModal(m, id); break; }
+    case "unfine": if (await setFine(m, id, 0)) { toast("Fine removed"); setTimeout(() => billModal(m, id), 150); } break;
+    case "delPay": { if (!(await ask("Delete this payment?", "This payment record will be removed.", "Delete", true))) { billModal(m, id); break; } const b = S.bills[m].b[id]; const payments = (b.payments || []).filter((_, i) => i !== +t.dataset.i); const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0)); if (await write(() => D.updateBill(m, id, { payments, paid }))) toast("Payment deleted"); setTimeout(() => billModal(m, id), 150); break; }
     case "bulkFine": { const mm = S.billMonth, bill = S.bills[mm]; const list = Object.values(bill.b).filter(b => balance(b) > 0 && !num(b.fine)); if (!list.length) { toast("No unpaid bills without a fine"); break; } openModal(`<h3>Fine all unpaid bills<button class="x" data-a="close">×</button></h3><p>A fine will be added to ${list.length} unpaid bill(s) that don't have one yet.</p><form data-f="bulkFine"><label class="f"><span>Fine (Rs)</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" required></label><button class="btn pri block">Apply</button></form>`); break; }
     case "pdf1": case "img1": { const b = S.bills[m].b[id]; t.disabled = true; const c = await billCanvas(m, b); t.disabled = false; const fn = "Bill-" + b.no + "-" + m; if (a === "img1") c.toBlob(bl => saveFile(fn + ".jpg", bl), "image/jpeg", 0.9); else saveFile(fn + ".pdf", makePdf([await canvasJpeg(c)])); break; }
     case "pdfAll": case "pdfPending": { const mm = S.billMonth; let list = Object.values(S.bills[mm].b).sort((x, y) => hsort({ no: x.no }, { no: y.no })); if (a === "pdfPending") list = list.filter(b => balance(b) > 0); pdfFor(mm, list, (a === "pdfAll" ? "Bills-" : "Unpaid-Bills-") + mm + ".pdf"); break; }
-    case "qrdel": if (await write(() => S.db.doc("society/settings").set(Object.assign({}, st(), { qr: "" })))) toast("QR removed"); break;
+    case "qrdel": if (await write(() => D.saveSettings(Object.assign({}, st(), { qr: "" })))) toast("QR removed"); break;
     case "backup": { const data = { exportedAt: new Date().toISOString(), settings: Object.assign({}, S.settings, { qr: S.settings && S.settings.qr ? "(image)" : "" }), houses: S.houses, readings: S.readings, bills: S.bills }; saveFile("royal-garden-backup-" + todayISO() + ".json", JSON.stringify(data, null, 1)); break; }
   }
 });
@@ -818,42 +1137,58 @@ document.addEventListener("change", async e => {
     const mx = 600, sc = Math.min(1, mx / Math.max(img.width, img.height)); const c = document.createElement("canvas"); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
     const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
     let d = c.toDataURL("image/png"); if (d.length > 180000) d = c.toDataURL("image/jpeg", 0.85);
-    if (await write(() => S.db.doc("society/settings").set(Object.assign({}, st(), { qr: d })))) { const im = $("#qrimg"); if (im) im.src = d; toast("QR code saved"); }
+    if (await write(() => D.saveSettings(Object.assign({}, st(), { qr: d })))) { const im = $("#qrimg"); if (im) im.src = d; toast("QR code saved"); }
   }
 });
 document.addEventListener("submit", async e => {
   e.preventDefault(); const f = e.target, k = f.dataset.f, fd = new FormData(f); S.dirty = false;
-  if (k === "pin") {
-    const p = String($("#pin").value || "").trim(), s = st();
-    if (p && p === String(s.readerPin)) { S.mode = "reader"; ss("rg_mode", "reader"); S.rfilter = "pending"; render(true); }
-    else if (p && s.adminPin && p === String(s.adminPin)) { S.mode = "admin"; S.adminViaPin = true; ss("rg_mode", "admin"); render(true); }
-    else toast("Incorrect PIN");
+  if (k === "login") {
+    const btn = f.querySelector("button"); btn.disabled = true; $("#lerr").innerHTML = "";
+    try { await login(fd.get("u"), String(fd.get("p") || "")); } catch (err) { $("#lerr").innerHTML = `<div class="err">${esc(err.message)}</div>`; btn.disabled = false; }
+  } else if (k === "bootstrap") {
+    const btn = f.querySelector("button"); btn.disabled = true;
+    try { await bootstrapAdmin(fd.get("u"), String(fd.get("p") || ""), String(fd.get("name") || "").trim()); } catch (err) { toast(err.message || "Could not create the account"); btn.disabled = false; }
+  } else if (k === "newLogin") {
+    const h = S.houses.find(x => x.id === f.dataset.id); const btn = f.querySelector("button"); btn.disabled = true;
+    try { const c = await D.createLogin("resident", fd.get("u"), String(fd.get("p") || ""), h.id, h.owner); credModal([Object.assign(c, { h })]); } catch (err) { toast(err.message || "Could not create the login"); btn.disabled = false; }
+  } else if (k === "staffLogin") {
+    const btn = f.querySelector("button"); btn.disabled = true;
+    try { const c = await D.createLogin(fd.get("role"), fd.get("u"), String(fd.get("p") || ""), null, String(fd.get("name") || "").trim()); credModal([c]); } catch (err) { toast(err.message || "Could not create the login"); btn.disabled = false; }
+  } else if (k === "proof") {
+    const btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Submitting…";
+    const file = f.shot.files[0]; let image = ""; if (file) image = await shrinkImage(file);
+    const p = { hid: S.me.hid, uid: S.uid, month: f.dataset.m, amount: num(fd.get("amount")), method: String(fd.get("method")), tid: String(fd.get("tid") || "").trim(), date: String(fd.get("date") || todayISO()), note: String(fd.get("note") || "").trim(), image, status: "pending", createdAt: new Date().toISOString() };
+    if (p.amount <= 0) { toast("Enter the amount"); btn.disabled = false; btn.textContent = "Submit payment"; return; }
+    if (await write(() => D.createProof(p))) { closeModal(); toast("Thank you! Your payment has been sent for confirmation."); } else { btn.disabled = false; btn.textContent = "Submit payment"; }
+  } else if (k === "chpw") {
+    if (fd.get("n1") !== fd.get("n2")) return toast("The new passwords don't match");
+    if (String(fd.get("n1")).length < 6) return toast("The new password must be at least 6 characters");
+    try { await D.changeOwnPassword(String(fd.get("old")), String(fd.get("n1"))); closeModal(); toast("Password changed"); } catch (err) { toast(/wrong|invalid|credential/i.test(err.code || "") ? "Current password is incorrect" : "Could not change the password"); }
   } else if (k === "setup") {
     const total = Math.min(2000, Math.max(1, Math.round(num(fd.get("total"))))), marla = num(fd.get("marla"));
     const sold = parseRanges(fd.get("sold"));
     const list = []; for (let i = 1; i <= total; i++) list.push({ id: String(i), no: String(i), owner: "", phone: "", marla, meter: "", opening: 0, sold: sold.has(String(i)) });
-    const s = Object.assign({}, st(), { name: String(fd.get("name") || DEF.name), marlaRate: num(fd.get("marlaRate")), unitRate: num(fd.get("unitRate")), readerPin: String(fd.get("readerPin") || "1234") });
-    const ok = await write(async () => { await S.db.doc("society/settings").set(s); if (!S.housesExists) await S.db.doc("society/houses").set({ list }); });
+    const s = Object.assign({}, st(), { name: String(fd.get("name") || DEF.name), marlaRate: num(fd.get("marlaRate")), unitRate: num(fd.get("unitRate")) });
+    const ok = await write(async () => { await D.saveSettings(s); if (!S.housesExists) await D.saveHouses(list); });
     if (ok) { toast("Setup complete"); S.view = "houses"; render(true); }
   } else if (k === "settings") {
     const s = Object.assign({}, st());
-    ["name", "address", "phone", "jazzNumber", "jazzTitle", "bankName", "bankTitle", "bankAcc", "iban", "readerPin", "adminPin"].forEach(n => s[n] = String(fd.get(n) || "").trim());
+    ["name", "address", "phone", "jazzNumber", "jazzTitle", "bankName", "bankTitle", "bankAcc", "iban"].forEach(n => s[n] = String(fd.get(n) || "").trim());
     ["marlaRate", "unitRate", "fineDefault", "dueDays"].forEach(n => s[n] = num(fd.get(n)));
     s.readerShowPrev = !!fd.get("readerShowPrev"); s.readerShowOwner = !!fd.get("readerShowOwner");
-    if (!s.readerPin) return toast("The reader PIN can't be empty");
-    if (await write(() => S.db.doc("society/settings").set(s))) toast("Settings saved");
+    if (await write(() => D.saveSettings(s))) toast("Settings saved");
   } else if (k === "house") saveHouse(f);
   else if (k === "reading") saveReading(f, (e.submitter && e.submitter.value) || "next");
   else if (k === "pay") savePay(f);
-  else if (k === "fine") { const m = f.dataset.m, id = f.dataset.id; const amt = num(fd.get("amt")); if (amt <= 0) return; if (await setFine(m, id, num(S.bills[m].b[id].fine) + amt)) { toast("Fine added"); billModal(m, id); } }
+  else if (k === "fine") { const m = f.dataset.m, id = f.dataset.id; const amt = num(fd.get("amt")); if (amt <= 0) return; if (await setFine(m, id, num(S.bills[m].b[id].fine) + amt)) { toast("Fine added"); setTimeout(() => billModal(m, id), 150); } }
   else if (k === "bulkFine") {
     const m = S.billMonth, amt = num(fd.get("amt")); if (amt <= 0) return; const u = {};
     Object.values(S.bills[m].b).forEach(b => { if (balance(b) > 0 && !num(b.fine)) u[b.hid] = { fine: amt, total: r2(num(b.total) + amt) }; });
-    if (await write(() => S.db.doc("bills/" + m).update({ b: u }))) { closeModal(); toast("Fine added to " + Object.keys(u).length + " bills"); }
+    if (await write(() => D.updateBills(m, u))) { closeModal(); toast("Fine added to " + Object.keys(u).length + " bills"); }
   } else if (k === "bulkSold") {
     const set = parseRanges(fd.get("nos")), v = fd.get("v") === "1"; if (!set.size) return toast("Enter plot numbers");
     let n = 0; const list = S.houses.map(h => { if (set.has(String(h.no))) { n++; return Object.assign({}, h, { sold: v }); } return h; });
-    if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); toast(n + " plots updated"); }
+    if (await write(() => D.saveHouses(list))) { closeModal(); toast(n + " plots updated"); }
   }
 });
 boot();
