@@ -112,7 +112,7 @@ const mUr = m => UR_M[+m.slice(5, 7) - 1] + " " + m.slice(0, 4);
 const prevMonthKey = m => { let y = +m.slice(0, 4), mo = +m.slice(5, 7) - 1; if (mo === 0) { y--; mo = 12; } return y + "-" + pad(mo); };
 function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 2600); }
 function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) { return null; } }
-function waPhone(p) { let d = String(p || "").replace(/\D/g, ""); if (!d) return ""; if (d.startsWith("00")) d = d.slice(2); if (d.startsWith("0")) d = "92" + d.slice(1); else if (d.length === 10 && d.startsWith("3")) d = "92" + d; return d; }
+function waPhone(p) { let d = String(p || "").trim().split(/[\s,\/]+(?=[0+9])/)[0].replace(/\D/g, ""); if (!d) return ""; if (d.startsWith("00")) d = d.slice(2); if (d.startsWith("920") && d.length === 13) d = "92" + d.slice(3); if (d.startsWith("0")) d = "92" + d.slice(1); else if (d.length === 10 && d.startsWith("3")) d = "92" + d; return d; }
 function parseRanges(t) { const out = new Set(); String(t || "").split(/[,\s]+/).forEach(p => { if (!p) return; const m = p.match(/^(\d+)-(\d+)$/); if (m) { for (let i = +m[1]; i <= +m[2] && i - +m[1] < 5000; i++) out.add(String(i)); } else if (/^\d+$/.test(p)) out.add(String(+p)); }); return out; }
 
 const DEF = { name: "Royal Garden", nameUr: "رائل گارڈن", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerPin: "1234", adminPin: "" };
@@ -128,7 +128,7 @@ const S = {
 };
 const st = () => Object.assign({}, DEF, S.settings || {});
 const soldHouses = () => S.houses.filter(h => h.sold).sort(hsort);
-function hsort(a, b) { const x = parseInt(a.no), y = parseInt(b.no); if (!isNaN(x) && !isNaN(y) && x !== y) return x - y; return String(a.no).localeCompare(String(b.no)); }
+function hsort(a, b) { const x = parseFloat(a.no), y = parseFloat(b.no); if (!isNaN(x) && !isNaN(y) && x !== y) return x - y; return String(a.no).localeCompare(String(b.no)); }
 const billMonths = () => Object.keys(S.bills).sort();
 const latestBillMonth = () => billMonths().slice(-1)[0] || null;
 
@@ -247,11 +247,11 @@ function vHouses() {
   const q = S.q.trim().toLowerCase();
   let list = S.houses.slice().sort(hsort);
   if (S.hfilter === "sold") list = list.filter(h => h.sold); else if (S.hfilter === "unsold") list = list.filter(h => !h.sold);
-  if (q) list = list.filter(h => (h.no + " " + (h.owner || "") + " " + (h.phone || "") + " " + (h.meter || "")).toLowerCase().includes(q));
+  if (q) list = list.filter(h => (h.no + " " + (h.owner || "") + " " + (h.phone || "") + " " + (h.meter || "") + " " + (h.code || "")).toLowerCase().includes(q));
   const ns = S.houses.filter(h => h.sold).length;
-  return `<div class="row" style="margin-bottom:12px"><input id="q" type="text" placeholder="Ghar no., naam, phone se talaash…" value="${esc(S.q)}" style="flex:1;min-width:200px"><button class="btn pri" data-a="addHouse">+ Naya ghar</button></div>
+  return `<div class="row" style="margin-bottom:12px"><input id="q" type="text" placeholder="Plot no., naam, phone, code se talaash…" value="${esc(S.q)}" style="flex:1;min-width:200px"><button class="btn" data-a="importXl">Excel se import</button><button class="btn pri" data-a="addHouse">+ Naya ghar</button></div>
   <div class="row" style="margin-bottom:12px"><div class="chips">${[["all", "Sab (" + S.houses.length + ")"], ["sold", "Sold (" + ns + ")"], ["unsold", "Unsold (" + (S.houses.length - ns) + ")"]].map(([k, t]) => `<button class="chip ${S.hfilter === k ? "on" : ""}" data-a="hf" data-v="${k}">${t}</button>`).join("")}</div><span class="sp"></span><button class="btn sm" data-a="bulkSold">Kai ghar ek saath Sold karein</button></div>
-  <div class="list">${list.map(h => `<div class="item" data-a="editHouse" data-id="${esc(h.id)}"><div class="hno">${esc(h.no)}</div><div class="m"><b>${esc(h.owner || "—")}</b><small>${esc(h.marla)} marla${h.phone ? " · " + esc(h.phone) : ""}${h.meter ? " · Meter " + esc(h.meter) : ""}</small></div>${h.sold ? '<span class="badge b-sold">Sold</span>' : '<span class="badge b-no">Unsold</span>'}</div>`).join("") || `<div class="empty">Koi ghar nahi mila</div>`}</div>`;
+  <div class="list">${list.map(h => `<div class="item" data-a="editHouse" data-id="${esc(h.id)}"><div class="hno">${esc(h.no)}</div><div class="m"><b>${esc(h.owner || "—")}</b><small>${h.street ? "Street " + esc(h.street) + " · " : ""}${esc(h.marla)} marla${h.phone ? " · " + esc(h.phone) : " · <span style=\"color:var(--red)\">phone nahi</span>"}${num(h.prevBal) ? " · Baqaya " + money(h.prevBal) : ""}</small></div>${h.sold ? '<span class="badge b-sold">Sold</span>' : '<span class="badge b-no">Unsold</span>'}</div>`).join("") || `<div class="empty">Koi ghar nahi mila</div>`}</div>`;
 }
 function vReadings() {
   const m = S.readMonth, sold = soldHouses();
@@ -363,16 +363,20 @@ function ask(title, msg, okText = "Haan", danger) {
 
 /* ---- house edit ---- */
 function houseModal(h) {
-  const isNew = !h; h = h || { id: "", no: "", owner: "", phone: "", marla: 5, meter: "", sold: true, opening: 0 };
+  const isNew = !h; h = Object.assign({ id: "", no: "", street: "", code: "", owner: "", phone: "", phone2: "", marla: 5, meter: "", sold: true, opening: 0, prevBal: 0 }, h || {});
   const hist = isNew ? "" : billMonths().reverse().filter(m => S.bills[m].b && S.bills[m].b[h.id]).map(m => { const b = S.bills[m].b[h.id]; return `<tr data-a="bill" data-m="${m}" data-id="${esc(h.id)}" style="cursor:pointer"><td>${mLabel(m)}</td><td>${b.units}</td><td>${money(b.total)}</td><td>${money(b.paid)}</td><td>${badge(status(b))}</td></tr>`; }).join("");
-  openModal(`<h3>${isNew ? "Naya ghar" : "Ghar # " + esc(h.no)}<button class="x" data-a="close">×</button></h3>
+  openModal(`<h3>${isNew ? "Naya ghar" : "Plot # " + esc(h.no)}<button class="x" data-a="close">×</button></h3>
   <form data-f="house" data-id="${esc(h.id)}"><div class="f2">
-  <label class="f"><span>Ghar number</span><input type="text" name="no" value="${esc(h.no)}" required></label>
+  <label class="f"><span>Plot / ghar number</span><input type="text" name="no" value="${esc(h.no)}" required></label>
+  <label class="f"><span>Street #</span><input type="text" name="street" value="${esc(h.street)}"></label>
+  <label class="f"><span>Subs. code</span><input type="text" name="code" value="${esc(h.code)}"></label>
   <label class="f"><span>Marla</span><input type="number" name="marla" value="${esc(h.marla)}" step="0.5" min="0"></label>
   <label class="f"><span>Maalik ka naam</span><input type="text" name="owner" value="${esc(h.owner)}"></label>
   <label class="f"><span>Mobile (WhatsApp)</span><input type="tel" name="phone" value="${esc(h.phone)}" placeholder="03xx xxxxxxx"></label>
+  <label class="f"><span>Mobile 2</span><input type="tel" name="phone2" value="${esc(h.phone2)}"></label>
   <label class="f"><span>Meter number</span><input type="text" name="meter" value="${esc(h.meter)}"></label>
   <label class="f"><span>Shuru ki meter reading</span><input type="number" name="opening" value="${esc(h.opening)}" step="0.01"></label>
+  <label class="f"><span>Previous balance (pehle bill mein judega)</span><input type="number" name="prevBal" value="${esc(h.prevBal)}" step="1"></label>
   </div><label class="row" style="margin:4px 0 14px"><input type="checkbox" name="sold" ${h.sold ? "checked" : ""} style="width:20px;height:20px"> <b>Sold hai</b> <span class="muted">(sirf sold gharon ka bill banta hai)</span></label>
   <div class="row"><button class="btn pri">Save</button>${isNew ? "" : `<span class="sp"></span><button type="button" class="btn red" data-a="delHouse" data-id="${esc(h.id)}">Delete</button>`}</div></form>
   ${hist ? `<h3 style="margin-top:20px">Bill history</h3><table class="tbl"><tr><th>Mahina</th><th>Units</th><th>Bill</th><th>Ada</th><th></th></tr>${hist}</table>` : ""}`);
@@ -382,9 +386,9 @@ async function saveHouse(form) {
   const no = String(fd.get("no") || "").trim(); if (!no) return toast("Ghar number likhein");
   const list = S.houses.slice();
   if (list.some(x => String(x.no).toLowerCase() === no.toLowerCase() && x.id !== id)) return toast("Yeh ghar number pehle se mojood hai");
-  const rec = { no, owner: String(fd.get("owner") || "").trim(), phone: String(fd.get("phone") || "").trim(), marla: num(fd.get("marla")), meter: String(fd.get("meter") || "").trim(), opening: num(fd.get("opening")), sold: !!fd.get("sold") };
+  const rec = { no, street: String(fd.get("street") || "").trim(), code: String(fd.get("code") || "").trim(), phone2: String(fd.get("phone2") || "").trim(), prevBal: num(fd.get("prevBal")), owner: String(fd.get("owner") || "").trim(), phone: String(fd.get("phone") || "").trim(), marla: num(fd.get("marla")), meter: String(fd.get("meter") || "").trim(), opening: num(fd.get("opening")), sold: !!fd.get("sold") };
   if (id) { const i = list.findIndex(x => x.id === id); list[i] = Object.assign({}, list[i], rec); }
-  else { let nid = no.replace(/[^A-Za-z0-9_-]/g, "") || "h"; while (list.some(x => x.id === nid)) nid += "_"; list.push(Object.assign({ id: nid }, rec)); }
+  else { let nid = hidFor(no); while (list.some(x => x.id === nid)) nid += "_"; list.push(Object.assign({ id: nid }, rec)); }
   if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); toast("Save ho gaya"); }
 }
 
@@ -393,7 +397,7 @@ function readingModal(hid) {
   const h = S.houses.find(x => x.id === hid); if (!h) return;
   const m = S.readMonth, prev = prevReading(h, m), cur = readingOf(hid, m);
   const e = S.readings[m] && S.readings[m].r && S.readings[m].r[hid];
-  openModal(`<h3>Ghar # ${esc(h.no)}<button class="x" data-a="close">×</button></h3>
+  openModal(`<h3>Plot # ${esc(h.no)}<button class="x" data-a="close">×</button></h3>
   <div class="kv"><span>Maalik</span><b>${esc(h.owner || "—")}</b></div>
   <div class="kv"><span>Meter no.</span><b>${esc(h.meter || "—")}</b></div>
   <div class="kv"><span>Mahina</span><b>${mLabel(m)}</b></div>
@@ -419,7 +423,7 @@ async function saveReading(form, go) {
     else { const s = await ref.get(); if (s.exists) await ref.update({ r: { [hid]: entry } }); else await ref.set({ month: m, r: { [hid]: entry } }); }
   });
   if (!ok) return;
-  toast("Ghar # " + h.no + ": " + v + " save ho gayi");
+  toast("Plot # " + h.no + ": " + v + " save ho gayi");
   if (go === "next") {
     const sold = soldHouses(); const i = sold.findIndex(x => x.id === hid);
     const nxt = sold.slice(i + 1).concat(sold.slice(0, i)).find(x => x.id !== hid && readingOf(x.id, m) == null);
@@ -438,12 +442,13 @@ async function generateBills(m, dueDate) {
   const b = {};
   sold.forEach(h => {
     const e = ex && ex.b && ex.b[h.id]; const pb = prev && prev.b && prev.b[h.id];
-    const arrears = pb ? balance(pb) : 0;
+    const hadBill = months.some(mm => mm < m && S.bills[mm].b && S.bills[mm].b[h.id]);
+    const arrears = pb ? balance(pb) : (hadBill ? 0 : num(h.prevBal));
     const prevR = prevReading(h, m), cur = readingOf(h.id, m), noReading = cur == null;
     const units = noReading ? 0 : Math.max(0, r2(cur - prevR));
     const marlaRate = e ? num(e.marlaRate) : num(s.marlaRate), unitRate = e ? num(e.unitRate) : num(s.unitRate);
     const marlaCharge = r2(num(h.marla) * marlaRate), water = r2(units * unitRate), fine = e ? num(e.fine) : 0;
-    b[h.id] = { hid: h.id, no: h.no, owner: h.owner || "", phone: h.phone || "", marla: num(h.marla), meter: h.meter || "", marlaRate, unitRate, marlaCharge, prev: prevR, curr: noReading ? null : cur, units, water, arrears, fine, total: r2(marlaCharge + water + arrears + fine), paid: e ? num(e.paid) : 0, payments: e ? (e.payments || []) : [], noReading };
+    b[h.id] = { hid: h.id, no: h.no, street: h.street || "", code: h.code || "", owner: h.owner || "", phone: h.phone || "", marla: num(h.marla), meter: h.meter || "", marlaRate, unitRate, marlaCharge, prev: prevR, curr: noReading ? null : cur, units, water, arrears, fine, total: r2(marlaCharge + water + arrears + fine), paid: e ? num(e.paid) : 0, payments: e ? (e.payments || []) : [], noReading };
   });
   const ok = await write(async () => {
     await S.db.doc("bills/" + m).set({ month: m, generatedAt: (ex && ex.generatedAt) || new Date().toISOString(), dueDate, b });
@@ -455,7 +460,7 @@ function billModal(m, hid) {
   const bill = S.bills[m] && S.bills[m].b && S.bills[m].b[hid]; if (!bill) return;
   const s = status(bill), bal = balance(bill), isLatest = m === latestBillMonth();
   const pays = (bill.payments || []).map((p, i) => `<tr><td>${fmtDate(p.date)}</td><td>${esc(p.method)}</td><td>${money(p.amt)}</td><td>${esc(p.note || "")}</td><td>${isLatest && !bill.carried ? `<button class="btn sm red" data-a="delPay" data-m="${m}" data-id="${esc(hid)}" data-i="${i}">×</button>` : ""}</td></tr>`).join("");
-  openModal(`<h3>Ghar # ${esc(bill.no)} · ${mLabel(m)} ${badge(s)}<button class="x" data-a="close">×</button></h3>
+  openModal(`<h3>Plot # ${esc(bill.no)} · ${mLabel(m)} ${badge(s)}<button class="x" data-a="close">×</button></h3>
   <div id="bprev" class="muted" style="text-align:center;padding:30px">Bill ban raha hai…</div>
   <div class="row" style="margin:12px 0"><button class="btn pri" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">PDF download</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Image download</button><a class="btn grn" target="_blank" rel="noopener" href="${waLink(m, bill)}">WhatsApp</a></div>
   <p class="muted" style="font-size:13px;margin:0 0 12px">WhatsApp button paigham ke saath chat kholta hai; PDF ya image wahan attach kar dein.${bill.phone ? "" : " <b>Is ghar ka mobile number save nahi.</b>"}</p>
@@ -481,7 +486,7 @@ function waLink(m, b) {
 }
 function payModal(m, hid) {
   const b = S.bills[m].b[hid];
-  openModal(`<h3>Payment · Ghar # ${esc(b.no)}<button class="x" data-a="close">×</button></h3><p class="muted">Baqi: <b>${money(balance(b))}</b></p>
+  openModal(`<h3>Payment · Plot # ${esc(b.no)}<button class="x" data-a="close">×</button></h3><p class="muted">Baqi: <b>${money(balance(b))}</b></p>
   <form data-f="pay" data-m="${m}" data-id="${esc(hid)}"><div class="f2"><label class="f"><span>Raqam (Rs)</span><input type="number" name="amt" value="${Math.max(0, Math.round(balance(b)))}" min="1" step="1" required></label>
   <label class="f"><span>Tareekh</span><input type="date" name="date" value="${todayISO()}"></label>
   <label class="f"><span>Tareeqa</span><select name="method"><option>Cash</option><option>JazzCash</option><option>Bank</option><option>Easypaisa</option></select></label>
@@ -497,7 +502,7 @@ async function savePay(form) {
 }
 function fineModal(m, hid) {
   const b = S.bills[m].b[hid];
-  openModal(`<h3>Fine · Ghar # ${esc(b.no)}<button class="x" data-a="close">×</button></h3><form data-f="fine" data-m="${m}" data-id="${esc(hid)}"><label class="f"><span>Fine ki raqam (Rs) — pehle se mojood fine: ${money(b.fine)}</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" step="1" required></label><button class="btn pri">Fine add karein</button></form>`);
+  openModal(`<h3>Fine · Plot # ${esc(b.no)}<button class="x" data-a="close">×</button></h3><form data-f="fine" data-m="${m}" data-id="${esc(hid)}"><label class="f"><span>Fine ki raqam (Rs) — pehle se mojood fine: ${money(b.fine)}</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" step="1" required></label><button class="btn pri">Fine add karein</button></form>`);
 }
 async function setFine(m, hid, fine) {
   const b = S.bills[m].b[hid]; fine = Math.max(0, r2(fine));
@@ -525,30 +530,31 @@ async function billCanvas(m, b) {
   const any = (t, px, y, size, o = {}) => isUr(t) ? ur(t, px, y, size, o) : en(t, px, y, size, Object.assign({}, o, { align: o.align === "right" ? "right" : o.align === "center" ? "center" : "left" }));
   const rs = n => "Rs " + (Math.round(n) || 0).toLocaleString("en-PK");
   // header
-  x.fillStyle = P; x.fillRect(0, 0, W, 250);
-  any(s.nameUr || s.name, W / 2, 85, 62, { bold: true, color: "#fff", align: "center" });
-  ur("پانی و مینٹیننس بل", W / 2, 170, 36, { color: "#d8efe9", align: "center" });
-  if (s.address) any(s.address, W / 2, 222, 22, { color: "#bfe0d8", align: "center" });
+  x.fillStyle = P; x.fillRect(0, 0, W, 220);
+  any(s.nameUr || s.name, W / 2, 75, 60, { bold: true, color: "#fff", align: "center" });
+  ur("پانی و مینٹیننس بل", W / 2, 150, 34, { color: "#d8efe9", align: "center" });
+  if (s.address) any(s.address, W / 2, 198, 22, { color: "#bfe0d8", align: "center" });
   // info box
-  let y = 300; x.strokeStyle = "#d5dedb"; x.lineWidth = 2; x.strokeRect(L, y - 30, W - 2 * L, 260);
+  let y = 262; x.strokeStyle = "#d5dedb"; x.lineWidth = 2; x.strokeRect(L, y - 22, W - 2 * L, 300);
   const kv = (label, val, right, yy) => { const w = ur(label, right, yy, 28, { color: "#5b6b66" }); any(String(val), right - w - 18, yy, 30, { bold: true, align: "right" }); };
-  kv("مکان نمبر:", b.no, R - 30, y + 25); kv("بل برائے:", mUr(m), W / 2 - 20, y + 25);
-  kv("مالک:", b.owner || "-", R - 30, y + 105); kv("جاری ہونے کی تاریخ:", fmtDate((doc.generatedAt || "").slice(0, 10)), W / 2 - 20, y + 105);
-  kv("رقبہ:", b.marla + " مرلہ", R - 30, y + 185); kv("میٹر نمبر:", b.meter || "-", W / 2 - 20, y + 185);
+  kv("پلاٹ نمبر:", b.no, R - 30, y + 18); kv("بل برائے:", mUr(m), W / 2 - 20, y + 18);
+  kv("مالک:", b.owner || "-", R - 30, y + 88); kv("جاری ہونے کی تاریخ:", fmtDate((doc.generatedAt || "").slice(0, 10)), W / 2 - 20, y + 88);
+  kv("رقبہ:", b.marla + " مرلہ", R - 30, y + 158); kv("گلی نمبر:", b.street || "-", W / 2 - 20, y + 158);
+  kv("صارف کوڈ:", b.code || "-", R - 30, y + 228); kv("میٹر نمبر:", b.meter || "-", W / 2 - 20, y + 228);
   // table
-  y = 610;
+  y = 590;
   x.fillStyle = P; x.fillRect(L, y, W - 2 * L, 70);
   ur("تفصیل", R - 25, y + 36, 30, { bold: true, color: "#fff" }); ur("رقم", L + 25, y + 36, 30, { bold: true, color: "#fff", align: "left" });
   y += 70;
   const row = (label, amt, o = {}) => {
-    const h = o.h || 74; if (o.bg) { x.fillStyle = o.bg; x.fillRect(L, y, W - 2 * L, h); }
+    const h = o.h || 68; if (o.bg) { x.fillStyle = o.bg; x.fillRect(L, y, W - 2 * L, h); }
     ur(label, R - 25, y + h / 2, o.size || 29, { bold: o.bold, color: o.color });
     if (amt !== null && amt !== undefined) en(rs(amt), L + 25, y + h / 2, o.size || 29, { bold: true, color: o.color });
     if (o.sub) { ur(o.sub, R - 25, y + h - 2, 21, { color: "#6a7a75" }); }
     x.strokeStyle = "#e2e8e6"; x.lineWidth = 1.5; x.beginPath(); x.moveTo(L, y + h); x.lineTo(W - L, y + h); x.stroke(); y += h;
   };
-  { const yy = y; row("مرلہ چارجز", b.marlaCharge); x.save(); x.font = "400 29px " + UR; const w = x.measureText("مرلہ چارجز").width; x.restore(); en("(" + b.marla + " × " + b.marlaRate + ")", R - 25 - w - 16, yy + 37, 25, { align: "right", color: "#5b6b66" }); }
-  row("پانی کا بل", b.water, { h: 74 });
+  { const yy = y; row("مرلہ چارجز", b.marlaCharge); x.save(); x.font = "400 29px " + UR; const w = x.measureText("مرلہ چارجز").width; x.restore(); en("(" + b.marla + " × " + b.marlaRate + ")", R - 25 - w - 16, yy + 34, 25, { align: "right", color: "#5b6b66" }); }
+  row("پانی کا بل", b.water);
   // reading detail line
   x.fillStyle = "#f6f9f8"; x.fillRect(L, y, W - 2 * L, 64);
   if (b.noReading) ur("اس ماہ کی ریڈنگ دستیاب نہیں — یونٹس اگلے بل میں شامل ہوں گے", R - 25, y + 32, 23, { color: "#8a5a00" });
@@ -560,7 +566,7 @@ async function billCanvas(m, b) {
   const arr = num(b.arrears);
   row(arr < 0 ? "پیشگی ادائیگی (منہا)" : "سابقہ بقایا", arr);
   row("جرمانہ", num(b.fine));
-  row("کل واجب الادا رقم", b.total, { bg: "#e5f1ee", bold: true, size: 34, h: 86, color: P });
+  row("کل واجب الادا رقم", b.total, { bg: "#e5f1ee", bold: true, size: 34, h: 82, color: P });
   if (num(b.paid) > 0) { row("ادا شدہ رقم", b.paid, { color: "#1b7a3d" }); row("باقی رقم", balance(b), { bold: true, color: "#b3261e" }); }
   // due
   y += 24;
@@ -570,12 +576,12 @@ async function billCanvas(m, b) {
   y += 110;
   // payment section
   ur("ادائیگی کے طریقے", R, y + 20, 34, { bold: true, color: P }); y += 70;
-  const qr = await loadImg(s.qr); const qs = 300;
+  const qr = await loadImg(s.qr); const qs = 270;
   const lines = [];
   if (s.jazzNumber) { lines.push(["جیز کیش نمبر:", s.jazzNumber]); if (s.jazzTitle) lines.push(["اکاؤنٹ ٹائٹل:", s.jazzTitle]); }
   if (s.bankName || s.bankAcc) { lines.push(["بینک:", s.bankName || "-"]); if (s.bankTitle) lines.push(["اکاؤنٹ ٹائٹل:", s.bankTitle]); if (s.bankAcc) lines.push(["اکاؤنٹ نمبر:", s.bankAcc]); if (s.iban) lines.push(["IBAN:", s.iban]); }
   if (!lines.length) lines.push(["رابطہ کریں:", s.phone || "-"]);
-  let ly = y + 10; lines.forEach(([l, v]) => { const w = isUr(l) ? ur(l, R, ly, 26, { color: "#5b6b66" }) : en(l, R, ly, 24, { color: "#5b6b66", align: "right" }); any(String(v), R - w - 16, ly, 28, { bold: true, align: "right" }); ly += 54; });
+  let ly = y + 10; lines.forEach(([l, v]) => { const w = isUr(l) ? ur(l, R, ly, 26, { color: "#5b6b66" }) : en(l, R, ly, 24, { color: "#5b6b66", align: "right" }); any(String(v), R - w - 16, ly, 28, { bold: true, align: "right" }); ly += 50; });
   if (qr) { const sc = Math.min(qs / qr.width, qs / qr.height); const dw = qr.width * sc, dh = qr.height * sc; x.drawImage(qr, L + (qs - dw) / 2, y - 10 + (qs - dh) / 2, dw, dh); x.strokeStyle = "#d5dedb"; x.strokeRect(L - 6, y - 16, qs + 12, qs + 12); ur("QR کوڈ اسکین کریں", L + qs / 2, y + qs + 30, 22, { color: "#5b6b66", align: "center" }); }
   // stamp
   if (balance(b) <= 0) { x.save(); x.translate(W - 300, 1000); x.rotate(-0.25); x.strokeStyle = "rgba(27,122,61,.75)"; x.lineWidth = 6; x.strokeRect(-130, -55, 260, 110); ur("ادا شدہ", 0, 0, 52, { bold: true, color: "rgba(27,122,61,.8)", align: "center" }); x.restore(); }
@@ -620,6 +626,59 @@ async function pdfFor(m, list, name) {
   $("#pdfsave").onclick = () => saveFile(name, blob);
 }
 
+function hidFor(no) { return String(no).replace(/\./g, "-").replace(/[^A-Za-z0-9_-]/g, "") || "h"; }
+function cleanName(n) { n = String(n ?? "").replace(/\s+/g, " ").trim(); const w = n.split(" "); if (w.length === 2 && w[0].toLowerCase() === w[1].toLowerCase()) n = w[0]; return n; }
+function plotStr(v) { if (typeof v === "number") return v.toFixed(2); return String(v ?? "").trim(); }
+let xlsxP = null;
+function loadXlsx() { if (window.XLSX) return Promise.resolve(window.XLSX); if (!xlsxP) xlsxP = new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; sc.onload = () => res(window.XLSX); sc.onerror = () => { xlsxP = null; rej(new Error("load")); }; document.head.appendChild(sc); }); return xlsxP; }
+function parseProfile(rows) {
+  // find header row with a PLOT column
+  let hi = rows.findIndex(r => r.some(c => /plot/i.test(String(c || ""))));
+  if (hi < 0) return null;
+  const hd = rows[hi].map(c => String(c || "").toLowerCase().replace(/[^a-z0-9]/g, ""));
+  const col = (...keys) => hd.findIndex(h => keys.some(k => h === k || h.startsWith(k)));
+  const ci = { no: col("plotname", "plotno", "plot"), street: col("street"), area: col("area", "marla"), code: col("subscode", "code"), owner: col("owner", "name"), phone: col("mobile1", "mobile", "phone"), phone2: col("mobile2"), bal: col("previousbalance", "prevbalance", "balance"), meter: col("meter"), opening: col("openingreading", "reading") };
+  if (ci.no < 0) return null;
+  const out = [];
+  for (const r of rows.slice(hi + 1)) {
+    const no = plotStr(r[ci.no]); if (!no) continue;
+    const g = k => ci[k] >= 0 ? r[ci[k]] : "";
+    let ph = String(g("phone") ?? "").trim(), ph2 = String(g("phone2") ?? "").trim();
+    const parts = ph.split(/\s+(?=\d)/); if (parts.length > 1 && !ph2) { ph = parts[0]; ph2 = parts.slice(1).join(" "); }
+    out.push({ no, street: String(g("street") ?? "").trim(), marla: num(g("area")), code: String(g("code") ?? "").trim(), owner: cleanName(g("owner")), phone: ph, phone2: ph2, prevBal: num(g("bal")), meter: String(g("meter") ?? "").trim(), opening: num(g("opening")) });
+  }
+  return out;
+}
+async function importExcel(file) {
+  openModal(`<h3>Excel parh rahe hain…</h3>`);
+  let X; try { X = await loadXlsx(); } catch (e) { openModal(`<h3>Excel reader load nahi hua<button class="x" data-a="close">×</button></h3><p>Internet check kar ke dobara koshish karein.</p>`); return; }
+  const wb = X.read(await file.arrayBuffer(), { type: "array" });
+  let rows = null, sheet = "";
+  for (const n of wb.SheetNames) { const r = X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: "" }); const p = parseProfile(r); if (p && p.length) { rows = p; sheet = n; break; } }
+  if (!rows) { openModal(`<h3>Data nahi mila<button class="x" data-a="close">×</button></h3><p>Excel mein "PLOT NAME", "AREA", "Owner", "MOBILE 1" wale columns hone chahiye.</p>`); return; }
+  const byNo = new Map(S.houses.map(h => [String(h.no), h]));
+  const nNew = rows.filter(r => !byNo.has(r.no)).length;
+  S.pendingImport = rows;
+  openModal(`<h3>Excel import<button class="x" data-a="close">×</button></h3>
+  <p>Sheet <b>${esc(sheet)}</b> se <b>${rows.length}</b> plot mile: ${rows.length - nNew} pehle se list mein (update honge), ${nNew} naye.</p>
+  <label class="row" style="margin-bottom:8px"><input type="radio" name="imode" value="merge" checked> Merge: Excel wale plot update/add, baqi list waise hi</label>
+  <label class="row" style="margin-bottom:14px"><input type="radio" name="imode" value="replace"> Replace: purani list hata kar sirf Excel ke plot rakhen</label>
+  <p class="muted" style="font-size:13px">Excel ke sab plot "Sold" mark honge. Bills aur readings pe asar nahi hoga.</p>
+  <button class="btn pri" data-a="importGo">Import karein</button>`);
+}
+async function applyImport(mode) {
+  const rows = S.pendingImport || []; if (!rows.length) return;
+  let list = mode === "replace" ? [] : S.houses.map(h => Object.assign({}, h));
+  rows.forEach(r => {
+    const i = list.findIndex(h => String(h.no) === r.no);
+    const rec = { no: r.no, street: r.street, marla: r.marla, code: r.code, owner: r.owner, phone: r.phone, phone2: r.phone2, prevBal: r.prevBal, sold: true };
+    if (r.meter) rec.meter = r.meter; if (r.opening) rec.opening = r.opening;
+    if (i >= 0) list[i] = Object.assign({}, list[i], rec);
+    else { const old = S.houses.find(h => String(h.no) === r.no); let id = old ? old.id : hidFor(r.no); while (list.some(h => h.id === id)) id += "_"; list.push(Object.assign({ id, meter: "", opening: 0 }, rec)); }
+  });
+  if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); S.pendingImport = null; toast(rows.length + " plots import ho gaye"); }
+}
+
 /* ============ events ============ */
 document.addEventListener("click", async e => {
   const t = e.target.closest("[data-a]"); if (!t) return;
@@ -635,8 +694,10 @@ document.addEventListener("click", async e => {
     case "toAdmin": S.mode = "admin"; render(true); break;
     case "logout": ss("rg_mode", null); S.mode = "pin"; render(true); break;
     case "addHouse": houseModal(null); break;
+    case "importXl": { const fi = document.createElement("input"); fi.type = "file"; fi.accept = ".xlsx,.xlsm,.xls,.csv"; fi.onchange = () => { if (fi.files[0]) importExcel(fi.files[0]); }; fi.click(); break; }
+    case "importGo": { const md = (document.querySelector("input[name=imode]:checked") || {}).value || "merge"; if (md === "replace" && !(await ask("Purani list hatayen?", "Jo plot Excel mein nahi, woh list se hat jayenge.", "Replace", true))) break; applyImport(md); break; }
     case "editHouse": houseModal(S.houses.find(h => h.id === id)); break;
-    case "delHouse": { const h = S.houses.find(x => x.id === id); if (await ask("Ghar delete karein?", "Ghar # " + esc(h.no) + " list se hat jayega. Purane bills mehfooz rahenge.", "Delete", true)) { if (await write(() => S.db.doc("society/houses").set({ list: S.houses.filter(x => x.id !== id) }))) toast("Delete ho gaya"); } break; }
+    case "delHouse": { const h = S.houses.find(x => x.id === id); if (await ask("Ghar delete karein?", "Plot # " + esc(h.no) + " list se hat jayega. Purane bills mehfooz rahenge.", "Delete", true)) { if (await write(() => S.db.doc("society/houses").set({ list: S.houses.filter(x => x.id !== id) }))) toast("Delete ho gaya"); } break; }
     case "bulkSold": openModal(`<h3>Kai ghar Sold karein<button class="x" data-a="close">×</button></h3><form data-f="bulkSold"><label class="f"><span>Ghar number (maslan 1-50, 61, 70-80)</span><textarea name="nos" rows="3"></textarea></label><label class="row" style="margin-bottom:12px"><input type="radio" name="v" value="1" checked> Sold &nbsp; <input type="radio" name="v" value="0"> Unsold</label><button class="btn pri">Apply</button></form>`); break;
     case "reading": readingModal(id); break;
     case "delReading": { if (await ask("Reading hatayen?", "Is ghar ki is mahine ki reading delete ho jayegi.", "Hatayen", true)) { const d = S.readings[S.readMonth]; const r = Object.assign({}, d.r); delete r[id]; if (await write(() => S.db.doc("readings/" + S.readMonth).set({ month: S.readMonth, r }))) toast("Reading hat gayi"); } break; }
