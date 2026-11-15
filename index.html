@@ -138,12 +138,26 @@ label.f>span{display:block;font-size:13px;color:var(--mute);margin-bottom:5px;fo
 .prevbox b{font-size:20px}
 .reader main{padding-bottom:calc(30px + var(--sab))}
 @media(min-width:900px){.reader .appbar.mob{display:flex}.reader main{max-width:720px}}
+#printArea{display:none}
+@media print{
+  body>*:not(#printArea){display:none!important}
+  html,body{background:#fff!important;margin:0;padding:0}
+  #printArea{display:block}
+  .pp{break-after:page;page-break-after:always;overflow:hidden}
+  .pp:last-child{break-after:auto;page-break-after:auto}
+  .pp.one{width:210mm;height:296mm}
+  .pp.one img{width:210mm;height:296mm;object-fit:contain;display:block}
+  .pp.two{width:297mm;height:209mm;display:flex}
+  .pp.two img{width:148.5mm;height:209mm;object-fit:contain;display:block;box-sizing:border-box}
+  .pp.two img:first-child{border-right:0.3mm dashed #999}
+}
 </style>
 </head>
 <body>
 <div id="app"><div class="boot">Loading…</div></div>
 <div id="modal" class="modal hidden"><div class="sheet" id="sheet"></div></div>
 <div id="toast"></div>
+<div id="printArea"></div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -549,7 +563,7 @@ function vBills() {
   return sel + `<div class="grid"><div class="stat"><span>Total billed (${rows.length})</span><b>${money(billed)}</b></div><div class="stat"><span>Collected</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="stat"><span>Outstanding</span><b style="color:var(--red)">${money(pend)}</b></div><div class="stat"><span>Due date</span><b>${fmtDate(bill.dueDate)}</b></div></div>
   ${isLatest && (changed || newSold) ? `<div class="note">${changed ? changed + " reading(s) changed after these bills were generated. " : ""}${newSold ? newSold + " newly sold plot(s) are not in this bill run. " : ""}Tap "Regenerate" — payments and fines are kept.</div>` : ""}
   ${!isLatest ? `<div class="info">This is an older bill run. Its balances have been carried into the next month's bills; record payments there.</div>` : ""}
-  <div class="actions"><button class="btn" data-a="pdfAll">All bills (PDF)</button><button class="btn" data-a="pdfPending">Unpaid bills (PDF)</button>${isLatest ? `<button class="btn" data-a="bulkFine">Fine all unpaid</button><button class="btn" data-a="regen">Regenerate</button>` : ""}</div>
+  <div class="actions"><button class="btn pri" data-a="printAll">Print all (2 per A4)</button><button class="btn" data-a="printPending">Print unpaid (2 per A4)</button><button class="btn" data-a="pdfAll">All bills (PDF)</button><button class="btn" data-a="pdfPending">Unpaid bills (PDF)</button>${isLatest ? `<button class="btn" data-a="bulkFine">Fine all unpaid</button><button class="btn" data-a="regen">Regenerate</button>` : ""}</div>
   <div class="toolbar"><input id="q" type="search" placeholder="Search plot no. or name…" value="${esc(S.q)}"><div class="chips">${[["all", "All"], ["unpaid", "Unpaid"], ["paid", "Paid"]].map(([k, t]) => `<button class="chip ${f === k ? "on" : ""}" data-a="bf" data-v="${k}">${t}</button>`).join("")}</div></div>
   <div class="list">${list.map(b => `<div class="item" data-a="bill" data-m="${m}" data-id="${esc(b.hid)}"><div class="hno">${esc(b.no)}</div><div class="m"><b>${esc(b.owner || "—")}</b><small>Marla ${money(b.marlaCharge)} · Water ${money(b.water)} (${b.units} u)${num(b.arrears) ? " · Arrears " + money(b.arrears) : ""}${num(b.fine) ? " · Fine " + money(b.fine) : ""}${b.noReading ? " · no reading" : ""}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>`).join("") || `<div class="empty">No bills</div>`}</div>`;
 }
@@ -704,7 +718,7 @@ function residentBillModal(m) {
   openModal(`<h3>${mLabel(m)} bill ${badge(status(bill))}<button class="x" data-a="close">×</button></h3>
   <div class="kv"><span>Total bill</span><b>${money(bill.total)}</b></div><div class="kv"><span>Paid</span><b style="color:var(--grn)">${money(bill.paid)}</b></div><div class="kv"><span>Balance</span><b>${money(Math.max(0, balance(bill)))}</b></div>
   ${bill.carried ? `<div class="info" style="margin-top:12px">This balance was carried into your ${mLabel(bill.carriedTo)} bill.</div>` : ""}
-  <div class="actions" style="margin-top:12px"><button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(h.id)}">Download PDF</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(h.id)}">Download image</button>${!bill.carried && balance(bill) > 0 ? `<button class="btn pri" data-a="payNow">Pay now</button>` : ""}</div>
+  <div class="actions" style="margin-top:12px"><button class="btn" data-a="print1" data-m="${m}" data-id="${esc(h.id)}">Print</button><button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(h.id)}">Download PDF</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(h.id)}">Download image</button>${!bill.carried && balance(bill) > 0 ? `<button class="btn pri" data-a="payNow">Pay now</button>` : ""}</div>
   ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th></tr>${pays}</table>` : ""}
   <div id="bprev" class="muted" style="text-align:center;padding:30px">Preparing bill…</div>`, true);
   billCanvas(m, bill).then(c => { const el = $("#bprev"); if (el) el.outerHTML = `<img class="preview" id="bimg" src="${c.toDataURL("image/jpeg", 0.85)}" alt="Bill">`; }).catch(e => console.error(e));
@@ -858,7 +872,7 @@ function billModal(m, hid) {
   <div class="kv"><span>Total bill</span><b>${money(bill.total)}</b></div><div class="kv"><span>Paid</span><b style="color:var(--grn)">${money(bill.paid)}</b></div><div class="kv"><span>Balance</span><b style="color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(bal)}</b></div>
   ${bill.carried ? `<div class="info" style="margin-top:12px">This balance has been carried into the ${mLabel(bill.carriedTo)} bill. Record payments there. <button class="btn sm" data-a="bill" data-m="${bill.carriedTo}" data-id="${esc(hid)}">Open ${mLabel(bill.carriedTo)} bill</button></div>` : ""}
   ${isLatest && !bill.carried ? `<div class="actions" style="margin-top:14px"><button class="btn pri" data-a="pay" data-m="${m}" data-id="${esc(hid)}">Record payment</button><button class="btn" data-a="fine" data-m="${m}" data-id="${esc(hid)}">Add fine</button>${num(bill.fine) ? `<button class="btn red" data-a="unfine" data-m="${m}" data-id="${esc(hid)}">Remove fine</button>` : ""}</div>` : ""}
-  <div class="actions" style="margin-top:6px"><button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">Download PDF</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Download image</button><a class="btn grn" target="_blank" rel="noopener" href="${waLink(m, bill)}">Send on WhatsApp</a></div>
+  <div class="actions" style="margin-top:6px"><button class="btn" data-a="print1" data-m="${m}" data-id="${esc(hid)}">Print</button><button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">Download PDF</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Download image</button><a class="btn grn" target="_blank" rel="noopener" href="${waLink(m, bill)}">Send on WhatsApp</a></div>
   <p class="muted" style="font-size:13px;margin:0 0 12px">WhatsApp opens the chat with the bill message; attach the PDF or image there.${bill.phone ? "" : " <b>No mobile number is saved for this plot.</b>"}</p>
   ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th><th>Note</th><th></th></tr>${pays}</table>` : ""}
   <div id="bprev" class="muted" style="text-align:center;padding:30px">Preparing bill…</div>`, true);
@@ -1016,6 +1030,27 @@ async function pdfFor(m, list, name) {
   $("#pdfsave").onclick = () => saveFile(name, blob);
 }
 
+/* ============ printing ============ */
+async function printBills(m, list, perPage) {
+  if (!list.length) return toast("No bills to print");
+  const multi = list.length > 1;
+  if (multi) openModal(`<h3>Preparing for print…</h3><div class="bar"><i id="pbar" style="width:0"></i></div><p class="muted" id="ptxt">0 / ${list.length}</p>`);
+  const urls = [];
+  for (let i = 0; i < list.length; i++) {
+    const c = await billCanvas(m, list[i]); urls.push(c.toDataURL("image/jpeg", 0.9));
+    const pb = $("#pbar"); if (pb) { pb.style.width = ((i + 1) / list.length * 100) + "%"; $("#ptxt").textContent = (i + 1) + " / " + list.length; }
+  }
+  const pa = $("#printArea"); let html = "";
+  for (let i = 0; i < urls.length; i += perPage) html += `<div class="pp ${perPage === 2 ? "two" : "one"}">${urls.slice(i, i + perPage).map(u => `<img src="${u}" alt="">`).join("")}</div>`;
+  pa.innerHTML = html;
+  let ps = $("#pageSize"); if (!ps) { ps = document.createElement("style"); ps.id = "pageSize"; document.head.appendChild(ps); }
+  ps.textContent = perPage === 2 ? "@page{size:A4 landscape;margin:0}" : "@page{size:A4 portrait;margin:0}";
+  await Promise.all([...pa.querySelectorAll("img")].map(im => im.decode ? im.decode().catch(() => { }) : null));
+  if (multi) closeModal();
+  setTimeout(() => window.print(), 50);
+}
+window.addEventListener("afterprint", () => { const pa = $("#printArea"); if (pa) pa.innerHTML = ""; });
+
 /* ============ Excel import ============ */
 function hidFor(no) { return String(no).replace(/\./g, "-").replace(/[^A-Za-z0-9_-]/g, "") || "h"; }
 function cleanName(n) { n = String(n ?? "").replace(/\s+/g, " ").trim(); const w = n.split(" "); if (w.length === 2 && w[0].toLowerCase() === w[1].toLowerCase()) n = w[0]; return n; }
@@ -1117,6 +1152,8 @@ document.addEventListener("click", async e => {
     case "delPay": { if (!(await ask("Delete this payment?", "This payment record will be removed.", "Delete", true))) { billModal(m, id); break; } const b = S.bills[m].b[id]; const payments = (b.payments || []).filter((_, i) => i !== +t.dataset.i); const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0)); if (await write(() => D.updateBill(m, id, { payments, paid }))) toast("Payment deleted"); setTimeout(() => billModal(m, id), 150); break; }
     case "bulkFine": { const mm = S.billMonth, bill = S.bills[mm]; const list = Object.values(bill.b).filter(b => balance(b) > 0 && !num(b.fine)); if (!list.length) { toast("No unpaid bills without a fine"); break; } openModal(`<h3>Fine all unpaid bills<button class="x" data-a="close">×</button></h3><p>A fine will be added to ${list.length} unpaid bill(s) that don't have one yet.</p><form data-f="bulkFine"><label class="f"><span>Fine (Rs)</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" required></label><button class="btn pri block">Apply</button></form>`); break; }
     case "pdf1": case "img1": { const b = S.bills[m].b[id]; t.disabled = true; const c = await billCanvas(m, b); t.disabled = false; const fn = "Bill-" + b.no + "-" + m; if (a === "img1") c.toBlob(bl => saveFile(fn + ".jpg", bl), "image/jpeg", 0.9); else saveFile(fn + ".pdf", makePdf([await canvasJpeg(c)])); break; }
+    case "print1": { const b = S.bills[m].b[id]; t.disabled = true; await printBills(m, [b], 1); t.disabled = false; break; }
+    case "printAll": case "printPending": { const mm = S.billMonth; let list = Object.values(S.bills[mm].b).sort((x, y) => hsort({ no: x.no }, { no: y.no })); if (a === "printPending") list = list.filter(b => balance(b) > 0); printBills(mm, list, 2); break; }
     case "pdfAll": case "pdfPending": { const mm = S.billMonth; let list = Object.values(S.bills[mm].b).sort((x, y) => hsort({ no: x.no }, { no: y.no })); if (a === "pdfPending") list = list.filter(b => balance(b) > 0); pdfFor(mm, list, (a === "pdfAll" ? "Bills-" : "Unpaid-Bills-") + mm + ".pdf"); break; }
     case "qrdel": if (await write(() => D.saveSettings(Object.assign({}, st(), { qr: "" })))) toast("QR removed"); break;
     case "backup": { const data = { exportedAt: new Date().toISOString(), settings: Object.assign({}, S.settings, { qr: S.settings && S.settings.qr ? "(image)" : "" }), houses: S.houses, readings: S.readings, bills: S.bills }; saveFile("royal-garden-backup-" + todayISO() + ".json", JSON.stringify(data, null, 1)); break; }
