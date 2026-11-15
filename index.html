@@ -563,9 +563,9 @@ function vBills() {
   return sel + `<div class="grid"><div class="stat"><span>Total billed (${rows.length})</span><b>${money(billed)}</b></div><div class="stat"><span>Collected</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="stat"><span>Outstanding</span><b style="color:var(--red)">${money(pend)}</b></div><div class="stat"><span>Due date</span><b>${fmtDate(bill.dueDate)}</b></div></div>
   ${isLatest && (changed || newSold) ? `<div class="note">${changed ? changed + " reading(s) changed after these bills were generated. " : ""}${newSold ? newSold + " newly sold plot(s) are not in this bill run. " : ""}Tap "Regenerate" — payments and fines are kept.</div>` : ""}
   ${!isLatest ? `<div class="info">This is an older bill run. Its balances have been carried into the next month's bills; record payments there.</div>` : ""}
-  <div class="actions"><button class="btn pri" data-a="printAll">Print all (2 per A4)</button><button class="btn" data-a="printPending">Print unpaid (2 per A4)</button><button class="btn" data-a="pdfAll">All bills (PDF)</button><button class="btn" data-a="pdfPending">Unpaid bills (PDF)</button>${isLatest ? `<button class="btn" data-a="bulkFine">Fine all unpaid</button><button class="btn" data-a="regen">Regenerate</button>` : ""}</div>
+  <div class="actions"><button class="btn grn" data-a="waPick">Send on WhatsApp…</button><button class="btn pri" data-a="printAll">Print all (2 per A4)</button><button class="btn" data-a="printPending">Print unpaid (2 per A4)</button><button class="btn" data-a="pdfAll">All bills (PDF)</button><button class="btn" data-a="pdfPending">Unpaid bills (PDF)</button>${isLatest ? `<button class="btn" data-a="bulkFine">Fine all unpaid</button><button class="btn" data-a="regen">Regenerate</button>` : ""}</div>
   <div class="toolbar"><input id="q" type="search" placeholder="Search plot no. or name…" value="${esc(S.q)}"><div class="chips">${[["all", "All"], ["unpaid", "Unpaid"], ["paid", "Paid"]].map(([k, t]) => `<button class="chip ${f === k ? "on" : ""}" data-a="bf" data-v="${k}">${t}</button>`).join("")}</div></div>
-  <div class="list">${list.map(b => `<div class="item" data-a="bill" data-m="${m}" data-id="${esc(b.hid)}"><div class="hno">${esc(b.no)}</div><div class="m"><b>${esc(b.owner || "—")}</b><small>Marla ${money(b.marlaCharge)} · Water ${money(b.water)} (${b.units} u)${num(b.arrears) ? " · Arrears " + money(b.arrears) : ""}${num(b.fine) ? " · Fine " + money(b.fine) : ""}${b.noReading ? " · no reading" : ""}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>`).join("") || `<div class="empty">No bills</div>`}</div>`;
+  <div class="list">${list.map(b => `<div class="item" data-a="bill" data-m="${m}" data-id="${esc(b.hid)}"><div class="hno">${esc(b.no)}</div><div class="m"><b>${esc(b.owner || "—")}</b><small>Marla ${money(b.marlaCharge)} · Water ${money(b.water)} (${b.units} u)${num(b.arrears) ? " · Arrears " + money(b.arrears) : ""}${num(b.fine) ? " · Fine " + money(b.fine) : ""}${b.noReading ? " · no reading" : ""}${b.waSentAt ? " · ✓ sent on WhatsApp" : ""}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>`).join("") || `<div class="empty">No bills</div>`}</div>`;
 }
 
 /* ---- Pending ---- */
@@ -872,8 +872,8 @@ function billModal(m, hid) {
   <div class="kv"><span>Total bill</span><b>${money(bill.total)}</b></div><div class="kv"><span>Paid</span><b style="color:var(--grn)">${money(bill.paid)}</b></div><div class="kv"><span>Balance</span><b style="color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(bal)}</b></div>
   ${bill.carried ? `<div class="info" style="margin-top:12px">This balance has been carried into the ${mLabel(bill.carriedTo)} bill. Record payments there. <button class="btn sm" data-a="bill" data-m="${bill.carriedTo}" data-id="${esc(hid)}">Open ${mLabel(bill.carriedTo)} bill</button></div>` : ""}
   ${isLatest && !bill.carried ? `<div class="actions" style="margin-top:14px"><button class="btn pri" data-a="pay" data-m="${m}" data-id="${esc(hid)}">Record payment</button><button class="btn" data-a="fine" data-m="${m}" data-id="${esc(hid)}">Add fine</button>${num(bill.fine) ? `<button class="btn red" data-a="unfine" data-m="${m}" data-id="${esc(hid)}">Remove fine</button>` : ""}</div>` : ""}
-  <div class="actions" style="margin-top:6px"><button class="btn" data-a="print1" data-m="${m}" data-id="${esc(hid)}">Print</button><button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">Download PDF</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Download image</button><a class="btn grn" target="_blank" rel="noopener" href="${waLink(m, bill)}">Send on WhatsApp</a></div>
-  <p class="muted" style="font-size:13px;margin:0 0 12px">WhatsApp opens the chat with the bill message; attach the PDF or image there.${bill.phone ? "" : " <b>No mobile number is saved for this plot.</b>"}</p>
+  <div class="actions" style="margin-top:6px"><button class="btn" data-a="print1" data-m="${m}" data-id="${esc(hid)}">Print</button><button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">Download PDF</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Download image</button><button class="btn grn" data-a="waOne" data-m="${m}" data-id="${esc(hid)}">Send picture on WhatsApp</button></div>
+  ${bill.phone ? "" : `<p class="muted" style="font-size:13px;margin:0 0 12px"><b>No mobile number is saved for this plot.</b></p>`}
   ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th><th>Note</th><th></th></tr>${pays}</table>` : ""}
   <div id="bprev" class="muted" style="text-align:center;padding:30px">Preparing bill…</div>`, true);
   billCanvas(m, bill).then(c => { const el = $("#bprev"); if (el) { el.outerHTML = `<img class="preview" id="bimg" src="${c.toDataURL("image/jpeg", 0.85)}" alt="Bill">`; } }).catch(e => { console.error(e); const el = $("#bprev"); if (el) el.textContent = "Could not draw the bill"; });
@@ -1030,6 +1030,67 @@ async function pdfFor(m, list, name) {
   $("#pdfsave").onclick = () => saveFile(name, blob);
 }
 
+/* ============ WhatsApp picture sending ============ */
+const isTouch = () => matchMedia("(pointer:coarse)").matches;
+const canShareFiles = () => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([new Blob(["x"], { type: "image/jpeg" })], "t.jpg", { type: "image/jpeg" })] })); } catch (e) { return false; } };
+function chatUrl(phone) { const p = waPhone(phone); if (!p) return ""; return isTouch() ? "https://wa.me/" + p : "https://web.whatsapp.com/send?phone=" + p; }
+function caption(m, b) { const s = st(); return `${s.name} — ${mLabel(m)} bill, Plot ${b.no}: ${money(b.total)}${num(b.paid) ? " (balance " + money(Math.max(0, balance(b))) + ")" : ""}. Due ${fmtDate((S.bills[m] || {}).dueDate)}.`; }
+function waPickModal() {
+  const m = S.billMonth, rows = Object.values(S.bills[m].b).sort((x, y) => hsort({ no: x.no }, { no: y.no }));
+  const opts = rows.map((b, i) => `<option value="${i}">${esc(b.no)} — ${esc(b.owner || "")}</option>`).join("");
+  const nSent = rows.filter(b => b.waSentAt).length, nUnpaid = rows.filter(b => balance(b) > 0).length, nPhone = rows.filter(b => waPhone(b.phone)).length;
+  openModal(`<h3>Send bills on WhatsApp · ${mLabel(m)}<button class="x" data-a="close">×</button></h3>
+  <p class="muted" style="margin-top:0">${rows.length} bills · ${nPhone} have a mobile number · ${nSent} already sent</p>
+  <form data-f="waPick">
+  <label class="toggle"><input type="radio" name="mode" value="all" checked><span><b>All bills</b><small>In plot order (serial)</small></span></label>
+  <label class="toggle"><input type="radio" name="mode" value="notsent"><span><b>Not sent yet</b><small>${rows.length - nSent} bills</small></span></label>
+  <label class="toggle"><input type="radio" name="mode" value="unpaid"><span><b>Unpaid only</b><small>${nUnpaid} bills</small></span></label>
+  <label class="toggle"><input type="radio" name="mode" value="range"><span><b>From plot … to plot</b><small>Everything between the two plots, in order</small></span></label>
+  <div class="f2" style="margin:4px 0 6px 34px"><label class="f"><span>From</span><select name="from">${opts}</select></label><label class="f"><span>To</span><select name="to">${rows.map((b, i) => `<option value="${i}" ${i === rows.length - 1 ? "selected" : ""}>${esc(b.no)} — ${esc(b.owner || "")}</option>`).join("")}</select></label></div>
+  <label class="toggle"><input type="radio" name="mode" value="custom"><span><b>Choose plots</b><small>Any plots, e.g. 1.02, 4.10, 11.15</small></span></label>
+  <div style="margin:4px 0 12px 34px"><input type="text" name="custom" placeholder="1.02, 4.10, 11.15"></div>
+  <label class="toggle" style="margin-bottom:12px"><input type="checkbox" name="skipNoPhone" checked><span><b>Skip plots without a mobile number</b></span></label>
+  <button class="btn grn block">Start sending</button></form>`);
+}
+function startWa(m, list) {
+  if (!list.length) return toast("No bills match");
+  S.waQ = { m, list: list.map(b => b.hid), i: 0, sent: 0 }; waStep();
+}
+async function waStep() {
+  const q = S.waQ; if (!q) return;
+  if (q.i >= q.list.length) { openModal(`<h3>Done<button class="x" data-a="close">×</button></h3><p>${q.sent} of ${q.list.length} bills marked as sent.</p><button class="btn pri block" data-a="close">Close</button>`); S.waQ = null; return; }
+  const b = S.bills[q.m].b[q.list[q.i]], url = chatUrl(b.phone), touch = isTouch(), share = canShareFiles();
+  openModal(`<h3>WhatsApp · ${q.i + 1} of ${q.list.length}<button class="x" data-a="waStop">×</button></h3>
+  <div class="bar" style="margin-bottom:12px"><i style="width:${q.i / q.list.length * 100}%"></i></div>
+  <div class="row" style="align-items:center;margin-bottom:10px"><div class="hno">${esc(b.no)}</div><div style="flex:1"><b>${esc(b.owner || "—")}</b><div class="muted">${esc(b.phone || "No mobile number")} · ${money(b.total)}${b.waSentAt ? " · sent before" : ""}</div></div></div>
+  ${touch && share ? `<div class="info"><b>1.</b> Tap <b>Share picture</b> → choose <b>WhatsApp</b> → pick <b>${esc(b.owner || "the owner")}</b> → send.<br><b>2.</b> Come back and tap <b>Sent · next</b>.</div>`
+    : `<div class="info"><b>1.</b> Click <b>Copy picture &amp; open chat</b>. WhatsApp opens this owner's chat.<br><b>2.</b> In the chat press <b>Ctrl + V</b>, then <b>Enter</b> to send the picture.<br><b>3.</b> Come back here and click <b>Sent · next</b>.</div>`}
+  <div class="actions">${touch && share ? `<button class="btn grn" data-a="waShare" id="wabtn" disabled>Share picture</button>${url ? `<a class="btn" target="_blank" rel="noopener" href="${url}">Open chat</a>` : ""}` : `<button class="btn grn" data-a="waCopy" id="wabtn" disabled ${url ? "" : "title=\"No mobile number\""}>Copy picture &amp; open chat</button>`}<button class="btn pri" data-a="waNext">Sent · next</button><button class="btn" data-a="waSkip">Skip</button>${q.i ? `<button class="btn" data-a="waBack">Back</button>` : ""}</div>
+  <div id="waprev" class="muted" style="text-align:center;padding:20px">Preparing picture…</div>`, true);
+  const c = await billCanvas(q.m, b);
+  if (S.waQ !== q || q.list[q.i] !== b.hid) return;
+  q.png = await new Promise(r => c.toBlob(r, "image/png"));
+  q.jpg = await new Promise(r => c.toBlob(r, "image/jpeg", 0.9));
+  const el = $("#waprev"); if (el) el.outerHTML = `<img class="preview" src="${URL.createObjectURL(q.jpg)}" alt="Bill" style="max-height:60vh;object-fit:contain">`;
+  const btn = $("#wabtn"); if (btn) btn.disabled = false;
+}
+async function waShareNow() {
+  const q = S.waQ, b = S.bills[q.m].b[q.list[q.i]];
+  const file = new File([q.jpg], "Bill-" + b.no + "-" + q.m + ".jpg", { type: "image/jpeg" });
+  try { await navigator.share({ files: [file], text: caption(q.m, b) }); } catch (e) { if (e && e.name !== "AbortError") toast("Sharing failed: " + e.message); }
+}
+async function waCopyNow() {
+  const q = S.waQ, b = S.bills[q.m].b[q.list[q.i]], url = chatUrl(b.phone);
+  try { await navigator.clipboard.write([new ClipboardItem({ "image/png": q.png })]); toast("Picture copied — press Ctrl+V in the chat"); }
+  catch (e) { toast("Could not copy the picture. Use Download image instead."); }
+  if (url) window.open(url, "rgwhatsapp"); else toast("No mobile number for this plot");
+}
+async function waMark(sent) {
+  const q = S.waQ; if (!q) return;
+  if (sent) { q.sent++; const hid = q.list[q.i]; write(() => D.updateBill(q.m, hid, { waSentAt: new Date().toISOString() })); }
+  q.i++; waStep();
+}
+
 /* ============ printing ============ */
 async function printBills(m, list, perPage) {
   if (!list.length) return toast("No bills to print");
@@ -1152,6 +1213,14 @@ document.addEventListener("click", async e => {
     case "delPay": { if (!(await ask("Delete this payment?", "This payment record will be removed.", "Delete", true))) { billModal(m, id); break; } const b = S.bills[m].b[id]; const payments = (b.payments || []).filter((_, i) => i !== +t.dataset.i); const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0)); if (await write(() => D.updateBill(m, id, { payments, paid }))) toast("Payment deleted"); setTimeout(() => billModal(m, id), 150); break; }
     case "bulkFine": { const mm = S.billMonth, bill = S.bills[mm]; const list = Object.values(bill.b).filter(b => balance(b) > 0 && !num(b.fine)); if (!list.length) { toast("No unpaid bills without a fine"); break; } openModal(`<h3>Fine all unpaid bills<button class="x" data-a="close">×</button></h3><p>A fine will be added to ${list.length} unpaid bill(s) that don't have one yet.</p><form data-f="bulkFine"><label class="f"><span>Fine (Rs)</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" required></label><button class="btn pri block">Apply</button></form>`); break; }
     case "pdf1": case "img1": { const b = S.bills[m].b[id]; t.disabled = true; const c = await billCanvas(m, b); t.disabled = false; const fn = "Bill-" + b.no + "-" + m; if (a === "img1") c.toBlob(bl => saveFile(fn + ".jpg", bl), "image/jpeg", 0.9); else saveFile(fn + ".pdf", makePdf([await canvasJpeg(c)])); break; }
+    case "waPick": waPickModal(); break;
+    case "waOne": startWa(m, [S.bills[m].b[id]]); break;
+    case "waShare": waShareNow(); break;
+    case "waCopy": waCopyNow(); break;
+    case "waNext": waMark(true); break;
+    case "waSkip": waMark(false); break;
+    case "waBack": if (S.waQ && S.waQ.i > 0) { S.waQ.i--; waStep(); } break;
+    case "waStop": S.waQ = null; closeModal(); break;
     case "print1": { const b = S.bills[m].b[id]; t.disabled = true; await printBills(m, [b], 1); t.disabled = false; break; }
     case "printAll": case "printPending": { const mm = S.billMonth; let list = Object.values(S.bills[mm].b).sort((x, y) => hsort({ no: x.no }, { no: y.no })); if (a === "printPending") list = list.filter(b => balance(b) > 0); printBills(mm, list, 2); break; }
     case "pdfAll": case "pdfPending": { const mm = S.billMonth; let list = Object.values(S.bills[mm].b).sort((x, y) => hsort({ no: x.no }, { no: y.no })); if (a === "pdfPending") list = list.filter(b => balance(b) > 0); pdfFor(mm, list, (a === "pdfAll" ? "Bills-" : "Unpaid-Bills-") + mm + ".pdf"); break; }
@@ -1197,6 +1266,15 @@ document.addEventListener("submit", async e => {
     const p = { hid: S.me.hid, uid: S.uid, month: f.dataset.m, amount: num(fd.get("amount")), method: String(fd.get("method")), tid: String(fd.get("tid") || "").trim(), date: String(fd.get("date") || todayISO()), note: String(fd.get("note") || "").trim(), image, status: "pending", createdAt: new Date().toISOString() };
     if (p.amount <= 0) { toast("Enter the amount"); btn.disabled = false; btn.textContent = "Submit payment"; return; }
     if (await write(() => D.createProof(p))) { closeModal(); toast("Thank you! Your payment has been sent for confirmation."); } else { btn.disabled = false; btn.textContent = "Submit payment"; }
+  } else if (k === "waPick") {
+    const m = S.billMonth; let rows = Object.values(S.bills[m].b).sort((x, y) => hsort({ no: x.no }, { no: y.no }));
+    const mode = fd.get("mode");
+    if (mode === "notsent") rows = rows.filter(b => !b.waSentAt);
+    else if (mode === "unpaid") rows = rows.filter(b => balance(b) > 0);
+    else if (mode === "range") { let a1 = +fd.get("from"), a2 = +fd.get("to"); if (a1 > a2) [a1, a2] = [a2, a1]; rows = rows.slice(a1, a2 + 1); }
+    else if (mode === "custom") { const set = new Set(String(fd.get("custom") || "").split(/[,\s]+/).filter(Boolean).map(x => x.toLowerCase())); rows = rows.filter(b => set.has(String(b.no).toLowerCase())); }
+    if (fd.get("skipNoPhone")) rows = rows.filter(b => waPhone(b.phone));
+    startWa(m, rows);
   } else if (k === "chpw") {
     if (fd.get("n1") !== fd.get("n2")) return toast("The new passwords don't match");
     if (String(fd.get("n1")).length < 6) return toast("The new password must be at least 6 characters");
