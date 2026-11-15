@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Royal Garden Water Billing</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap">
+<style>
+:root{--bg:#f4f6f5;--card:#fff;--ink:#17201d;--mute:#66736e;--line:#e1e6e3;--pri:#0f5c4d;--pri2:#e5f1ee;--red:#b3261e;--red2:#fbe9e7;--amb:#a15c00;--amb2:#fff3dc;--grn:#1b7a3d;--grn2:#e3f4e8;--r:12px}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit;color:inherit}
+.top{background:var(--pri);color:#fff;padding:12px 16px 0;position:sticky;top:0;z-index:5}
+.top h1{margin:0;font-size:18px;font-weight:650;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.top .btn{color:var(--ink);background:#fff}
+.top small{opacity:.8;font-weight:400;font-size:12px}
+.tabs{display:flex;gap:2px;overflow-x:auto;margin-top:10px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{background:none;border:0;color:#cfe5df;padding:9px 12px;border-bottom:3px solid transparent;white-space:nowrap;cursor:pointer;font-weight:550}
+.tab.on{color:#fff;border-color:#fff}
+main{max-width:980px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 12px;font-size:16px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{color:var(--mute);font-size:13px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:550;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn:hover{border-color:#b9c6c1}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.red{color:var(--red);border-color:#efc6c2}
+.btn.grn{background:#1f8f4c;border-color:#1f8f4c;color:#fff}
+.btn.sm{padding:5px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sp{flex:1}
+input[type=text],input[type=number],input[type=tel],input[type=date],input[type=month],input[type=password],select,textarea{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:#fff;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid #8cc5b7;border-color:var(--pri)}
+label.f{display:block;margin-bottom:10px}
+label.f span{display:block;font-size:13px;color:var(--mute);margin-bottom:4px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media(max-width:560px){.f2{grid-template-columns:1fr}}
+.list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.item:last-child{border-bottom:0}
+.item:hover{background:#fafcfb}
+.hno{min-width:52px;height:40px;border-radius:9px;background:var(--pri2);color:var(--pri);display:flex;align-items:center;justify-content:center;font-weight:700;padding:0 6px}
+.item .m{flex:1;min-width:0}
+.item .m b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .m small{color:var(--mute)}
+.amt{font-variant-numeric:tabular-nums;font-weight:650;text-align:right;white-space:nowrap}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:650;white-space:nowrap}
+.b-paid{background:var(--grn2);color:var(--grn)}
+.b-unpaid{background:var(--red2);color:var(--red)}
+.b-part{background:var(--amb2);color:var(--amb)}
+.b-carried{background:#eceff1;color:#546e7a}
+.b-sold{background:var(--pri2);color:var(--pri)}
+.b-no{background:#eceff1;color:#78858a}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:5px 12px;font-size:13px;cursor:pointer}
+.chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.note{background:var(--amb2);color:#5c3b00;border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+.info{background:var(--pri2);color:#0c4a3e;border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+.err{background:var(--red2);color:var(--red);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+.muted{color:var(--mute)}
+.bar{height:8px;background:#e6ecea;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--pri)}
+.empty{padding:30px;text-align:center;color:var(--mute)}
+.modal{position:fixed;inset:0;background:rgba(10,20,16,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+@media(min-width:700px){.modal{align-items:center}}
+.modal.hidden{display:none}
+.sheet{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px}
+@media(min-width:700px){.sheet{border-radius:16px}}
+.sheet.wide{max-width:760px}
+.sheet h3{margin:0 0 12px;font-size:17px;display:flex;align-items:center;gap:8px}
+.x{margin-left:auto;border:0;background:#f0f3f2;border-radius:99px;width:32px;height:32px;cursor:pointer;font-size:18px}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#17201d;color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none;z-index:40;max-width:90vw}
+#toast.on{opacity:1}
+.big{font-size:30px;font-weight:700;text-align:center;padding:14px;letter-spacing:1px}
+.kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line)}
+.kv:last-child{border:0}
+.preview{width:100%;border:1px solid var(--line);border-radius:8px;display:block}
+.boot{padding:60px 20px;text-align:center;color:var(--mute)}
+.qrprev{width:140px;height:140px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#fff}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl td,.tbl th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}
+.tbl th{color:var(--mute);font-weight:600;font-size:12px}
+.pinbox{max-width:360px;margin:50px auto}
+</style>
+</head>
+<body>
+<div id="app"><div class="boot">Load ho raha hai…</div></div>
+<div id="modal" class="modal hidden"><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+<script>
+"use strict";
+/* ============ helpers ============ */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const r2 = n => Math.round(n * 100) / 100;
+const money = n => "Rs " + (Math.round(n) || 0).toLocaleString("en-PK");
+const pad = n => String(n).padStart(2, "0");
+const todayISO = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
+const curMonth = () => todayISO().slice(0, 7);
+const addDays = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
+const fmtDate = iso => iso ? iso.slice(8, 10) + "-" + iso.slice(5, 7) + "-" + iso.slice(0, 4) : "";
+const EN_M = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const UR_M = ["جنوری", "فروری", "مارچ", "اپریل", "مئی", "جون", "جولائی", "اگست", "ستمبر", "اکتوبر", "نومبر", "دسمبر"];
+const mLabel = m => m ? EN_M[+m.slice(5, 7) - 1] + " " + m.slice(0, 4) : "";
+const mUr = m => UR_M[+m.slice(5, 7) - 1] + " " + m.slice(0, 4);
+const prevMonthKey = m => { let y = +m.slice(0, 4), mo = +m.slice(5, 7) - 1; if (mo === 0) { y--; mo = 12; } return y + "-" + pad(mo); };
+function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 2600); }
+function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) { return null; } }
+function waPhone(p) { let d = String(p || "").replace(/\D/g, ""); if (!d) return ""; if (d.startsWith("00")) d = d.slice(2); if (d.startsWith("0")) d = "92" + d.slice(1); else if (d.length === 10 && d.startsWith("3")) d = "92" + d; return d; }
+function parseRanges(t) { const out = new Set(); String(t || "").split(/[,\s]+/).forEach(p => { if (!p) return; const m = p.match(/^(\d+)-(\d+)$/); if (m) { for (let i = +m[1]; i <= +m[2] && i - +m[1] < 5000; i++) out.add(String(i)); } else if (/^\d+$/.test(p)) out.add(String(+p)); }); return out; }
+
+const DEF = { name: "Royal Garden", nameUr: "رائل گارڈن", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerPin: "1234", adminPin: "" };
+
+/* ============ state ============ */
+const S = {
+  db: null, user: null, dl: null, owner: false,
+  mode: "loading", // loading | admin | reader | pin | nodb
+  settings: null, settingsExists: false, houses: [], housesExists: false,
+  bills: {}, readings: {},
+  ready: { s: false, h: false, b: false, r: false }, slow: false, writeDenied: false,
+  view: "home", q: "", hfilter: "all", rfilter: "pending", billMonth: null, readMonth: curMonth(), bfilter: "all",
+};
+const st = () => Object.assign({}, DEF, S.settings || {});
+const soldHouses = () => S.houses.filter(h => h.sold).sort(hsort);
+function hsort(a, b) { const x = parseInt(a.no), y = parseInt(b.no); if (!isNaN(x) && !isNaN(y) && x !== y) return x - y; return String(a.no).localeCompare(String(b.no)); }
+const billMonths = () => Object.keys(S.bills).sort();
+const latestBillMonth = () => billMonths().slice(-1)[0] || null;
+
+function readingOf(hid, month) { const d = S.readings[month]; const e = d && d.r && d.r[hid]; return e && e.v != null ? num(e.v) : null; }
+function prevReading(h, month) {
+  const ms = Object.keys(S.readings).filter(m => m < month).sort().reverse();
+  for (const m of ms) { const v = readingOf(h.id, m); if (v != null) return v; }
+  return num(h.opening);
+}
+function balance(b) { return r2(num(b.total) - num(b.paid)); }
+function status(b) {
+  const bal = balance(b);
+  if (bal <= 0) return { k: "paid", t: "Paid" };
+  if (b.carried) return { k: "carried", t: "Agle bill mein" };
+  if (num(b.paid) > 0) return { k: "part", t: "Partial" };
+  return { k: "unpaid", t: "Unpaid" };
+}
+const badge = s => `<span class="badge b-${s.k}">${s.t}</span>`;
+
+/* ============ boot ============ */
+async function boot() {
+  const C = window.claude;
+  if (!C || !C.use) { S.mode = "nodb"; render(); return; }
+  const [db, user, dl] = await Promise.all([C.use("db"), C.use("user"), C.use("downloads")].map(p => Promise.resolve(p).catch(() => null)));
+  S.db = db; S.user = user; S.dl = dl;
+  if (!db) { S.mode = "nodb"; render(); return; }
+  try { S.owner = user ? !!(await user.isOwner()) : false; } catch (e) { S.owner = false; }
+  S.mode = S.owner ? "admin" : (ss("rg_mode") || "pin");
+  const slowT = setTimeout(() => { S.slow = true; render(); }, 10000);
+  const done = k => { S.ready[k] = true; if (Object.values(S.ready).every(Boolean)) { clearTimeout(slowT); S.slow = false; } render(); };
+  const fail = k => e => { console.warn(k, e); done(k); };
+  db.doc("society/settings").onSnapshot(s => { S.settingsExists = s.exists; S.settings = s.exists ? s.data() : null; if (!s.metadata.fromCache) done("s"); else render(); }, fail("s"));
+  db.doc("society/houses").onSnapshot(s => { S.housesExists = s.exists; S.houses = s.exists ? (s.data().list || []).slice() : []; if (!s.metadata.fromCache) done("h"); else render(); }, fail("h"));
+  db.collection("bills").orderBy("month", "desc").limit(36).onSnapshot(q => { const o = {}; q.docs.forEach(d => { if (d.exists) o[d.id] = d.data(); }); S.bills = o; if (!q.metadata.fromCache) done("b"); else render(); }, fail("b"));
+  db.collection("readings").orderBy("month", "desc").limit(36).onSnapshot(q => { const o = {}; q.docs.forEach(d => { if (d.exists) o[d.id] = d.data(); }); S.readings = o; if (!q.metadata.fromCache) done("r"); else render(); }, fail("r"));
+}
+async function write(fn) {
+  try { await fn(); return true; }
+  catch (e) {
+    console.warn(e);
+    if (e && e.code === "invalid_argument") { toast("Save nahi hua: aap ko is ki ijazat nahi (admin se access lein)"); S.writeDenied = true; }
+    else if (e && e.code === "quota_exceeded") toast("Database bhar gaya hai: purana data saaf karein");
+    else toast("Save nahi hua, dobara koshish karein");
+    return false;
+  }
+}
+
+/* ============ render ============ */
+function render(force) {
+  if (!force && S.dirty && $("#app form[data-f]")) return; // don't wipe a form the admin is typing in
+  S.dirty = false;
+  const a = document.activeElement, aid = a && a.id, sel = a && a.selectionStart;
+  const app = $("#app");
+  if (S.mode === "loading") app.innerHTML = `<div class="boot">Load ho raha hai…</div>`;
+  else if (S.mode === "nodb") app.innerHTML = `<div class="boot"><b>Data se connect nahi ho saka.</b><br>Yeh page Claude par sign in kar ke kholein. Agar aap reader hain to admin se kahein ke yeh link aap ke saath share kare.</div>`;
+  else if (!S.ready.s || !S.ready.h) app.innerHTML = `<div class="boot">Data aa raha hai…${S.slow ? "<br><br>Data abhi nahi mil raha. Internet check karein." : ""}</div>`;
+  else if (S.mode === "pin") app.innerHTML = viewPin();
+  else if (S.mode === "reader") app.innerHTML = viewReader();
+  else app.innerHTML = viewAdmin();
+  if (aid) { const el = document.getElementById(aid); if (el) { el.focus(); try { if (sel != null) el.setSelectionRange(sel, sel); } catch (e) { } } }
+}
+function header(sub, tabs) {
+  const s = st();
+  return `<div class="top"><h1><span>${esc(s.name)} <small>${esc(sub)}</small></span>${S.mode === "reader" && S.owner ? `<button class="btn sm" data-a="toAdmin">Admin</button>` : ""}${S.mode !== "admin" && !S.owner ? `<button class="btn sm" data-a="logout">Lock</button>` : ""}${S.mode === "admin" && !S.owner ? `<button class="btn sm" data-a="logout">Lock</button>` : ""}</h1>${tabs || '<div style="height:12px"></div>'}</div>`;
+}
+
+/* ---- PIN ---- */
+function viewPin() {
+  if (!S.settingsExists) return header("") + `<div class="boot">Admin ne abhi system set up nahi kiya.</div>`;
+  return header("Login") + `<div class="pinbox card"><h2>Meter Reader Login</h2><p class="muted">Apna PIN darj karein.</p>
+  <form data-f="pin"><input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN" style="font-size:22px;text-align:center;letter-spacing:6px"><div style="height:10px"></div><button class="btn pri" style="width:100%;justify-content:center">Login</button></form></div>`;
+}
+
+/* ---- ADMIN ---- */
+const TABS = [["home", "Home"], ["houses", "Ghar"], ["readings", "Readings"], ["bills", "Bills"], ["pending", "Pending"], ["settings", "Settings"]];
+function viewAdmin() {
+  const tabs = `<div class="tabs">${TABS.map(([k, t]) => `<button class="tab ${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${t}</button>`).join("")}</div>`;
+  let body;
+  if (!S.settingsExists && S.view !== "settings") body = viewSetup();
+  else if (!S.housesExists && S.view !== "settings") body = viewSetup();
+  else body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings }[S.view] || vHome)();
+  return header("Water & Maintenance Billing", tabs) + `<main>${S.slow ? `<div class="note">Data abhi poora nahi mila; jo dikh raha hai woh purana ho sakta hai.</div>` : ""}${body}</main>`;
+}
+function viewSetup() {
+  return `<div class="card"><h2>Pehli dafa setup</h2><p class="muted">Society ke ghar bana dein. Baad mein har ghar ki details (maalik, phone, marla) "Ghar" tab se badal sakte hain.</p>
+  <form data-f="setup"><div class="f2">
+  <label class="f"><span>Society ka naam</span><input type="text" name="name" value="${esc(st().name)}"></label>
+  <label class="f"><span>Society ka naam (Urdu, bill ke liye)</span><input type="text" name="nameUr" dir="rtl" value="${esc(st().nameUr)}"></label>
+  <label class="f"><span>Kul ghar</span><input type="number" name="total" value="200" min="1" max="2000"></label>
+  <label class="f"><span>Har ghar ke default marla</span><input type="number" name="marla" value="5" step="0.5" min="0"></label>
+  <label class="f"><span>Per marla rate (Rs)</span><input type="number" name="marlaRate" value="${esc(st().marlaRate)}"></label>
+  <label class="f"><span>Water rate per unit (Rs)</span><input type="number" name="unitRate" value="${esc(st().unitRate || "")}" step="0.01" placeholder="maslan 15"></label>
+  </div>
+  <label class="f"><span>Sold gharon ke number (comma ya range: 1-50, 61, 70-99)</span><textarea name="sold" rows="2" placeholder="1-80"></textarea></label>
+  <label class="f"><span>Reader PIN</span><input type="text" name="readerPin" value="${esc(st().readerPin)}" inputmode="numeric"></label>
+  <button class="btn pri">Setup mukammal karein</button></form></div>`;
+}
+function vHome() {
+  const sold = soldHouses(), cm = curMonth();
+  const done = sold.filter(h => readingOf(h.id, cm) != null).length;
+  const lm = latestBillMonth(); const lb = lm ? S.bills[lm] : null;
+  let billed = 0, coll = 0, pend = 0, pendN = 0;
+  if (lb) Object.values(lb.b || {}).forEach(b => { billed += num(b.total); coll += num(b.paid); const bal = balance(b); if (bal > 0) { pend += bal; pendN++; } });
+  const s = st();
+  return `<div class="grid" style="margin-bottom:14px">
+  <div class="stat"><span>Kul ghar</span><b>${S.houses.length}</b></div>
+  <div class="stat"><span>Sold ghar</span><b>${sold.length}</b></div>
+  <div class="stat"><span>Readings (${mLabel(cm)})</span><b>${done} / ${sold.length}</b></div>
+  <div class="stat"><span>Pending (${lm ? mLabel(lm) : "-"})</span><b style="color:var(--red)">${money(pend)}</b><span>${pendN} ghar</span></div>
+  </div>
+  ${lb ? `<div class="card"><h2>Aakhri bill: ${mLabel(lm)}</h2><div class="kv"><span>Kul bill</span><b>${money(billed)}</b></div><div class="kv"><span>Wusool</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="kv"><span>Baqi</span><b style="color:var(--red)">${money(pend)}</b></div><div class="row" style="margin-top:12px"><button class="btn" data-a="tab" data-v="bills">Bills dekhein</button><button class="btn" data-a="tab" data-v="pending">Pending list</button></div></div>` : `<div class="info">Abhi koi bill nahi bana. Readings ho jayein to "Bills" tab se is mahine ke bill generate karein.</div>`}
+  <div class="card"><h2>Rates</h2><div class="kv"><span>Per marla</span><b>${money(s.marlaRate)}</b></div><div class="kv"><span>Water per unit</span><b>${s.unitRate ? "Rs " + s.unitRate : '<span style="color:var(--red)">Set nahi</span>'}</b></div><div class="kv"><span>Reader PIN</span><b>${esc(s.readerPin || "-")}</b></div></div>
+  <div class="card"><h2>Meter reader ko kaise bhejein</h2><p class="muted" style="margin:0 0 10px">Is page ko claude.ai par "Share" se reader ke email ke saath share karein (Contributor ya Editor access, taake woh reading save kar sake). Reader link khol kar apna PIN dalega aur sirf reading ka page dekhega.</p><button class="btn" data-a="toReader">Reader mode khud check karein</button></div>`;
+}
+function vHouses() {
+  const q = S.q.trim().toLowerCase();
+  let list = S.houses.slice().sort(hsort);
+  if (S.hfilter === "sold") list = list.filter(h => h.sold); else if (S.hfilter === "unsold") list = list.filter(h => !h.sold);
+  if (q) list = list.filter(h => (h.no + " " + (h.owner || "") + " " + (h.phone || "") + " " + (h.meter || "")).toLowerCase().includes(q));
+  const ns = S.houses.filter(h => h.sold).length;
+  return `<div class="row" style="margin-bottom:12px"><input id="q" type="text" placeholder="Ghar no., naam, phone se talaash…" value="${esc(S.q)}" style="flex:1;min-width:200px"><button class="btn pri" data-a="addHouse">+ Naya ghar</button></div>
+  <div class="row" style="margin-bottom:12px"><div class="chips">${[["all", "Sab (" + S.houses.length + ")"], ["sold", "Sold (" + ns + ")"], ["unsold", "Unsold (" + (S.houses.length - ns) + ")"]].map(([k, t]) => `<button class="chip ${S.hfilter === k ? "on" : ""}" data-a="hf" data-v="${k}">${t}</button>`).join("")}</div><span class="sp"></span><button class="btn sm" data-a="bulkSold">Kai ghar ek saath Sold karein</button></div>
+  <div class="list">${list.map(h => `<div class="item" data-a="editHouse" data-id="${esc(h.id)}"><div class="hno">${esc(h.no)}</div><div class="m"><b>${esc(h.owner || "—")}</b><small>${esc(h.marla)} marla${h.phone ? " · " + esc(h.phone) : ""}${h.meter ? " · Meter " + esc(h.meter) : ""}</small></div>${h.sold ? '<span class="badge b-sold">Sold</span>' : '<span class="badge b-no">Unsold</span>'}</div>`).join("") || `<div class="empty">Koi ghar nahi mila</div>`}</div>`;
+}
+function vReadings() {
+  const m = S.readMonth, sold = soldHouses();
+  const q = S.q.trim().toLowerCase();
+  let list = sold.map(h => ({ h, prev: prevReading(h, m), cur: readingOf(h.id, m), e: S.readings[m] && S.readings[m].r && S.readings[m].r[h.id] }));
+  const doneN = list.filter(x => x.cur != null).length;
+  if (S.rfilter === "pending") list = list.filter(x => x.cur == null); else if (S.rfilter === "done") list = list.filter(x => x.cur != null);
+  if (q) list = list.filter(x => (x.h.no + " " + (x.h.owner || "") + " " + (x.h.meter || "")).toLowerCase().includes(q));
+  const bill = S.bills[m];
+  const changed = bill ? sold.filter(h => bill.b && bill.b[h.id] && (bill.b[h.id].curr ?? null) !== readingOf(h.id, m)).length : 0;
+  return `<div class="card"><div class="row"><label style="flex:1;min-width:160px"><span class="muted" style="font-size:13px">Mahina</span><input type="month" id="rm" value="${m}"></label><div style="flex:2;min-width:200px"><div class="row" style="justify-content:space-between;margin-bottom:6px"><b>${doneN} / ${sold.length} readings ho gayi</b><span class="muted">${sold.length - doneN} baqi</span></div><div class="bar"><i style="width:${sold.length ? doneN / sold.length * 100 : 0}%"></i></div></div></div></div>
+  ${changed ? `<div class="note">${mLabel(m)} ka bill ban chuka hai, lekin ${changed} gharon ki reading baad mein badli/aayi hai. "Bills" tab se bill dobara generate karein.</div>` : ""}
+  <div class="row" style="margin-bottom:12px"><input id="q" type="text" placeholder="Ghar no. ya naam…" value="${esc(S.q)}" style="flex:1;min-width:180px"><div class="chips">${[["pending", "Baqi"], ["done", "Ho gayi"], ["all", "Sab"]].map(([k, t]) => `<button class="chip ${S.rfilter === k ? "on" : ""}" data-a="rf" data-v="${k}">${t}</button>`).join("")}</div></div>
+  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>Pichli: ${x.prev}${x.cur != null ? ` → Nayi: ${x.cur} · <b>${r2(x.cur - x.prev)} units</b>` : ""}${x.e && x.e.at ? " · " + fmtDate(x.e.at.slice(0, 10)) : ""}</small></div>${x.cur != null ? (x.cur < x.prev ? '<span class="badge b-unpaid">Kam hai!</span>' : '<span class="badge b-paid">Ho gayi</span>') : '<span class="badge b-no">Baqi</span>'}</div>`).join("") || `<div class="empty">${sold.length ? "Is filter mein koi ghar nahi" : "Pehle \"Ghar\" tab mein ghar Sold mark karein"}</div>`}</div>`;
+}
+function vBills() {
+  const months = billMonths();
+  const cm = curMonth();
+  const opts = Array.from(new Set([...months, cm])).sort().reverse();
+  if (!S.billMonth) S.billMonth = months.includes(cm) ? cm : (months.slice(-1)[0] || cm);
+  const m = S.billMonth, bill = S.bills[m];
+  const sel = `<div class="row" style="margin-bottom:12px"><select id="bm" style="max-width:200px">${opts.map(o => `<option value="${o}" ${o === m ? "selected" : ""}>${mLabel(o)}${S.bills[o] ? "" : " (naya)"}</option>`).join("")}</select><button class="btn sm" data-a="otherMonth">Koi aur mahina</button></div>`;
+  if (!bill) {
+    const lm = latestBillMonth();
+    if (lm && lm > m) return sel + `<div class="note">${mLabel(m)} se naya bill (${mLabel(lm)}) pehle se bana hai. Purane mahine ka naya bill nahi ban sakta, warna baqaya ka hisaab bigar jayega.</div>`;
+    const sold = soldHouses(); const miss = sold.filter(h => readingOf(h.id, m) == null).length;
+    const s = st();
+    return sel + `<div class="card"><h2>${mLabel(m)} ke bill generate karein</h2>
+    <div class="kv"><span>Sold ghar (bill banenge)</span><b>${sold.length}</b></div>
+    <div class="kv"><span>Readings mukammal</span><b>${sold.length - miss} / ${sold.length}</b></div>
+    <div class="kv"><span>Per marla rate</span><b>${money(s.marlaRate)}</b></div>
+    <div class="kv"><span>Water rate per unit</span><b>${s.unitRate ? "Rs " + s.unitRate : '<span style="color:var(--red)">Set nahi (Settings)</span>'}</b></div>
+    <div class="kv"><span>Pichla baqaya</span><b>${lm ? mLabel(lm) + " ke bill se khud judega" : "Pehla bill"}</b></div>
+    ${miss ? `<div class="note" style="margin-top:12px">${miss} gharon ki reading baqi hai. Un ka water bill 0 aayega (agle mahine units jud jayenge). Chahein to pehle readings mukammal kar lein.</div>` : ""}
+    <label class="f" style="margin-top:12px"><span>Aakhri tareekh (due date)</span><input type="date" id="due" value="${addDays(todayISO(), num(s.dueDays) || 10)}"></label>
+    <button class="btn pri" data-a="gen" ${sold.length ? "" : "disabled"}>Sab ${sold.length} bills generate karein</button></div>`;
+  }
+  const rows = Object.values(bill.b || {}).sort((a, b) => hsort({ no: a.no }, { no: b.no }));
+  let billed = 0, coll = 0, pend = 0; rows.forEach(b => { billed += num(b.total); coll += num(b.paid); pend += Math.max(0, balance(b)); });
+  const isLatest = m === latestBillMonth();
+  const f = S.bfilter, q = S.q.trim().toLowerCase();
+  let list = rows;
+  if (f === "unpaid") list = list.filter(b => balance(b) > 0); else if (f === "paid") list = list.filter(b => balance(b) <= 0);
+  if (q) list = list.filter(b => (b.no + " " + (b.owner || "")).toLowerCase().includes(q));
+  const changed = rows.filter(b => (b.curr ?? null) !== readingOf(b.hid, m)).length;
+  const newSold = soldHouses().filter(h => !bill.b[h.id]).length;
+  return sel + `<div class="grid" style="margin-bottom:14px"><div class="stat"><span>Kul bill (${rows.length})</span><b>${money(billed)}</b></div><div class="stat"><span>Wusool</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="stat"><span>Baqi</span><b style="color:var(--red)">${money(pend)}</b></div><div class="stat"><span>Due date</span><b style="font-size:18px">${fmtDate(bill.dueDate)}</b></div></div>
+  ${isLatest && (changed || newSold) ? `<div class="note">${changed ? changed + " gharon ki reading bill banne ke baad badli hai. " : ""}${newSold ? newSold + " naye sold ghar is bill mein nahi hain. " : ""}"Dobara generate" dabayen (payments aur fine mehfooz rahenge).</div>` : ""}
+  ${!isLatest ? `<div class="info">Yeh purana bill hai. Is ka baqaya agle mahine ke bill mein shamil ho chuka hai, payment naye bill par darj karein.</div>` : ""}
+  <div class="row" style="margin-bottom:12px"><button class="btn" data-a="pdfAll">Sab bills PDF</button><button class="btn" data-a="pdfPending">Sirf unpaid PDF</button>${isLatest ? `<button class="btn" data-a="bulkFine">Unpaid par fine</button><button class="btn" data-a="regen">Dobara generate</button>` : ""}</div>
+  <div class="row" style="margin-bottom:12px"><input id="q" type="text" placeholder="Ghar no. ya naam…" value="${esc(S.q)}" style="flex:1;min-width:180px"><div class="chips">${[["all", "Sab"], ["unpaid", "Unpaid"], ["paid", "Paid"]].map(([k, t]) => `<button class="chip ${f === k ? "on" : ""}" data-a="bf" data-v="${k}">${t}</button>`).join("")}</div></div>
+  <div class="list">${list.map(b => `<div class="item" data-a="bill" data-m="${m}" data-id="${esc(b.hid)}"><div class="hno">${esc(b.no)}</div><div class="m"><b>${esc(b.owner || "—")}</b><small>Marla ${money(b.marlaCharge)} · Water ${money(b.water)} (${b.units} u)${num(b.arrears) ? " · Baqaya " + money(b.arrears) : ""}${num(b.fine) ? " · Fine " + money(b.fine) : ""}${b.noReading ? " · reading nahi" : ""}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>`).join("") || `<div class="empty">Koi bill nahi</div>`}</div>`;
+}
+function pendingList() {
+  const lm = latestBillMonth(); const out = [];
+  const months = billMonths().reverse();
+  S.houses.forEach(h => {
+    const m = months.find(mm => S.bills[mm].b && S.bills[mm].b[h.id]);
+    if (!m) return; const b = S.bills[m].b[h.id];
+    if (b.carried) return; const bal = balance(b);
+    if (bal > 0) out.push({ h, m, b, bal });
+  });
+  return out.sort((a, b) => b.bal - a.bal);
+}
+function vPending() {
+  const list = pendingList(); const tot = list.reduce((s, x) => s + x.bal, 0);
+  return `<div class="grid" style="margin-bottom:14px"><div class="stat"><span>Pending ghar</span><b>${list.length}</b></div><div class="stat"><span>Kul baqaya</span><b style="color:var(--red)">${money(tot)}</b></div></div>
+  <div class="list">${list.map(x => `<div class="item" data-a="bill" data-m="${x.m}" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>${mLabel(x.m)} · Due ${fmtDate(S.bills[x.m].dueDate)}${num(x.b.arrears) > 0 ? " · purana baqaya shamil" : ""}</small></div><div><div class="amt" style="color:var(--red)">${money(x.bal)}</div><div style="text-align:right">${badge(status(x.b))}</div></div></div>`).join("") || `<div class="empty">Koi bill pending nahi 🎉</div>`}</div>`;
+}
+function vSettings() {
+  const s = st();
+  const fld = (k, label, type = "text", extra = "") => `<label class="f"><span>${label}</span><input type="${type}" name="${k}" value="${esc(s[k])}" ${extra}></label>`;
+  return `<form data-f="settings">
+  <div class="card"><h2>Society</h2><div class="f2">${fld("name", "Naam")}${fld("nameUr", "Naam (Urdu, bill par)", "text", 'dir="rtl"')}${fld("address", "Pata (Urdu ya English)")}${fld("phone", "Rabta / WhatsApp number (bill par)", "tel")}</div></div>
+  <div class="card"><h2>Rates</h2><div class="f2">${fld("marlaRate", "Per marla rate (Rs)", "number", 'step="0.01" min="0"')}${fld("unitRate", "Water rate per unit (Rs)", "number", 'step="0.01" min="0"')}${fld("fineDefault", "Default fine (Rs)", "number", 'step="1" min="0"')}${fld("dueDays", "Bill ke kitne din baad due date", "number", 'min="0"')}</div><p class="muted" style="margin:0;font-size:13px">Naya rate agle generate hone wale bill se lagega; purane bills nahi badlenge.</p></div>
+  <div class="card"><h2>JazzCash</h2><div class="f2">${fld("jazzNumber", "JazzCash number", "tel")}${fld("jazzTitle", "Account title")}</div></div>
+  <div class="card"><h2>Bank account</h2><div class="f2">${fld("bankName", "Bank ka naam")}${fld("bankTitle", "Account title")}${fld("bankAcc", "Account number")}${fld("iban", "IBAN")}</div></div>
+  <div class="card"><h2>QR code</h2><div class="row"><img class="qrprev" id="qrimg" src="${s.qr ? esc(s.qr) : "data:image/gif;base64,R0lGODlhAQABAAAAACw="}" alt=""><div><input type="file" id="qrfile" accept="image/*"><p class="muted" style="font-size:13px">JazzCash/Raast QR ki tasveer ya screenshot. Bill par chhapega.</p>${s.qr ? '<button type="button" class="btn sm red" data-a="qrdel">QR hatayen</button>' : ""}</div></div></div>
+  <div class="card"><h2>PIN</h2><div class="f2">${fld("readerPin", "Meter reader PIN", "text", 'inputmode="numeric"')}${fld("adminPin", "Admin PIN (doosre admin ke liye, khali = band)", "text")}</div></div>
+  <div class="row" style="margin-bottom:14px"><button class="btn pri">Settings save karein</button></div></form>
+  <div class="card"><h2>Backup</h2><p class="muted" style="margin-top:0">Saara data (ghar, readings, bills) ek JSON file mein.</p><button class="btn" data-a="backup">Backup download</button></div>`;
+}
+
+/* ---- READER ---- */
+function viewReader() {
+  const m = S.readMonth, sold = soldHouses(), q = S.q.trim().toLowerCase();
+  let list = sold.map(h => ({ h, prev: prevReading(h, m), cur: readingOf(h.id, m) }));
+  const doneN = list.filter(x => x.cur != null).length;
+  if (S.rfilter === "pending") list = list.filter(x => x.cur == null); else if (S.rfilter === "done") list = list.filter(x => x.cur != null);
+  if (q) list = list.filter(x => (x.h.no + " " + (x.h.owner || "") + " " + (x.h.meter || "")).toLowerCase().includes(q));
+  return header("Meter Reading") + `<main>
+  ${S.writeDenied ? `<div class="err">Aap ki reading save nahi ho rahi. Admin se kahein ke page aap ke saath Contributor ya Editor access par share kare.</div>` : ""}
+  <div class="card"><div class="row"><label style="flex:1;min-width:150px"><span class="muted" style="font-size:13px">Mahina</span><input type="month" id="rm" value="${m}"></label><div style="flex:2;min-width:180px"><div class="row" style="justify-content:space-between;margin-bottom:6px"><b>${doneN} / ${sold.length} ho gayi</b><span class="muted">${sold.length - doneN} baqi</span></div><div class="bar"><i style="width:${sold.length ? doneN / sold.length * 100 : 0}%"></i></div></div></div></div>
+  <div class="row" style="margin-bottom:12px"><input id="q" type="text" inputmode="search" placeholder="Ghar number likhein…" value="${esc(S.q)}" style="flex:1;font-size:18px"></div>
+  <div class="chips" style="margin-bottom:12px">${[["pending", "Baqi"], ["done", "Ho gayi"], ["all", "Sab"]].map(([k, t]) => `<button class="chip ${S.rfilter === k ? "on" : ""}" data-a="rf" data-v="${k}">${t}</button>`).join("")}</div>
+  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>${x.h.meter ? "Meter " + esc(x.h.meter) + " · " : ""}Pichli: ${x.prev}${x.cur != null ? " → " + x.cur : ""}</small></div>${x.cur != null ? '<span class="badge b-paid">✓</span>' : '<span class="badge b-no">Baqi</span>'}</div>`).join("") || `<div class="empty">${S.rfilter === "pending" && sold.length ? "Sab readings ho gayi ✓" : "Koi ghar nahi"}</div>`}</div></main>`;
+}
+
+/* ============ modal ============ */
+function openModal(html, wide) { const sh = $("#sheet"); sh.className = "sheet" + (wide ? " wide" : ""); sh.innerHTML = html; $("#modal").classList.remove("hidden"); }
+function closeModal() { $("#modal").classList.add("hidden"); $("#sheet").innerHTML = ""; }
+$("#modal").addEventListener("click", e => { if (e.target.id === "modal") closeModal(); });
+function ask(title, msg, okText = "Haan", danger) {
+  return new Promise(res => {
+    openModal(`<h3>${esc(title)}<button class="x" data-r="0">×</button></h3><p>${msg}</p><div class="row"><button class="btn ${danger ? "red" : "pri"}" data-r="1">${esc(okText)}</button><button class="btn" data-r="0">Wapas</button></div>`);
+    $("#sheet").onclick = e => { const b = e.target.closest("[data-r]"); if (!b) return; $("#sheet").onclick = null; closeModal(); res(b.dataset.r === "1"); };
+  });
+}
+
+/* ---- house edit ---- */
+function houseModal(h) {
+  const isNew = !h; h = h || { id: "", no: "", owner: "", phone: "", marla: 5, meter: "", sold: true, opening: 0 };
+  const hist = isNew ? "" : billMonths().reverse().filter(m => S.bills[m].b && S.bills[m].b[h.id]).map(m => { const b = S.bills[m].b[h.id]; return `<tr data-a="bill" data-m="${m}" data-id="${esc(h.id)}" style="cursor:pointer"><td>${mLabel(m)}</td><td>${b.units}</td><td>${money(b.total)}</td><td>${money(b.paid)}</td><td>${badge(status(b))}</td></tr>`; }).join("");
+  openModal(`<h3>${isNew ? "Naya ghar" : "Ghar # " + esc(h.no)}<button class="x" data-a="close">×</button></h3>
+  <form data-f="house" data-id="${esc(h.id)}"><div class="f2">
+  <label class="f"><span>Ghar number</span><input type="text" name="no" value="${esc(h.no)}" required></label>
+  <label class="f"><span>Marla</span><input type="number" name="marla" value="${esc(h.marla)}" step="0.5" min="0"></label>
+  <label class="f"><span>Maalik ka naam</span><input type="text" name="owner" value="${esc(h.owner)}"></label>
+  <label class="f"><span>Mobile (WhatsApp)</span><input type="tel" name="phone" value="${esc(h.phone)}" placeholder="03xx xxxxxxx"></label>
+  <label class="f"><span>Meter number</span><input type="text" name="meter" value="${esc(h.meter)}"></label>
+  <label class="f"><span>Shuru ki meter reading</span><input type="number" name="opening" value="${esc(h.opening)}" step="0.01"></label>
+  </div><label class="row" style="margin:4px 0 14px"><input type="checkbox" name="sold" ${h.sold ? "checked" : ""} style="width:20px;height:20px"> <b>Sold hai</b> <span class="muted">(sirf sold gharon ka bill banta hai)</span></label>
+  <div class="row"><button class="btn pri">Save</button>${isNew ? "" : `<span class="sp"></span><button type="button" class="btn red" data-a="delHouse" data-id="${esc(h.id)}">Delete</button>`}</div></form>
+  ${hist ? `<h3 style="margin-top:20px">Bill history</h3><table class="tbl"><tr><th>Mahina</th><th>Units</th><th>Bill</th><th>Ada</th><th></th></tr>${hist}</table>` : ""}`);
+}
+async function saveHouse(form) {
+  const fd = new FormData(form); const id = form.dataset.id;
+  const no = String(fd.get("no") || "").trim(); if (!no) return toast("Ghar number likhein");
+  const list = S.houses.slice();
+  if (list.some(x => String(x.no).toLowerCase() === no.toLowerCase() && x.id !== id)) return toast("Yeh ghar number pehle se mojood hai");
+  const rec = { no, owner: String(fd.get("owner") || "").trim(), phone: String(fd.get("phone") || "").trim(), marla: num(fd.get("marla")), meter: String(fd.get("meter") || "").trim(), opening: num(fd.get("opening")), sold: !!fd.get("sold") };
+  if (id) { const i = list.findIndex(x => x.id === id); list[i] = Object.assign({}, list[i], rec); }
+  else { let nid = no.replace(/[^A-Za-z0-9_-]/g, "") || "h"; while (list.some(x => x.id === nid)) nid += "_"; list.push(Object.assign({ id: nid }, rec)); }
+  if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); toast("Save ho gaya"); }
+}
+
+/* ---- reading ---- */
+function readingModal(hid) {
+  const h = S.houses.find(x => x.id === hid); if (!h) return;
+  const m = S.readMonth, prev = prevReading(h, m), cur = readingOf(hid, m);
+  const e = S.readings[m] && S.readings[m].r && S.readings[m].r[hid];
+  openModal(`<h3>Ghar # ${esc(h.no)}<button class="x" data-a="close">×</button></h3>
+  <div class="kv"><span>Maalik</span><b>${esc(h.owner || "—")}</b></div>
+  <div class="kv"><span>Meter no.</span><b>${esc(h.meter || "—")}</b></div>
+  <div class="kv"><span>Mahina</span><b>${mLabel(m)}</b></div>
+  <div class="kv"><span>Pichli reading</span><b>${prev}</b></div>
+  ${e && e.at ? `<div class="kv"><span>Pehle darj</span><b>${cur} (${fmtDate(e.at.slice(0, 10))})</b></div>` : ""}
+  <form data-f="reading" data-id="${esc(hid)}" style="margin-top:14px">
+  <label class="f"><span>Nayi reading</span><input id="rv" type="number" inputmode="decimal" step="0.01" name="v" value="${cur != null ? cur : ""}" style="font-size:28px;text-align:center;font-weight:700" autofocus></label>
+  <div id="rinfo" class="info" style="text-align:center">Units: —</div>
+  <div class="row"><button class="btn pri" name="go" value="next" style="flex:1;justify-content:center">Save & agla ghar</button><button class="btn" name="go" value="close">Save</button>${S.mode === "admin" && cur != null ? `<button type="button" class="btn red" data-a="delReading" data-id="${esc(hid)}">Hatayen</button>` : ""}</div></form>`);
+  const inp = $("#rv"), info = $("#rinfo");
+  const upd = () => { if (inp.value === "") { info.className = "info"; info.textContent = "Units: —"; return; } const u = r2(num(inp.value) - prev); if (u < 0) { info.className = "err"; info.textContent = "Nayi reading pichli (" + prev + ") se kam hai! Dobara check karein."; } else { info.className = u > 500 ? "note" : "info"; info.textContent = "Units: " + u + (u > 500 ? " (bohat zyada, check karein)" : ""); } };
+  inp.addEventListener("input", upd); upd(); setTimeout(() => inp.focus(), 50);
+}
+async function saveReading(form, go) {
+  const hid = form.dataset.id, m = S.readMonth; const raw = form.v.value;
+  if (raw === "" || !isFinite(+raw)) return toast("Reading likhein");
+  const v = num(raw); const h = S.houses.find(x => x.id === hid); const prev = prevReading(h, m);
+  if (v < prev && !form.dataset.ok) { form.dataset.ok = "1"; toast("Reading pichli se kam hai. Dobara Save dabayen agar yahi sahi hai."); return; }
+  const entry = { v, at: new Date().toISOString(), by: S.mode === "reader" ? "reader" : "admin" };
+  const ref = S.db.doc("readings/" + m);
+  const ok = await write(async () => {
+    if (S.readings[m]) await ref.update({ r: { [hid]: entry } });
+    else { const s = await ref.get(); if (s.exists) await ref.update({ r: { [hid]: entry } }); else await ref.set({ month: m, r: { [hid]: entry } }); }
+  });
+  if (!ok) return;
+  toast("Ghar # " + h.no + ": " + v + " save ho gayi");
+  if (go === "next") {
+    const sold = soldHouses(); const i = sold.findIndex(x => x.id === hid);
+    const nxt = sold.slice(i + 1).concat(sold.slice(0, i)).find(x => x.id !== hid && readingOf(x.id, m) == null);
+    if (nxt) { readingModal(nxt.id); return; }
+    toast("Sab readings mukammal ✓");
+  }
+  closeModal();
+}
+
+/* ---- bills ---- */
+async function generateBills(m, dueDate) {
+  const s = st(); const sold = soldHouses();
+  const months = billMonths(); if (months.some(x => x > m)) return toast("Is se naya bill pehle se mojood hai");
+  const prevM = months.filter(x => x < m).pop(); const prev = prevM ? S.bills[prevM] : null;
+  const ex = S.bills[m];
+  const b = {};
+  sold.forEach(h => {
+    const e = ex && ex.b && ex.b[h.id]; const pb = prev && prev.b && prev.b[h.id];
+    const arrears = pb ? balance(pb) : 0;
+    const prevR = prevReading(h, m), cur = readingOf(h.id, m), noReading = cur == null;
+    const units = noReading ? 0 : Math.max(0, r2(cur - prevR));
+    const marlaRate = e ? num(e.marlaRate) : num(s.marlaRate), unitRate = e ? num(e.unitRate) : num(s.unitRate);
+    const marlaCharge = r2(num(h.marla) * marlaRate), water = r2(units * unitRate), fine = e ? num(e.fine) : 0;
+    b[h.id] = { hid: h.id, no: h.no, owner: h.owner || "", phone: h.phone || "", marla: num(h.marla), meter: h.meter || "", marlaRate, unitRate, marlaCharge, prev: prevR, curr: noReading ? null : cur, units, water, arrears, fine, total: r2(marlaCharge + water + arrears + fine), paid: e ? num(e.paid) : 0, payments: e ? (e.payments || []) : [], noReading };
+  });
+  const ok = await write(async () => {
+    await S.db.doc("bills/" + m).set({ month: m, generatedAt: (ex && ex.generatedAt) || new Date().toISOString(), dueDate, b });
+    if (prev) { const u = {}; Object.keys(b).forEach(id => { if (prev.b[id]) u[id] = { carried: true, carriedTo: m }; }); if (Object.keys(u).length) await S.db.doc("bills/" + prevM).update({ b: u }); }
+  });
+  if (ok) { S.billMonth = m; toast(Object.keys(b).length + " bills ban gaye"); }
+}
+function billModal(m, hid) {
+  const bill = S.bills[m] && S.bills[m].b && S.bills[m].b[hid]; if (!bill) return;
+  const s = status(bill), bal = balance(bill), isLatest = m === latestBillMonth();
+  const pays = (bill.payments || []).map((p, i) => `<tr><td>${fmtDate(p.date)}</td><td>${esc(p.method)}</td><td>${money(p.amt)}</td><td>${esc(p.note || "")}</td><td>${isLatest && !bill.carried ? `<button class="btn sm red" data-a="delPay" data-m="${m}" data-id="${esc(hid)}" data-i="${i}">×</button>` : ""}</td></tr>`).join("");
+  openModal(`<h3>Ghar # ${esc(bill.no)} · ${mLabel(m)} ${badge(s)}<button class="x" data-a="close">×</button></h3>
+  <div id="bprev" class="muted" style="text-align:center;padding:30px">Bill ban raha hai…</div>
+  <div class="row" style="margin:12px 0"><button class="btn pri" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">PDF download</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Image download</button><a class="btn grn" target="_blank" rel="noopener" href="${waLink(m, bill)}">WhatsApp</a></div>
+  <p class="muted" style="font-size:13px;margin:0 0 12px">WhatsApp button paigham ke saath chat kholta hai; PDF ya image wahan attach kar dein.${bill.phone ? "" : " <b>Is ghar ka mobile number save nahi.</b>"}</p>
+  <div class="kv"><span>Kul bill</span><b>${money(bill.total)}</b></div><div class="kv"><span>Ada shuda</span><b style="color:var(--grn)">${money(bill.paid)}</b></div><div class="kv"><span>Baqi</span><b style="color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(bal)}</b></div>
+  ${bill.carried ? `<div class="info" style="margin-top:12px">Yeh baqaya ${mLabel(bill.carriedTo)} ke bill mein shamil ho chuka hai. Payment wahan darj karein. <button class="btn sm" data-a="bill" data-m="${bill.carriedTo}" data-id="${esc(hid)}">${mLabel(bill.carriedTo)} ka bill</button></div>` : ""}
+  ${isLatest && !bill.carried ? `<div class="row" style="margin-top:14px"><button class="btn pri" data-a="pay" data-m="${m}" data-id="${esc(hid)}">Payment darj karein</button><button class="btn" data-a="fine" data-m="${m}" data-id="${esc(hid)}">Fine lagayen</button>${num(bill.fine) ? `<button class="btn red" data-a="unfine" data-m="${m}" data-id="${esc(hid)}">Fine hatayen</button>` : ""}</div>` : ""}
+  ${pays ? `<h3 style="margin-top:18px">Payments</h3><table class="tbl"><tr><th>Tareekh</th><th>Tareeqa</th><th>Raqam</th><th>Note</th><th></th></tr>${pays}</table>` : ""}`, true);
+  billCanvas(m, bill).then(c => { const el = $("#bprev"); if (el) { el.outerHTML = `<img class="preview" id="bimg" src="${c.toDataURL("image/jpeg", 0.85)}" alt="Bill">`; } }).catch(e => { console.error(e); const el = $("#bprev"); if (el) el.textContent = "Bill ki tasveer nahi ban saki"; });
+}
+function waLink(m, b) {
+  const s = st(), doc = S.bills[m], bal = balance(b);
+  let t = `محترم ${b.owner || "صاحب"}،\n${s.nameUr || s.name}\nمکان نمبر ${b.no} کا ${mUr(m)} کا بل:\n`;
+  t += `مرلہ چارجز: Rs ${Math.round(b.marlaCharge)}\nپانی (${b.units} یونٹ): Rs ${Math.round(b.water)}\n`;
+  if (num(b.arrears)) t += `سابقہ بقایا: Rs ${Math.round(b.arrears)}\n`;
+  if (num(b.fine)) t += `جرمانہ: Rs ${Math.round(b.fine)}\n`;
+  t += `کل رقم: Rs ${Math.round(b.total)}\n`; if (num(b.paid)) t += `ادا شدہ: Rs ${Math.round(b.paid)}\nباقی: Rs ${Math.round(bal)}\n`;
+  t += `آخری تاریخ: ${fmtDate(doc.dueDate)}\n`;
+  if (s.jazzNumber) t += `\nجیز کیش: ${s.jazzNumber}${s.jazzTitle ? " (" + s.jazzTitle + ")" : ""}`;
+  if (s.bankAcc || s.iban) t += `\nبینک: ${s.bankName} ${s.bankTitle ? "- " + s.bankTitle : ""}\nاکاؤنٹ: ${s.bankAcc}${s.iban ? "\nIBAN: " + s.iban : ""}`;
+  t += `\n\nادائیگی کے بعد رسید کا اسکرین شاٹ بھیج دیں۔ شکریہ`;
+  const p = waPhone(b.phone);
+  return (p ? "https://wa.me/" + p : "https://wa.me/") + "?text=" + encodeURIComponent(t);
+}
+function payModal(m, hid) {
+  const b = S.bills[m].b[hid];
+  openModal(`<h3>Payment · Ghar # ${esc(b.no)}<button class="x" data-a="close">×</button></h3><p class="muted">Baqi: <b>${money(balance(b))}</b></p>
+  <form data-f="pay" data-m="${m}" data-id="${esc(hid)}"><div class="f2"><label class="f"><span>Raqam (Rs)</span><input type="number" name="amt" value="${Math.max(0, Math.round(balance(b)))}" min="1" step="1" required></label>
+  <label class="f"><span>Tareekh</span><input type="date" name="date" value="${todayISO()}"></label>
+  <label class="f"><span>Tareeqa</span><select name="method"><option>Cash</option><option>JazzCash</option><option>Bank</option><option>Easypaisa</option></select></label>
+  <label class="f"><span>Note / TID</span><input type="text" name="note"></label></div>
+  <button class="btn pri">Payment save karein</button></form>`);
+}
+async function savePay(form) {
+  const m = form.dataset.m, hid = form.dataset.id, b = S.bills[m].b[hid]; const fd = new FormData(form);
+  const amt = num(fd.get("amt")); if (amt <= 0) return toast("Raqam likhein");
+  const payments = (b.payments || []).concat([{ amt, date: fd.get("date") || todayISO(), method: fd.get("method"), note: String(fd.get("note") || "").trim(), at: new Date().toISOString() }]);
+  const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0));
+  if (await write(() => S.db.doc("bills/" + m).update({ b: { [hid]: { payments, paid } } }))) { toast("Payment darj ho gayi"); billModal(m, hid); }
+}
+function fineModal(m, hid) {
+  const b = S.bills[m].b[hid];
+  openModal(`<h3>Fine · Ghar # ${esc(b.no)}<button class="x" data-a="close">×</button></h3><form data-f="fine" data-m="${m}" data-id="${esc(hid)}"><label class="f"><span>Fine ki raqam (Rs) — pehle se mojood fine: ${money(b.fine)}</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" step="1" required></label><button class="btn pri">Fine add karein</button></form>`);
+}
+async function setFine(m, hid, fine) {
+  const b = S.bills[m].b[hid]; fine = Math.max(0, r2(fine));
+  const total = r2(num(b.total) - num(b.fine) + fine);
+  return write(() => S.db.doc("bills/" + m).update({ b: { [hid]: { fine, total } } }));
+}
+
+/* ============ bill canvas (Urdu) ============ */
+const UR = '"Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Noto Naskh Arabic","Urdu Typesetting",serif';
+const LAT = 'Arial,"Helvetica Neue",sans-serif';
+let fontP = null;
+function fontsReady() { if (!fontP) fontP = Promise.race([Promise.all([document.fonts.load('400 30px "Noto Nastaliq Urdu"', "مکان"), document.fonts.load('700 30px "Noto Nastaliq Urdu"', "مکان")]).catch(() => { }), new Promise(r => setTimeout(r, 4000))]); return fontP; }
+const imgCache = {};
+function loadImg(src) { if (!src) return Promise.resolve(null); if (!imgCache[src]) imgCache[src] = new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; }); return imgCache[src]; }
+async function billCanvas(m, b) {
+  await fontsReady();
+  const s = st(), doc = S.bills[m];
+  const W = 1240, H = 1754, c = document.createElement("canvas"); c.width = W; c.height = H;
+  const x = c.getContext("2d"); x.textBaseline = "middle";
+  const P = "#0f5c4d", R = W - 70, L = 70;
+  x.fillStyle = "#fff"; x.fillRect(0, 0, W, H);
+  const ur = (t, px, y, size, o = {}) => { x.save(); x.direction = "rtl"; x.textAlign = o.align || "right"; x.font = (o.bold ? "700 " : "400 ") + size + "px " + UR; x.fillStyle = o.color || "#17201d"; x.fillText(t, px, y); const w = x.measureText(t).width; x.restore(); return w; };
+  const en = (t, px, y, size, o = {}) => { x.save(); x.direction = "ltr"; x.textAlign = o.align || "left"; x.font = (o.bold ? "700 " : "400 ") + size + "px " + LAT; x.fillStyle = o.color || "#17201d"; x.fillText(String(t), px, y); const w = x.measureText(String(t)).width; x.restore(); return w; };
+  const isUr = t => /[؀-ۿ]/.test(t);
+  const any = (t, px, y, size, o = {}) => isUr(t) ? ur(t, px, y, size, o) : en(t, px, y, size, Object.assign({}, o, { align: o.align === "right" ? "right" : o.align === "center" ? "center" : "left" }));
+  const rs = n => "Rs " + (Math.round(n) || 0).toLocaleString("en-PK");
+  // header
+  x.fillStyle = P; x.fillRect(0, 0, W, 250);
+  any(s.nameUr || s.name, W / 2, 85, 62, { bold: true, color: "#fff", align: "center" });
+  ur("پانی و مینٹیننس بل", W / 2, 170, 36, { color: "#d8efe9", align: "center" });
+  if (s.address) any(s.address, W / 2, 222, 22, { color: "#bfe0d8", align: "center" });
+  // info box
+  let y = 300; x.strokeStyle = "#d5dedb"; x.lineWidth = 2; x.strokeRect(L, y - 30, W - 2 * L, 260);
+  const kv = (label, val, right, yy) => { const w = ur(label, right, yy, 28, { color: "#5b6b66" }); any(String(val), right - w - 18, yy, 30, { bold: true, align: "right" }); };
+  kv("مکان نمبر:", b.no, R - 30, y + 25); kv("بل برائے:", mUr(m), W / 2 - 20, y + 25);
+  kv("مالک:", b.owner || "-", R - 30, y + 105); kv("جاری ہونے کی تاریخ:", fmtDate((doc.generatedAt || "").slice(0, 10)), W / 2 - 20, y + 105);
+  kv("رقبہ:", b.marla + " مرلہ", R - 30, y + 185); kv("میٹر نمبر:", b.meter || "-", W / 2 - 20, y + 185);
+  // table
+  y = 610;
+  x.fillStyle = P; x.fillRect(L, y, W - 2 * L, 70);
+  ur("تفصیل", R - 25, y + 36, 30, { bold: true, color: "#fff" }); ur("رقم", L + 25, y + 36, 30, { bold: true, color: "#fff", align: "left" });
+  y += 70;
+  const row = (label, amt, o = {}) => {
+    const h = o.h || 74; if (o.bg) { x.fillStyle = o.bg; x.fillRect(L, y, W - 2 * L, h); }
+    ur(label, R - 25, y + h / 2, o.size || 29, { bold: o.bold, color: o.color });
+    if (amt !== null && amt !== undefined) en(rs(amt), L + 25, y + h / 2, o.size || 29, { bold: true, color: o.color });
+    if (o.sub) { ur(o.sub, R - 25, y + h - 2, 21, { color: "#6a7a75" }); }
+    x.strokeStyle = "#e2e8e6"; x.lineWidth = 1.5; x.beginPath(); x.moveTo(L, y + h); x.lineTo(W - L, y + h); x.stroke(); y += h;
+  };
+  { const yy = y; row("مرلہ چارجز", b.marlaCharge); x.save(); x.font = "400 29px " + UR; const w = x.measureText("مرلہ چارجز").width; x.restore(); en("(" + b.marla + " × " + b.marlaRate + ")", R - 25 - w - 16, yy + 37, 25, { align: "right", color: "#5b6b66" }); }
+  row("پانی کا بل", b.water, { h: 74 });
+  // reading detail line
+  x.fillStyle = "#f6f9f8"; x.fillRect(L, y, W - 2 * L, 64);
+  if (b.noReading) ur("اس ماہ کی ریڈنگ دستیاب نہیں — یونٹس اگلے بل میں شامل ہوں گے", R - 25, y + 32, 23, { color: "#8a5a00" });
+  else {
+    const seg = [["پچھلی ریڈنگ:", b.prev], ["موجودہ ریڈنگ:", b.curr], ["یونٹس:", b.units], ["فی یونٹ:", b.unitRate]];
+    let px = R - 25; seg.forEach(([l, v]) => { const w = ur(l, px, y + 32, 23, { color: "#5b6b66" }); const w2 = en(v, px - w - 10, y + 32, 24, { bold: true, align: "right" }); px -= w + w2 + 50; });
+  }
+  y += 64; x.strokeStyle = "#e2e8e6"; x.beginPath(); x.moveTo(L, y); x.lineTo(W - L, y); x.stroke();
+  const arr = num(b.arrears);
+  row(arr < 0 ? "پیشگی ادائیگی (منہا)" : "سابقہ بقایا", arr);
+  row("جرمانہ", num(b.fine));
+  row("کل واجب الادا رقم", b.total, { bg: "#e5f1ee", bold: true, size: 34, h: 86, color: P });
+  if (num(b.paid) > 0) { row("ادا شدہ رقم", b.paid, { color: "#1b7a3d" }); row("باقی رقم", balance(b), { bold: true, color: "#b3261e" }); }
+  // due
+  y += 24;
+  x.fillStyle = "#fff3dc"; x.fillRect(L, y, W - 2 * L, 80);
+  const w = ur("آخری تاریخ:", R - 25, y + 40, 32, { bold: true, color: "#7a4500" }); en(fmtDate(doc.dueDate), R - 25 - w - 18, y + 40, 32, { bold: true, color: "#7a4500", align: "right" });
+  ur("مقررہ تاریخ کے بعد جرمانہ عائد ہو سکتا ہے", L + 25, y + 40, 23, { color: "#7a4500", align: "left" });
+  y += 110;
+  // payment section
+  ur("ادائیگی کے طریقے", R, y + 20, 34, { bold: true, color: P }); y += 70;
+  const qr = await loadImg(s.qr); const qs = 300;
+  const lines = [];
+  if (s.jazzNumber) { lines.push(["جیز کیش نمبر:", s.jazzNumber]); if (s.jazzTitle) lines.push(["اکاؤنٹ ٹائٹل:", s.jazzTitle]); }
+  if (s.bankName || s.bankAcc) { lines.push(["بینک:", s.bankName || "-"]); if (s.bankTitle) lines.push(["اکاؤنٹ ٹائٹل:", s.bankTitle]); if (s.bankAcc) lines.push(["اکاؤنٹ نمبر:", s.bankAcc]); if (s.iban) lines.push(["IBAN:", s.iban]); }
+  if (!lines.length) lines.push(["رابطہ کریں:", s.phone || "-"]);
+  let ly = y + 10; lines.forEach(([l, v]) => { const w = isUr(l) ? ur(l, R, ly, 26, { color: "#5b6b66" }) : en(l, R, ly, 24, { color: "#5b6b66", align: "right" }); any(String(v), R - w - 16, ly, 28, { bold: true, align: "right" }); ly += 54; });
+  if (qr) { const sc = Math.min(qs / qr.width, qs / qr.height); const dw = qr.width * sc, dh = qr.height * sc; x.drawImage(qr, L + (qs - dw) / 2, y - 10 + (qs - dh) / 2, dw, dh); x.strokeStyle = "#d5dedb"; x.strokeRect(L - 6, y - 16, qs + 12, qs + 12); ur("QR کوڈ اسکین کریں", L + qs / 2, y + qs + 30, 22, { color: "#5b6b66", align: "center" }); }
+  // stamp
+  if (balance(b) <= 0) { x.save(); x.translate(W - 300, 1000); x.rotate(-0.25); x.strokeStyle = "rgba(27,122,61,.75)"; x.lineWidth = 6; x.strokeRect(-130, -55, 260, 110); ur("ادا شدہ", 0, 0, 52, { bold: true, color: "rgba(27,122,61,.8)", align: "center" }); x.restore(); }
+  // footer
+  x.fillStyle = "#f1f5f4"; x.fillRect(0, H - 110, W, 110);
+  { const ft = "ادائیگی کے بعد رسید یا اسکرین شاٹ واٹس ایپ کریں" + (s.phone ? ":" : "۔"); x.save(); x.font = "400 26px " + UR; const wu = x.measureText(ft).width; x.font = "700 28px " + LAT; const wp = s.phone ? x.measureText(s.phone).width + 20 : 0; x.restore(); const rr = W / 2 + (wu + wp) / 2; ur(ft, rr, H - 58, 26, { color: "#3b4a45" }); if (s.phone) en(s.phone, rr - wu - 20, H - 58, 28, { bold: true, align: "right" }); }
+  return c;
+}
+function canvasJpeg(c) { return new Promise(r => c.toBlob(bl => bl.arrayBuffer().then(ab => r({ bytes: new Uint8Array(ab), w: c.width, h: c.height })), "image/jpeg", 0.85)); }
+function makePdf(imgs) {
+  const enc = new TextEncoder(); const parts = []; let len = 0; const offs = [];
+  const push = d => { const u = typeof d === "string" ? enc.encode(d) : d; parts.push(u); len += u.length; };
+  push("%PDF-1.4\n%âãÏÓ\n");
+  const obj = (id, body) => { offs[id] = len; push(id + " 0 obj\n" + body + "\nendobj\n"); };
+  const n = imgs.length;
+  obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
+  obj(2, "<< /Type /Pages /Kids [" + imgs.map((_, i) => (3 + 3 * i) + " 0 R").join(" ") + "] /Count " + n + " >>");
+  imgs.forEach((im, i) => {
+    const pw = 595.28, ph = pw * im.h / im.w, p = 3 + 3 * i;
+    obj(p, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw.toFixed(2)} ${ph.toFixed(2)}] /Resources << /XObject << /Im${i} ${p + 2} 0 R >> >> /Contents ${p + 1} 0 R >>`);
+    const cs = `q ${pw.toFixed(2)} 0 0 ${ph.toFixed(2)} 0 0 cm /Im${i} Do Q`;
+    obj(p + 1, `<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`);
+    offs[p + 2] = len; push(`${p + 2} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`); push(im.bytes); push("\nendstream\nendobj\n");
+  });
+  const total = 3 + 3 * n, xref = len;
+  let t = "xref\n0 " + total + "\n0000000000 65535 f \n"; for (let i = 1; i < total; i++) t += String(offs[i]).padStart(10, "0") + " 00000 n \n";
+  push(t); push("trailer\n<< /Size " + total + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF\n");
+  return new Blob(parts, { type: "application/pdf" });
+}
+async function saveFile(name, blob) {
+  if (!S.dl) { toast("Is view mein download available nahi. Image par long-press kar ke save karein."); return; }
+  try { await S.dl.save({ filename: name, data: blob }); toast("File save ho gayi"); }
+  catch (e) { if (e && e.code !== "declined") toast("Download nahi ho saka (" + (e.code || "error") + ")"); }
+}
+async function pdfFor(m, list, name) {
+  if (!list.length) return toast("Koi bill nahi");
+  openModal(`<h3>PDF ban rahi hai…</h3><div class="bar"><i id="pbar" style="width:0"></i></div><p class="muted" id="ptxt">0 / ${list.length}</p>`);
+  const imgs = [];
+  for (let i = 0; i < list.length; i++) { const c = await billCanvas(m, list[i]); imgs.push(await canvasJpeg(c)); const pb = $("#pbar"); if (pb) { pb.style.width = ((i + 1) / list.length * 100) + "%"; $("#ptxt").textContent = (i + 1) + " / " + list.length; } }
+  const blob = makePdf(imgs);
+  openModal(`<h3>PDF tayyar hai<button class="x" data-a="close">×</button></h3><p>${list.length} bills · ${(blob.size / 1048576).toFixed(1)} MB</p><button class="btn pri" id="pdfsave">Download karein</button>`);
+  $("#pdfsave").onclick = () => saveFile(name, blob);
+}
+
+/* ============ events ============ */
+document.addEventListener("click", async e => {
+  const t = e.target.closest("[data-a]"); if (!t) return;
+  const a = t.dataset.a, id = t.dataset.id, m = t.dataset.m;
+  if (t.tagName === "A") return;
+  switch (a) {
+    case "tab": S.view = t.dataset.v; S.q = ""; closeModal(); render(true); window.scrollTo(0, 0); break;
+    case "close": closeModal(); break;
+    case "hf": S.hfilter = t.dataset.v; render(true); break;
+    case "rf": S.rfilter = t.dataset.v; render(true); break;
+    case "bf": S.bfilter = t.dataset.v; render(true); break;
+    case "toReader": S.mode = "reader"; S.q = ""; render(true); break;
+    case "toAdmin": S.mode = "admin"; render(true); break;
+    case "logout": ss("rg_mode", null); S.mode = "pin"; render(true); break;
+    case "addHouse": houseModal(null); break;
+    case "editHouse": houseModal(S.houses.find(h => h.id === id)); break;
+    case "delHouse": { const h = S.houses.find(x => x.id === id); if (await ask("Ghar delete karein?", "Ghar # " + esc(h.no) + " list se hat jayega. Purane bills mehfooz rahenge.", "Delete", true)) { if (await write(() => S.db.doc("society/houses").set({ list: S.houses.filter(x => x.id !== id) }))) toast("Delete ho gaya"); } break; }
+    case "bulkSold": openModal(`<h3>Kai ghar Sold karein<button class="x" data-a="close">×</button></h3><form data-f="bulkSold"><label class="f"><span>Ghar number (maslan 1-50, 61, 70-80)</span><textarea name="nos" rows="3"></textarea></label><label class="row" style="margin-bottom:12px"><input type="radio" name="v" value="1" checked> Sold &nbsp; <input type="radio" name="v" value="0"> Unsold</label><button class="btn pri">Apply</button></form>`); break;
+    case "reading": readingModal(id); break;
+    case "delReading": { if (await ask("Reading hatayen?", "Is ghar ki is mahine ki reading delete ho jayegi.", "Hatayen", true)) { const d = S.readings[S.readMonth]; const r = Object.assign({}, d.r); delete r[id]; if (await write(() => S.db.doc("readings/" + S.readMonth).set({ month: S.readMonth, r }))) toast("Reading hat gayi"); } break; }
+    case "otherMonth": openModal(`<h3>Mahina chunein<button class="x" data-a="close">×</button></h3><input type="month" id="om" value="${S.billMonth || curMonth()}"><div style="height:12px"></div><button class="btn pri" data-a="omGo">Kholein</button>`); break;
+    case "omGo": { const v = $("#om").value; if (v) { S.billMonth = v; closeModal(); render(true); } break; }
+    case "gen": { const due = $("#due").value || addDays(todayISO(), 10); if (!num(st().unitRate) && !(await ask("Water rate set nahi", "Water rate per unit 0 hai, is liye water bill 0 aayega. Phir bhi generate karein?", "Generate"))) break; t.disabled = true; t.textContent = "Ban rahe hain…"; await generateBills(S.billMonth, due); render(true); break; }
+    case "regen": { if (await ask("Dobara generate karein?", "Is mahine ke bills nayi readings aur sold gharon ke hisaab se dobara banenge. Payments, fine aur purane rates mehfooz rahenge.", "Generate")) { await generateBills(S.billMonth, S.bills[S.billMonth].dueDate); render(true); } break; }
+    case "bill": billModal(m, id); break;
+    case "pay": payModal(m, id); break;
+    case "fine": fineModal(m, id); break;
+    case "unfine": if (await setFine(m, id, 0)) { toast("Fine hat gaya"); billModal(m, id); } break;
+    case "delPay": { if (!(await ask("Payment hatayen?", "Yeh payment record delete ho jayega.", "Hatayen", true))) { billModal(m, id); break; } const b = S.bills[m].b[id]; const payments = (b.payments || []).filter((_, i) => i !== +t.dataset.i); const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0)); if (await write(() => S.db.doc("bills/" + m).update({ b: { [id]: { payments, paid } } }))) toast("Payment hat gayi"); billModal(m, id); break; }
+    case "bulkFine": { const mm = S.billMonth, bill = S.bills[mm]; const list = Object.values(bill.b).filter(b => balance(b) > 0 && !num(b.fine)); if (!list.length) { toast("Koi unpaid bill baghair fine ke nahi"); break; } openModal(`<h3>Unpaid bills par fine<button class="x" data-a="close">×</button></h3><p>${list.length} unpaid bills (jin par abhi fine nahi) par fine lagega.</p><form data-f="bulkFine"><label class="f"><span>Fine (Rs)</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" required></label><button class="btn pri">Apply</button></form>`); break; }
+    case "pdf1": case "img1": { const b = S.bills[m].b[id]; t.disabled = true; const c = await billCanvas(m, b); t.disabled = false; const fn = "Bill-" + b.no + "-" + m; if (a === "img1") c.toBlob(bl => saveFile(fn + ".jpg", bl), "image/jpeg", 0.9); else saveFile(fn + ".pdf", makePdf([await canvasJpeg(c)])); break; }
+    case "pdfAll": case "pdfPending": { const mm = S.billMonth; let list = Object.values(S.bills[mm].b).sort((x, y) => hsort({ no: x.no }, { no: y.no })); if (a === "pdfPending") list = list.filter(b => balance(b) > 0); pdfFor(mm, list, (a === "pdfAll" ? "Bills-" : "Unpaid-Bills-") + mm + ".pdf"); break; }
+    case "qrdel": if (await write(() => S.db.doc("society/settings").set(Object.assign({}, st(), { qr: "" })))) toast("QR hat gaya"); break;
+    case "backup": { const data = { exportedAt: new Date().toISOString(), settings: Object.assign({}, S.settings, { qr: S.settings && S.settings.qr ? "(image)" : "" }), houses: S.houses, readings: S.readings, bills: S.bills }; saveFile("royal-garden-backup-" + todayISO() + ".json", JSON.stringify(data, null, 1)); break; }
+  }
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "q") { S.q = e.target.value; render(true); }
+  else if (e.target.closest("#app form[data-f]")) S.dirty = true;
+});
+document.addEventListener("change", async e => {
+  const t = e.target;
+  if (t.id === "rm") { if (t.value) { S.readMonth = t.value; render(true); } }
+  else if (t.id === "bm") { S.billMonth = t.value; S.q = ""; render(true); }
+  else if (t.id === "qrfile" && t.files[0]) {
+    const f = t.files[0]; const url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
+    const img = await loadImg(url); if (!img) return toast("Tasveer nahi khul saki");
+    const mx = 600, sc = Math.min(1, mx / Math.max(img.width, img.height)); const c = document.createElement("canvas"); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+    const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+    let d = c.toDataURL("image/png"); if (d.length > 180000) d = c.toDataURL("image/jpeg", 0.85);
+    if (await write(() => S.db.doc("society/settings").set(Object.assign({}, st(), { qr: d })))) { const im = $("#qrimg"); if (im) im.src = d; toast("QR save ho gaya"); }
+  }
+});
+document.addEventListener("submit", async e => {
+  e.preventDefault(); const f = e.target, k = f.dataset.f, fd = new FormData(f); S.dirty = false;
+  if (k === "pin") {
+    const p = String($("#pin").value || "").trim(), s = st();
+    if (p && p === String(s.readerPin)) { S.mode = "reader"; ss("rg_mode", "reader"); S.rfilter = "pending"; render(true); }
+    else if (p && s.adminPin && p === String(s.adminPin)) { S.mode = "admin"; ss("rg_mode", "admin"); render(true); }
+    else toast("PIN ghalat hai");
+  } else if (k === "setup") {
+    const total = Math.min(2000, Math.max(1, Math.round(num(fd.get("total"))))), marla = num(fd.get("marla"));
+    const sold = parseRanges(fd.get("sold"));
+    const list = []; for (let i = 1; i <= total; i++) list.push({ id: String(i), no: String(i), owner: "", phone: "", marla, meter: "", opening: 0, sold: sold.has(String(i)) });
+    const s = Object.assign({}, st(), { name: String(fd.get("name") || DEF.name), nameUr: String(fd.get("nameUr") || ""), marlaRate: num(fd.get("marlaRate")), unitRate: num(fd.get("unitRate")), readerPin: String(fd.get("readerPin") || "1234") });
+    const ok = await write(async () => { await S.db.doc("society/settings").set(s); if (!S.housesExists) await S.db.doc("society/houses").set({ list }); });
+    if (ok) { toast("Setup ho gaya"); S.view = "houses"; render(true); }
+  } else if (k === "settings") {
+    const s = Object.assign({}, st());
+    ["name", "nameUr", "address", "phone", "jazzNumber", "jazzTitle", "bankName", "bankTitle", "bankAcc", "iban", "readerPin", "adminPin"].forEach(n => s[n] = String(fd.get(n) || "").trim());
+    ["marlaRate", "unitRate", "fineDefault", "dueDays"].forEach(n => s[n] = num(fd.get(n)));
+    if (!s.readerPin) return toast("Reader PIN khali nahi ho sakta");
+    if (await write(() => S.db.doc("society/settings").set(s))) toast("Settings save ho gayi");
+  } else if (k === "house") saveHouse(f);
+  else if (k === "reading") saveReading(f, (e.submitter && e.submitter.value) || "next");
+  else if (k === "pay") savePay(f);
+  else if (k === "fine") { const m = f.dataset.m, id = f.dataset.id; const amt = num(fd.get("amt")); if (amt <= 0) return; if (await setFine(m, id, num(S.bills[m].b[id].fine) + amt)) { toast("Fine lag gaya"); billModal(m, id); } }
+  else if (k === "bulkFine") {
+    const m = S.billMonth, amt = num(fd.get("amt")); if (amt <= 0) return; const u = {};
+    Object.values(S.bills[m].b).forEach(b => { if (balance(b) > 0 && !num(b.fine)) u[b.hid] = { fine: amt, total: r2(num(b.total) + amt) }; });
+    if (await write(() => S.db.doc("bills/" + m).update({ b: u }))) { closeModal(); toast(Object.keys(u).length + " bills par fine lag gaya"); }
+  } else if (k === "bulkSold") {
+    const set = parseRanges(fd.get("nos")), v = fd.get("v") === "1"; if (!set.size) return toast("Number likhein");
+    let n = 0; const list = S.houses.map(h => { if (set.has(String(h.no)) || set.has(String(parseInt(h.no)))) { n++; return Object.assign({}, h, { sold: v }); } return h; });
+    if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); toast(n + " ghar update ho gaye"); }
+  }
+});
+boot();
+</script>
+</body>
+</html>
