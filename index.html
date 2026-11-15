@@ -2,94 +2,146 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f5c4d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Royal Garden">
 <title>Royal Garden Water Billing</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap">
 <style>
-:root{--bg:#f4f6f5;--card:#fff;--ink:#17201d;--mute:#66736e;--line:#e1e6e3;--pri:#0f5c4d;--pri2:#e5f1ee;--red:#b3261e;--red2:#fbe9e7;--amb:#a15c00;--amb2:#fff3dc;--grn:#1b7a3d;--grn2:#e3f4e8;--r:12px}
-*{box-sizing:border-box}
-body{margin:0;font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+:root{--bg:#f3f5f4;--card:#fff;--ink:#16201c;--mute:#66736e;--line:#e2e7e5;--pri:#0f5c4d;--pri-d:#0b4639;--pri2:#e4f1ed;--red:#b3261e;--red2:#fbe9e7;--amb:#9a5800;--amb2:#fff3dc;--grn:#1b7a3d;--grn2:#e3f4e8;--r:14px;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
 button,input,select,textarea{font:inherit;color:inherit}
-.top{background:var(--pri);color:#fff;padding:12px 16px 0;position:sticky;top:0;z-index:5}
-.top h1{margin:0;font-size:18px;font-weight:650;display:flex;align-items:center;gap:8px;justify-content:space-between}
-.top .btn{color:var(--ink);background:#fff}
-.top small{opacity:.8;font-weight:400;font-size:12px}
-.tabs{display:flex;gap:2px;overflow-x:auto;margin-top:10px;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{background:none;border:0;color:#cfe5df;padding:9px 12px;border-bottom:3px solid transparent;white-space:nowrap;cursor:pointer;font-weight:550}
-.tab.on{color:#fff;border-color:#fff}
-main{max-width:980px;margin:0 auto;padding:16px}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* ---- layout: mobile first ---- */
+.appbar{position:sticky;top:0;z-index:10;background:var(--pri);color:#fff;padding:calc(10px + var(--sat)) 16px 10px;display:flex;align-items:center;gap:10px;min-height:56px}
+.appbar .t{flex:1;min-width:0}
+.appbar .t b{display:block;font-size:17px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appbar .t small{opacity:.8;font-size:12px}
+.ibtn{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:12px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.ibtn.on{background:#fff;color:var(--pri)}
+main{padding:16px 16px calc(96px + var(--sab));max-width:1100px;margin:0 auto}
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:#fff;border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + var(--sab))}
+.bnav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;color:var(--mute);font-size:11px;font-weight:600;cursor:pointer;border-radius:12px}
+.bnav button.on{color:var(--pri)}
+.bnav button.on svg{background:var(--pri2);border-radius:99px;padding:3px 14px;width:50px;height:28px}
+.side{display:none}
+.pagehead{display:none}
+@media(min-width:900px){
+  body:not(.reader) #app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+  .appbar.mob{display:none}
+  .bnav{display:none}
+  .side{display:flex;flex-direction:column;position:sticky;top:0;height:100vh;background:var(--pri-d);color:#cfe6df;padding:20px 12px}
+  .side .brand{color:#fff;font-weight:700;font-size:18px;padding:4px 12px 2px}
+  .side .brand small{display:block;font-weight:400;font-size:12px;color:#9fc7bc;margin-top:2px}
+  .side nav{margin-top:22px;display:flex;flex-direction:column;gap:4px}
+  .side nav button{display:flex;align-items:center;gap:12px;border:0;background:none;color:inherit;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:550;text-align:left}
+  .side nav button:hover{background:rgba(255,255,255,.07)}
+  .side nav button.on{background:rgba(255,255,255,.14);color:#fff}
+  .side .foot{margin-top:auto;display:flex;flex-direction:column;gap:4px}
+  main{padding:28px 32px 40px;width:100%}
+  .pagehead{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .pagehead h1{margin:0;font-size:24px;font-weight:700;flex:1}
+}
+/* ---- components ---- */
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
-.card h2{margin:0 0 12px;font-size:16px}
-.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
-.stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
-.stat span{color:var(--mute);font-size:13px}
-.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:550;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.card h2{margin:0 0 12px;font-size:16px;font-weight:650}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:14px}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.cols{display:grid;gap:14px}
+@media(min-width:900px){.cols{grid-template-columns:1fr 1fr}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.stat span{color:var(--mute);font-size:12.5px;display:block}
+.stat b{display:block;font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat em{font-style:normal;color:var(--mute);font-size:12px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:11px;padding:10px 14px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;min-height:42px}
 .btn:hover{border-color:#b9c6c1}
 .btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
 .btn.red{color:var(--red);border-color:#efc6c2}
 .btn.grn{background:#1f8f4c;border-color:#1f8f4c;color:#fff}
-.btn.sm{padding:5px 10px;font-size:13px}
+.btn.sm{padding:6px 11px;font-size:13px;min-height:34px}
+.btn.block{width:100%}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .sp{flex:1}
-input[type=text],input[type=number],input[type=tel],input[type=date],input[type=month],input[type=password],select,textarea{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:#fff;width:100%}
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+@media(min-width:700px){.actions{display:flex;flex-wrap:wrap}}
+input[type=text],input[type=number],input[type=tel],input[type=date],input[type=month],input[type=password],input[type=search],select,textarea{border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:#fff;width:100%;min-height:44px}
 input:focus,select:focus,textarea:focus{outline:2px solid #8cc5b7;border-color:var(--pri)}
-label.f{display:block;margin-bottom:10px}
-label.f span{display:block;font-size:13px;color:var(--mute);margin-bottom:4px}
-.f2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
-@media(max-width:560px){.f2{grid-template-columns:1fr}}
+label.f{display:block;margin-bottom:12px}
+label.f>span{display:block;font-size:13px;color:var(--mute);margin-bottom:5px;font-weight:500}
+.f2{display:grid;grid-template-columns:1fr;gap:0 14px}
+@media(min-width:620px){.f2{grid-template-columns:1fr 1fr}}
+.toggle{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.toggle input{width:22px;height:22px;accent-color:var(--pri);flex:none}
+.toggle small{display:block;color:var(--mute)}
 .list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;min-height:64px}
 .item:last-child{border-bottom:0}
 .item:hover{background:#fafcfb}
-.hno{min-width:52px;height:40px;border-radius:9px;background:var(--pri2);color:var(--pri);display:flex;align-items:center;justify-content:center;font-weight:700;padding:0 6px}
+.hno{min-width:58px;height:42px;border-radius:10px;background:var(--pri2);color:var(--pri);display:flex;align-items:center;justify-content:center;font-weight:700;padding:0 6px;font-variant-numeric:tabular-nums}
 .item .m{flex:1;min-width:0}
-.item .m b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.item .m small{color:var(--mute)}
-.amt{font-variant-numeric:tabular-nums;font-weight:650;text-align:right;white-space:nowrap}
-.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:650;white-space:nowrap}
+.item .m b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.item .m small{color:var(--mute);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.amt{font-variant-numeric:tabular-nums;font-weight:700;text-align:right;white-space:nowrap}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:650;white-space:nowrap}
 .b-paid{background:var(--grn2);color:var(--grn)}
 .b-unpaid{background:var(--red2);color:var(--red)}
 .b-part{background:var(--amb2);color:var(--amb)}
 .b-carried{background:#eceff1;color:#546e7a}
 .b-sold{background:var(--pri2);color:var(--pri)}
 .b-no{background:#eceff1;color:#78858a}
-.chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:5px 12px;font-size:13px;cursor:pointer}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
 .chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}
-.note{background:var(--amb2);color:#5c3b00;border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
-.info{background:var(--pri2);color:#0c4a3e;border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
-.err{background:var(--red2);color:var(--red);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.toolbar input{flex:1;min-width:200px}
+.note{background:var(--amb2);color:#5c3b00;border-radius:11px;padding:11px 13px;font-size:14px;margin-bottom:12px}
+.info{background:var(--pri2);color:#0c4a3e;border-radius:11px;padding:11px 13px;font-size:14px;margin-bottom:12px}
+.err{background:var(--red2);color:var(--red);border-radius:11px;padding:11px 13px;font-size:14px;margin-bottom:12px}
 .muted{color:var(--mute)}
 .bar{height:8px;background:#e6ecea;border-radius:99px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--pri)}
-.empty{padding:30px;text-align:center;color:var(--mute)}
-.modal{position:fixed;inset:0;background:rgba(10,20,16,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.empty{padding:34px 20px;text-align:center;color:var(--mute)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.kv:last-child{border:0}
+.kv b{text-align:right}
+.modal{position:fixed;inset:0;background:rgba(10,20,16,.45);display:flex;align-items:flex-end;justify-content:center;z-index:30}
 @media(min-width:700px){.modal{align-items:center}}
 .modal.hidden{display:none}
-.sheet{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px}
-@media(min-width:700px){.sheet{border-radius:16px}}
-.sheet.wide{max-width:760px}
-.sheet h3{margin:0 0 12px;font-size:17px;display:flex;align-items:center;gap:8px}
-.x{margin-left:auto;border:0;background:#f0f3f2;border-radius:99px;width:32px;height:32px;cursor:pointer;font-size:18px}
-#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#17201d;color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none;z-index:40;max-width:90vw}
+.sheet{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + var(--sab))}
+@media(min-width:700px){.sheet{border-radius:18px}}
+.sheet.wide{max-width:780px}
+.sheet h3{margin:0 0 12px;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.x{margin-left:auto;border:0;background:#f0f3f2;border-radius:99px;width:34px;height:34px;cursor:pointer;font-size:19px}
+#toast{position:fixed;left:50%;bottom:calc(90px + var(--sab));transform:translateX(-50%);background:#16201c;color:#fff;padding:11px 16px;border-radius:11px;opacity:0;transition:.25s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
 #toast.on{opacity:1}
-.big{font-size:30px;font-weight:700;text-align:center;padding:14px;letter-spacing:1px}
-.kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line)}
-.kv:last-child{border:0}
-.preview{width:100%;border:1px solid var(--line);border-radius:8px;display:block}
-.boot{padding:60px 20px;text-align:center;color:var(--mute)}
-.qrprev{width:140px;height:140px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#fff}
+.preview{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
+.boot{padding:70px 24px;text-align:center;color:var(--mute)}
+.qrprev{width:130px;height:130px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
-.tbl td,.tbl th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}
+.tbl td,.tbl th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
 .tbl th{color:var(--mute);font-weight:600;font-size:12px}
-.pinbox{max-width:360px;margin:50px auto}
+.login{max-width:380px;margin:0 auto;padding:40px 20px}
+.login .logo{width:64px;height:64px;border-radius:18px;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.login .logo svg{width:34px;height:34px}
+.pinin{font-size:26px;text-align:center;letter-spacing:10px;font-weight:700}
+.readin::-webkit-inner-spin-button,.readin::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.readin{-moz-appearance:textfield;font-size:32px;text-align:center;font-weight:700;min-height:64px}
+.rd-plot{font-size:34px;font-weight:800;text-align:center;color:var(--pri);margin:4px 0 2px}
+.rd-sub{text-align:center;color:var(--mute);margin-bottom:12px}
+.prevbox{display:flex;justify-content:space-around;text-align:center;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:12px}
+.prevbox span{display:block;font-size:12px;color:var(--mute)}
+.prevbox b{font-size:20px}
+.reader main{padding-bottom:calc(30px + var(--sab))}
+@media(min-width:900px){.reader .appbar.mob{display:flex}.reader main{max-width:720px}}
 </style>
 </head>
 <body>
-<div id="app"><div class="boot">Load ho raha hai…</div></div>
+<div id="app"><div class="boot">Loading…</div></div>
 <div id="modal" class="modal hidden"><div class="sheet" id="sheet"></div></div>
 <div id="toast"></div>
 <script>
@@ -109,13 +161,24 @@ const EN_M = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oc
 const UR_M = ["جنوری", "فروری", "مارچ", "اپریل", "مئی", "جون", "جولائی", "اگست", "ستمبر", "اکتوبر", "نومبر", "دسمبر"];
 const mLabel = m => m ? EN_M[+m.slice(5, 7) - 1] + " " + m.slice(0, 4) : "";
 const mUr = m => UR_M[+m.slice(5, 7) - 1] + " " + m.slice(0, 4);
-const prevMonthKey = m => { let y = +m.slice(0, 4), mo = +m.slice(5, 7) - 1; if (mo === 0) { y--; mo = 12; } return y + "-" + pad(mo); };
-function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 2600); }
+function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 2800); }
 function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) { return null; } }
 function waPhone(p) { let d = String(p || "").trim().split(/[\s,\/]+(?=[0+9])/)[0].replace(/\D/g, ""); if (!d) return ""; if (d.startsWith("00")) d = d.slice(2); if (d.startsWith("920") && d.length === 13) d = "92" + d.slice(3); if (d.startsWith("0")) d = "92" + d.slice(1); else if (d.length === 10 && d.startsWith("3")) d = "92" + d; return d; }
-function parseRanges(t) { const out = new Set(); String(t || "").split(/[,\s]+/).forEach(p => { if (!p) return; const m = p.match(/^(\d+)-(\d+)$/); if (m) { for (let i = +m[1]; i <= +m[2] && i - +m[1] < 5000; i++) out.add(String(i)); } else if (/^\d+$/.test(p)) out.add(String(+p)); }); return out; }
+function parseRanges(t) { const out = new Set(); String(t || "").split(/[,\s]+/).forEach(p => { if (!p) return; const m = p.match(/^(\d+)-(\d+)$/); if (m) { for (let i = +m[1]; i <= +m[2] && i - +m[1] < 5000; i++) out.add(String(i)); } else out.add(p); }); return out; }
+const IC = {
+  home: '<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  plots: '<path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M8 8h3M8 12h3M8 16h3M3 21h18"/>',
+  readings: '<path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/>',
+  bills: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3"/>',
+  pending: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  back: '<path d="M15 18l-6-6 6-6"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+};
+const icon = k => `<svg class="i" viewBox="0 0 24 24">${IC[k]}</svg>`;
 
-const DEF = { name: "Royal Garden", nameUr: "رائل گارڈن", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerPin: "1234", adminPin: "" };
+const DEF = { name: "Royal Garden", nameUr: "رائل گارڈن", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerPin: "1234", adminPin: "", readerShowPrev: true, readerShowOwner: true };
 
 /* ============ state ============ */
 const S = {
@@ -131,7 +194,6 @@ const soldHouses = () => S.houses.filter(h => h.sold).sort(hsort);
 function hsort(a, b) { const x = parseFloat(a.no), y = parseFloat(b.no); if (!isNaN(x) && !isNaN(y) && x !== y) return x - y; return String(a.no).localeCompare(String(b.no)); }
 const billMonths = () => Object.keys(S.bills).sort();
 const latestBillMonth = () => billMonths().slice(-1)[0] || null;
-
 function readingOf(hid, month) { const d = S.readings[month]; const e = d && d.r && d.r[hid]; return e && e.v != null ? num(e.v) : null; }
 function prevReading(h, month) {
   const ms = Object.keys(S.readings).filter(m => m < month).sort().reverse();
@@ -142,19 +204,22 @@ function balance(b) { return r2(num(b.total) - num(b.paid)); }
 function status(b) {
   const bal = balance(b);
   if (bal <= 0) return { k: "paid", t: "Paid" };
-  if (b.carried) return { k: "carried", t: "Agle bill mein" };
-  if (num(b.paid) > 0) return { k: "part", t: "Partial" };
+  if (b.carried) return { k: "carried", t: "Carried forward" };
+  if (num(b.paid) > 0) return { k: "part", t: "Partly paid" };
   return { k: "unpaid", t: "Unpaid" };
 }
 const badge = s => `<span class="badge b-${s.k}">${s.t}</span>`;
+const isReaderUI = () => S.mode === "reader";
+const showPrev = () => !isReaderUI() || st().readerShowPrev !== false;
+const showOwner = () => !isReaderUI() || st().readerShowOwner !== false;
 
 /* ============ boot ============ */
 async function boot() {
   const C = window.claude;
-  if (!C || !C.use) { S.mode = "nodb"; render(); return; }
+  if (!C || !C.use) { S.mode = "nodb"; render(true); return; }
   const [db, user, dl] = await Promise.all([C.use("db"), C.use("user"), C.use("downloads")].map(p => Promise.resolve(p).catch(() => null)));
   S.db = db; S.user = user; S.dl = dl;
-  if (!db) { S.mode = "nodb"; render(); return; }
+  if (!db) { S.mode = "nodb"; render(true); return; }
   try { S.owner = user ? !!(await user.isOwner()) : false; } catch (e) { S.owner = false; }
   S.mode = S.owner ? "admin" : (ss("rg_mode") || "pin");
   const slowT = setTimeout(() => { S.slow = true; render(); }, 10000);
@@ -169,9 +234,9 @@ async function write(fn) {
   try { await fn(); return true; }
   catch (e) {
     console.warn(e);
-    if (e && e.code === "invalid_argument") { toast("Save nahi hua: aap ko is ki ijazat nahi (admin se access lein)"); S.writeDenied = true; }
-    else if (e && e.code === "quota_exceeded") toast("Database bhar gaya hai: purana data saaf karein");
-    else toast("Save nahi hua, dobara koshish karein");
+    if (e && e.code === "invalid_argument") { toast("Not saved: you don't have permission. Ask the admin for access."); S.writeDenied = true; }
+    else if (e && e.code === "quota_exceeded") toast("Storage is full. Please remove old data.");
+    else toast("Could not save. Please try again.");
     return false;
   }
 }
@@ -182,132 +247,155 @@ function render(force) {
   S.dirty = false;
   const a = document.activeElement, aid = a && a.id, sel = a && a.selectionStart;
   const app = $("#app");
-  if (S.mode === "loading") app.innerHTML = `<div class="boot">Load ho raha hai…</div>`;
-  else if (S.mode === "nodb") app.innerHTML = `<div class="boot"><b>Data se connect nahi ho saka.</b><br>Yeh page Claude par sign in kar ke kholein. Agar aap reader hain to admin se kahein ke yeh link aap ke saath share kare.</div>`;
-  else if (!S.ready.s || !S.ready.h) app.innerHTML = `<div class="boot">Data aa raha hai…${S.slow ? "<br><br>Data abhi nahi mil raha. Internet check karein." : ""}</div>`;
+  document.body.classList.toggle("reader", S.mode !== "admin");
+  if (S.mode === "loading") app.innerHTML = `<div class="boot">Loading…</div>`;
+  else if (S.mode === "nodb") app.innerHTML = `<div class="boot"><b>Could not connect to the data.</b><br>Please open this page while signed in to Claude. If you are a meter reader, ask the admin to share this link with you.</div>`;
+  else if (!S.ready.s || !S.ready.h) app.innerHTML = `<div class="boot">Loading data…${S.slow ? "<br><br>The data is taking too long. Please check your internet connection." : ""}</div>`;
   else if (S.mode === "pin") app.innerHTML = viewPin();
   else if (S.mode === "reader") app.innerHTML = viewReader();
   else app.innerHTML = viewAdmin();
   if (aid) { const el = document.getElementById(aid); if (el) { el.focus(); try { if (sel != null) el.setSelectionRange(sel, sel); } catch (e) { } } }
 }
-function header(sub, tabs) {
-  const s = st();
-  return `<div class="top"><h1><span>${esc(s.name)} <small>${esc(sub)}</small></span>${S.mode === "reader" && S.owner ? `<button class="btn sm" data-a="toAdmin">Admin</button>` : ""}${S.mode !== "admin" && !S.owner ? `<button class="btn sm" data-a="logout">Lock</button>` : ""}${S.mode === "admin" && !S.owner ? `<button class="btn sm" data-a="logout">Lock</button>` : ""}</h1>${tabs || '<div style="height:12px"></div>'}</div>`;
-}
 
 /* ---- PIN ---- */
 function viewPin() {
-  if (!S.settingsExists) return header("") + `<div class="boot">Admin ne abhi system set up nahi kiya.</div>`;
-  return header("Login") + `<div class="pinbox card"><h2>Meter Reader Login</h2><p class="muted">Apna PIN darj karein.</p>
-  <form data-f="pin"><input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN" style="font-size:22px;text-align:center;letter-spacing:6px"><div style="height:10px"></div><button class="btn pri" style="width:100%;justify-content:center">Login</button></form></div>`;
+  const s = st();
+  if (!S.settingsExists) return `<div class="boot">The admin has not set up the system yet.</div>`;
+  return `<div class="login"><div class="logo">${icon("readings")}</div><h2 style="text-align:center;margin:0 0 4px">${esc(s.name)}</h2><p class="muted" style="text-align:center;margin:0 0 24px">Meter Reader Login</p>
+  <form data-f="pin" class="card"><label class="f"><span>Enter your PIN</span><input id="pin" class="pinin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••"></label><button class="btn pri block">Log in</button></form></div>`;
 }
 
-/* ---- ADMIN ---- */
-const TABS = [["home", "Home"], ["houses", "Ghar"], ["readings", "Readings"], ["bills", "Bills"], ["pending", "Pending"], ["settings", "Settings"]];
+/* ---- ADMIN shell ---- */
+const NAV = [["home", "Dashboard", "home"], ["houses", "Plots", "plots"], ["readings", "Readings", "readings"], ["bills", "Bills", "bills"], ["pending", "Pending", "pending"]];
+const TITLES = { home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings" };
 function viewAdmin() {
-  const tabs = `<div class="tabs">${TABS.map(([k, t]) => `<button class="tab ${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${t}</button>`).join("")}</div>`;
+  const s = st();
   let body;
-  if (!S.settingsExists && S.view !== "settings") body = viewSetup();
-  else if (!S.housesExists && S.view !== "settings") body = viewSetup();
-  else body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings }[S.view] || vHome)();
-  return header("Water & Maintenance Billing", tabs) + `<main>${S.slow ? `<div class="note">Data abhi poora nahi mila; jo dikh raha hai woh purana ho sakta hai.</div>` : ""}${body}</main>`;
+  if (!S.settingsExists || !S.housesExists) { if (S.view !== "settings") body = viewSetup(); }
+  if (!body) body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings }[S.view] || vHome)();
+  const navBtn = ([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t}</span></button>`;
+  const lock = !S.owner ? `<button data-a="logout">${icon("lock")}<span>Lock</span></button>` : "";
+  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button>${lock}</nav></aside>
+  <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button>${!S.owner ? `<button class="ibtn" data-a="logout" aria-label="Lock">${icon("lock")}</button>` : ""}</header>
+  <main><div class="pagehead"><h1>${esc(TITLES[S.view] || "")}</h1></div>${S.slow ? `<div class="note">Some data has not loaded yet; what you see may be out of date.</div>` : ""}${body}</main>
+  <nav class="bnav">${NAV.map(([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t === "Dashboard" ? "Home" : t}</span></button>`).join("")}</nav>`;
 }
 function viewSetup() {
-  return `<div class="card"><h2>Pehli dafa setup</h2><p class="muted">Society ke ghar bana dein. Baad mein har ghar ki details (maalik, phone, marla) "Ghar" tab se badal sakte hain.</p>
+  return `<div class="card"><h2>First-time setup</h2><p class="muted">Create the plot list. You can edit each plot (owner, phone, marla) later from the Plots tab, or import your Excel file.</p>
   <form data-f="setup"><div class="f2">
-  <label class="f"><span>Society ka naam</span><input type="text" name="name" value="${esc(st().name)}"></label>
-  <label class="f"><span>Society ka naam (Urdu, bill ke liye)</span><input type="text" name="nameUr" dir="rtl" value="${esc(st().nameUr)}"></label>
-  <label class="f"><span>Kul ghar</span><input type="number" name="total" value="200" min="1" max="2000"></label>
-  <label class="f"><span>Har ghar ke default marla</span><input type="number" name="marla" value="5" step="0.5" min="0"></label>
-  <label class="f"><span>Per marla rate (Rs)</span><input type="number" name="marlaRate" value="${esc(st().marlaRate)}"></label>
-  <label class="f"><span>Water rate per unit (Rs)</span><input type="number" name="unitRate" value="${esc(st().unitRate || "")}" step="0.01" placeholder="maslan 15"></label>
+  <label class="f"><span>Society name</span><input type="text" name="name" value="${esc(st().name)}"></label>
+  <label class="f"><span>Society name in Urdu (for bills)</span><input type="text" name="nameUr" dir="rtl" value="${esc(st().nameUr)}"></label>
+  <label class="f"><span>Total houses</span><input type="number" name="total" value="200" min="1" max="2000"></label>
+  <label class="f"><span>Default marla per house</span><input type="number" name="marla" value="5" step="0.5" min="0"></label>
+  <label class="f"><span>Rate per marla (Rs)</span><input type="number" name="marlaRate" value="${esc(st().marlaRate)}"></label>
+  <label class="f"><span>Water rate per unit (Rs)</span><input type="number" name="unitRate" value="${esc(st().unitRate || "")}" step="0.01" placeholder="e.g. 25"></label>
   </div>
-  <label class="f"><span>Sold gharon ke number (comma ya range: 1-50, 61, 70-99)</span><textarea name="sold" rows="2" placeholder="1-80"></textarea></label>
-  <label class="f"><span>Reader PIN</span><input type="text" name="readerPin" value="${esc(st().readerPin)}" inputmode="numeric"></label>
-  <button class="btn pri">Setup mukammal karein</button></form></div>`;
+  <label class="f"><span>Sold house numbers (commas or ranges, e.g. 1-50, 61, 70-99)</span><textarea name="sold" rows="2" placeholder="1-80"></textarea></label>
+  <label class="f"><span>Meter reader PIN</span><input type="text" name="readerPin" value="${esc(st().readerPin)}" inputmode="numeric"></label>
+  <button class="btn pri">Complete setup</button></form></div>`;
 }
+
+/* ---- Dashboard ---- */
 function vHome() {
   const sold = soldHouses(), cm = curMonth();
   const done = sold.filter(h => readingOf(h.id, cm) != null).length;
   const lm = latestBillMonth(); const lb = lm ? S.bills[lm] : null;
-  let billed = 0, coll = 0, pend = 0, pendN = 0;
-  if (lb) Object.values(lb.b || {}).forEach(b => { billed += num(b.total); coll += num(b.paid); const bal = balance(b); if (bal > 0) { pend += bal; pendN++; } });
-  const s = st();
-  return `<div class="grid" style="margin-bottom:14px">
-  <div class="stat"><span>Kul ghar</span><b>${S.houses.length}</b></div>
-  <div class="stat"><span>Sold ghar</span><b>${sold.length}</b></div>
-  <div class="stat"><span>Readings (${mLabel(cm)})</span><b>${done} / ${sold.length}</b></div>
-  <div class="stat"><span>Pending (${lm ? mLabel(lm) : "-"})</span><b style="color:var(--red)">${money(pend)}</b><span>${pendN} ghar</span></div>
+  let billed = 0, coll = 0, pend = 0, pendN = 0, paidN = 0;
+  if (lb) Object.values(lb.b || {}).forEach(b => { billed += num(b.total); coll += num(b.paid); const bal = balance(b); if (bal > 0) { pend += bal; pendN++; } else paidN++; });
+  const s = st(), pct = billed ? Math.round(coll / billed * 100) : 0;
+  const allPend = pendingList().reduce((t, x) => t + x.bal, 0);
+  const marla = sold.reduce((t, h) => t + num(h.marla), 0);
+  return `<div class="grid">
+  <div class="stat"><span>Sold plots</span><b>${sold.length}</b><em>of ${S.houses.length} in list</em></div>
+  <div class="stat"><span>Readings · ${mLabel(cm)}</span><b>${done}/${sold.length}</b><em>${sold.length - done} remaining</em></div>
+  <div class="stat"><span>Collected${lm ? " · " + mLabel(lm) : ""}</span><b style="color:var(--grn)">${money(coll)}</b><em>${pct}% of ${money(billed)}</em></div>
+  <div class="stat"><span>Total outstanding</span><b style="color:var(--red)">${money(allPend)}</b><em>${pendN} unpaid bills</em></div>
   </div>
-  ${lb ? `<div class="card"><h2>Aakhri bill: ${mLabel(lm)}</h2><div class="kv"><span>Kul bill</span><b>${money(billed)}</b></div><div class="kv"><span>Wusool</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="kv"><span>Baqi</span><b style="color:var(--red)">${money(pend)}</b></div><div class="row" style="margin-top:12px"><button class="btn" data-a="tab" data-v="bills">Bills dekhein</button><button class="btn" data-a="tab" data-v="pending">Pending list</button></div></div>` : `<div class="info">Abhi koi bill nahi bana. Readings ho jayein to "Bills" tab se is mahine ke bill generate karein.</div>`}
-  <div class="card"><h2>Rates</h2><div class="kv"><span>Per marla</span><b>${money(s.marlaRate)}</b></div><div class="kv"><span>Water per unit</span><b>${s.unitRate ? "Rs " + s.unitRate : '<span style="color:var(--red)">Set nahi</span>'}</b></div><div class="kv"><span>Reader PIN</span><b>${esc(s.readerPin || "-")}</b></div></div>
-  <div class="card"><h2>Meter reader ko kaise bhejein</h2><p class="muted" style="margin:0 0 10px">Is page ko claude.ai par "Share" se reader ke email ke saath share karein (Contributor ya Editor access, taake woh reading save kar sake). Reader link khol kar apna PIN dalega aur sirf reading ka page dekhega.</p><button class="btn" data-a="toReader">Reader mode khud check karein</button></div>`;
+  <div class="actions"><button class="btn pri" data-a="tab" data-v="bills">${icon("bills")} Bills</button><button class="btn" data-a="tab" data-v="readings">${icon("readings")} Readings</button><button class="btn" data-a="tab" data-v="pending">${icon("pending")} Pending</button><button class="btn" data-a="toReader">Reader view</button></div>
+  <div class="cols">
+  ${lb ? `<div class="card"><h2>Latest bill run · ${mLabel(lm)}</h2><div class="bar" style="margin-bottom:12px"><i style="width:${pct}%"></i></div><div class="kv"><span>Total billed</span><b>${money(billed)}</b></div><div class="kv"><span>Collected</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="kv"><span>Outstanding</span><b style="color:var(--red)">${money(pend)}</b></div><div class="kv"><span>Paid / unpaid bills</span><b>${paidN} / ${pendN}</b></div><div class="kv"><span>Due date</span><b>${fmtDate(lb.dueDate)}</b></div></div>`
+    : `<div class="card"><h2>No bills yet</h2><p class="muted" style="margin:0 0 12px">Once this month's readings are in, generate the bills from the Bills tab.</p><button class="btn pri" data-a="tab" data-v="bills">Go to Bills</button></div>`}
+  <div class="card"><h2>Meter readings · ${mLabel(cm)}</h2><div class="bar" style="margin-bottom:12px"><i style="width:${sold.length ? done / sold.length * 100 : 0}%"></i></div><div class="kv"><span>Completed</span><b>${done}</b></div><div class="kv"><span>Remaining</span><b>${sold.length - done}</b></div><div class="kv"><span>Reader PIN</span><b>${esc(s.readerPin || "-")}</b></div><div class="kv"><span>Reader sees previous reading</span><b>${s.readerShowPrev !== false ? "Yes" : "No"}</b></div></div>
+  <div class="card"><h2>Rates</h2><div class="kv"><span>Per marla</span><b>${money(s.marlaRate)}</b></div><div class="kv"><span>Water per unit</span><b>${s.unitRate ? "Rs " + s.unitRate : '<span style="color:var(--red)">Not set</span>'}</b></div><div class="kv"><span>Total marla (sold)</span><b>${r2(marla)}</b></div><div class="kv"><span>Monthly marla charges</span><b>${money(marla * num(s.marlaRate))}</b></div></div>
+  <div class="card"><h2>Sharing with the meter reader</h2><p class="muted" style="margin:0 0 12px">Share this page from claude.ai (Share button) with the reader's email, with Contributor or Editor access so they can save readings. The reader opens the link on their phone, enters the PIN, and sees only the reading screen.</p><button class="btn" data-a="toReader">Preview reader view</button></div>
+  </div>`;
 }
+
+/* ---- Plots ---- */
 function vHouses() {
   const q = S.q.trim().toLowerCase();
   let list = S.houses.slice().sort(hsort);
-  if (S.hfilter === "sold") list = list.filter(h => h.sold); else if (S.hfilter === "unsold") list = list.filter(h => !h.sold);
+  if (S.hfilter === "sold") list = list.filter(h => h.sold); else if (S.hfilter === "unsold") list = list.filter(h => !h.sold); else if (S.hfilter === "nophone") list = list.filter(h => !h.phone);
   if (q) list = list.filter(h => (h.no + " " + (h.owner || "") + " " + (h.phone || "") + " " + (h.meter || "") + " " + (h.code || "")).toLowerCase().includes(q));
-  const ns = S.houses.filter(h => h.sold).length;
-  return `<div class="row" style="margin-bottom:12px"><input id="q" type="text" placeholder="Plot no., naam, phone, code se talaash…" value="${esc(S.q)}" style="flex:1;min-width:200px"><button class="btn" data-a="importXl">Excel se import</button><button class="btn pri" data-a="addHouse">+ Naya ghar</button></div>
-  <div class="row" style="margin-bottom:12px"><div class="chips">${[["all", "Sab (" + S.houses.length + ")"], ["sold", "Sold (" + ns + ")"], ["unsold", "Unsold (" + (S.houses.length - ns) + ")"]].map(([k, t]) => `<button class="chip ${S.hfilter === k ? "on" : ""}" data-a="hf" data-v="${k}">${t}</button>`).join("")}</div><span class="sp"></span><button class="btn sm" data-a="bulkSold">Kai ghar ek saath Sold karein</button></div>
-  <div class="list">${list.map(h => `<div class="item" data-a="editHouse" data-id="${esc(h.id)}"><div class="hno">${esc(h.no)}</div><div class="m"><b>${esc(h.owner || "—")}</b><small>${h.street ? "Street " + esc(h.street) + " · " : ""}${esc(h.marla)} marla${h.phone ? " · " + esc(h.phone) : " · <span style=\"color:var(--red)\">phone nahi</span>"}${num(h.prevBal) ? " · Baqaya " + money(h.prevBal) : ""}</small></div>${h.sold ? '<span class="badge b-sold">Sold</span>' : '<span class="badge b-no">Unsold</span>'}</div>`).join("") || `<div class="empty">Koi ghar nahi mila</div>`}</div>`;
+  const ns = S.houses.filter(h => h.sold).length, np = S.houses.filter(h => !h.phone).length;
+  return `<div class="toolbar"><input id="q" type="search" placeholder="Search plot no., name, phone or code…" value="${esc(S.q)}"><button class="btn" data-a="importXl">Import Excel</button><button class="btn pri" data-a="addHouse">+ Add plot</button></div>
+  <div class="row" style="margin-bottom:12px"><div class="chips">${[["all", "All (" + S.houses.length + ")"], ["sold", "Sold (" + ns + ")"], ["unsold", "Unsold (" + (S.houses.length - ns) + ")"], ["nophone", "No phone (" + np + ")"]].map(([k, t]) => `<button class="chip ${S.hfilter === k ? "on" : ""}" data-a="hf" data-v="${k}">${t}</button>`).join("")}</div><span class="sp"></span><button class="btn sm" data-a="bulkSold">Mark several as sold</button></div>
+  <div class="list">${list.map(h => `<div class="item" data-a="editHouse" data-id="${esc(h.id)}"><div class="hno">${esc(h.no)}</div><div class="m"><b>${esc(h.owner || "—")}</b><small>${h.street ? "Street " + esc(h.street) + " · " : ""}${esc(h.marla)} marla · ${h.phone ? esc(h.phone) : '<span style="color:var(--red)">no phone</span>'}${num(h.prevBal) ? " · Prev. balance " + money(h.prevBal) : ""}</small></div>${h.sold ? '<span class="badge b-sold">Sold</span>' : '<span class="badge b-no">Unsold</span>'}</div>`).join("") || `<div class="empty">No plots found</div>`}</div>`;
 }
-function vReadings() {
-  const m = S.readMonth, sold = soldHouses();
-  const q = S.q.trim().toLowerCase();
+
+/* ---- Readings (admin) ---- */
+function readingRows(m) {
+  const sold = soldHouses(), q = S.q.trim().toLowerCase();
   let list = sold.map(h => ({ h, prev: prevReading(h, m), cur: readingOf(h.id, m), e: S.readings[m] && S.readings[m].r && S.readings[m].r[h.id] }));
   const doneN = list.filter(x => x.cur != null).length;
   if (S.rfilter === "pending") list = list.filter(x => x.cur == null); else if (S.rfilter === "done") list = list.filter(x => x.cur != null);
-  if (q) list = list.filter(x => (x.h.no + " " + (x.h.owner || "") + " " + (x.h.meter || "")).toLowerCase().includes(q));
+  if (q) list = list.filter(x => (x.h.no + " " + (showOwner() ? x.h.owner || "" : "") + " " + (x.h.meter || "") + " " + (x.h.street ? "street " + x.h.street : "")).toLowerCase().includes(q));
+  return { sold, list, doneN };
+}
+function progressCard(m, doneN, total) {
+  return `<div class="card"><div class="row" style="align-items:flex-end"><label style="flex:1;min-width:150px"><span class="muted" style="font-size:13px;display:block;margin-bottom:5px">Month</span><input type="month" id="rm" value="${m}"></label><div style="flex:2;min-width:200px"><div class="row" style="justify-content:space-between;margin-bottom:6px"><b>${doneN} of ${total} done</b><span class="muted">${total - doneN} remaining</span></div><div class="bar"><i style="width:${total ? doneN / total * 100 : 0}%"></i></div></div></div></div>`;
+}
+const rChips = () => `<div class="chips">${[["pending", "Remaining"], ["done", "Done"], ["all", "All"]].map(([k, t]) => `<button class="chip ${S.rfilter === k ? "on" : ""}" data-a="rf" data-v="${k}">${t}</button>`).join("")}</div>`;
+function vReadings() {
+  const m = S.readMonth, { sold, list, doneN } = readingRows(m);
   const bill = S.bills[m];
   const changed = bill ? sold.filter(h => bill.b && bill.b[h.id] && (bill.b[h.id].curr ?? null) !== readingOf(h.id, m)).length : 0;
-  return `<div class="card"><div class="row"><label style="flex:1;min-width:160px"><span class="muted" style="font-size:13px">Mahina</span><input type="month" id="rm" value="${m}"></label><div style="flex:2;min-width:200px"><div class="row" style="justify-content:space-between;margin-bottom:6px"><b>${doneN} / ${sold.length} readings ho gayi</b><span class="muted">${sold.length - doneN} baqi</span></div><div class="bar"><i style="width:${sold.length ? doneN / sold.length * 100 : 0}%"></i></div></div></div></div>
-  ${changed ? `<div class="note">${mLabel(m)} ka bill ban chuka hai, lekin ${changed} gharon ki reading baad mein badli/aayi hai. "Bills" tab se bill dobara generate karein.</div>` : ""}
-  <div class="row" style="margin-bottom:12px"><input id="q" type="text" placeholder="Ghar no. ya naam…" value="${esc(S.q)}" style="flex:1;min-width:180px"><div class="chips">${[["pending", "Baqi"], ["done", "Ho gayi"], ["all", "Sab"]].map(([k, t]) => `<button class="chip ${S.rfilter === k ? "on" : ""}" data-a="rf" data-v="${k}">${t}</button>`).join("")}</div></div>
-  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>Pichli: ${x.prev}${x.cur != null ? ` → Nayi: ${x.cur} · <b>${r2(x.cur - x.prev)} units</b>` : ""}${x.e && x.e.at ? " · " + fmtDate(x.e.at.slice(0, 10)) : ""}</small></div>${x.cur != null ? (x.cur < x.prev ? '<span class="badge b-unpaid">Kam hai!</span>' : '<span class="badge b-paid">Ho gayi</span>') : '<span class="badge b-no">Baqi</span>'}</div>`).join("") || `<div class="empty">${sold.length ? "Is filter mein koi ghar nahi" : "Pehle \"Ghar\" tab mein ghar Sold mark karein"}</div>`}</div>`;
+  return progressCard(m, doneN, sold.length) +
+  (changed ? `<div class="note">Bills for ${mLabel(m)} were already generated, but ${changed} reading(s) were added or changed afterwards. Use "Regenerate" on the Bills tab.</div>` : "") +
+  `<div class="toolbar"><input id="q" type="search" placeholder="Search plot no. or name…" value="${esc(S.q)}">${rChips()}</div>
+  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>Previous: ${x.prev}${x.cur != null ? ` → Current: ${x.cur} · <b>${r2(x.cur - x.prev)} units</b>` : ""}${x.e && x.e.at ? " · " + fmtDate(x.e.at.slice(0, 10)) + (x.e.by === "reader" ? " (reader)" : "") : ""}</small></div>${x.cur != null ? (x.cur < x.prev ? '<span class="badge b-unpaid">Lower!</span>' : '<span class="badge b-paid">Done</span>') : '<span class="badge b-no">Remaining</span>'}</div>`).join("") || `<div class="empty">${sold.length ? "No plots match this filter" : "Mark plots as sold on the Plots tab first"}</div>`}</div>`;
 }
+
+/* ---- Bills ---- */
 function vBills() {
-  const months = billMonths();
-  const cm = curMonth();
+  const months = billMonths(), cm = curMonth();
   const opts = Array.from(new Set([...months, cm])).sort().reverse();
   if (!S.billMonth) S.billMonth = months.includes(cm) ? cm : (months.slice(-1)[0] || cm);
   const m = S.billMonth, bill = S.bills[m];
-  const sel = `<div class="row" style="margin-bottom:12px"><select id="bm" style="max-width:200px">${opts.map(o => `<option value="${o}" ${o === m ? "selected" : ""}>${mLabel(o)}${S.bills[o] ? "" : " (naya)"}</option>`).join("")}</select><button class="btn sm" data-a="otherMonth">Koi aur mahina</button></div>`;
+  const sel = `<div class="toolbar"><select id="bm" style="max-width:220px">${opts.map(o => `<option value="${o}" ${o === m ? "selected" : ""}>${mLabel(o)}${S.bills[o] ? "" : " (new)"}</option>`).join("")}</select><button class="btn sm" data-a="otherMonth">Other month</button></div>`;
   if (!bill) {
     const lm = latestBillMonth();
-    if (lm && lm > m) return sel + `<div class="note">${mLabel(m)} se naya bill (${mLabel(lm)}) pehle se bana hai. Purane mahine ka naya bill nahi ban sakta, warna baqaya ka hisaab bigar jayega.</div>`;
-    const sold = soldHouses(); const miss = sold.filter(h => readingOf(h.id, m) == null).length;
-    const s = st();
-    return sel + `<div class="card"><h2>${mLabel(m)} ke bill generate karein</h2>
-    <div class="kv"><span>Sold ghar (bill banenge)</span><b>${sold.length}</b></div>
-    <div class="kv"><span>Readings mukammal</span><b>${sold.length - miss} / ${sold.length}</b></div>
-    <div class="kv"><span>Per marla rate</span><b>${money(s.marlaRate)}</b></div>
-    <div class="kv"><span>Water rate per unit</span><b>${s.unitRate ? "Rs " + s.unitRate : '<span style="color:var(--red)">Set nahi (Settings)</span>'}</b></div>
-    <div class="kv"><span>Pichla baqaya</span><b>${lm ? mLabel(lm) + " ke bill se khud judega" : "Pehla bill"}</b></div>
-    ${miss ? `<div class="note" style="margin-top:12px">${miss} gharon ki reading baqi hai. Un ka water bill 0 aayega (agle mahine units jud jayenge). Chahein to pehle readings mukammal kar lein.</div>` : ""}
-    <label class="f" style="margin-top:12px"><span>Aakhri tareekh (due date)</span><input type="date" id="due" value="${addDays(todayISO(), num(s.dueDays) || 10)}"></label>
-    <button class="btn pri" data-a="gen" ${sold.length ? "" : "disabled"}>Sab ${sold.length} bills generate karein</button></div>`;
+    if (lm && lm > m) return sel + `<div class="note">Bills for a later month (${mLabel(lm)}) already exist. New bills can't be created for an earlier month, as that would break the carried-forward balances.</div>`;
+    const sold = soldHouses(), miss = sold.filter(h => readingOf(h.id, m) == null).length, s = st();
+    return sel + `<div class="card"><h2>Generate bills for ${mLabel(m)}</h2>
+    <div class="kv"><span>Sold plots (bills to create)</span><b>${sold.length}</b></div>
+    <div class="kv"><span>Readings completed</span><b>${sold.length - miss} / ${sold.length}</b></div>
+    <div class="kv"><span>Rate per marla</span><b>${money(s.marlaRate)}</b></div>
+    <div class="kv"><span>Water rate per unit</span><b>${s.unitRate ? "Rs " + s.unitRate : '<span style="color:var(--red)">Not set (Settings)</span>'}</b></div>
+    <div class="kv"><span>Previous balance</span><b>${lm ? "Carried from " + mLabel(lm) : "From each plot's opening balance"}</b></div>
+    ${miss ? `<div class="note" style="margin-top:12px">${miss} plot(s) have no reading yet. Their water charge will be 0 this month and the units will be billed next month. You may want to finish the readings first.</div>` : ""}
+    <label class="f" style="margin-top:12px"><span>Due date</span><input type="date" id="due" value="${addDays(todayISO(), num(s.dueDays) || 10)}"></label>
+    <button class="btn pri block" data-a="gen" ${sold.length ? "" : "disabled"}>Generate ${sold.length} bills</button></div>`;
   }
   const rows = Object.values(bill.b || {}).sort((a, b) => hsort({ no: a.no }, { no: b.no }));
   let billed = 0, coll = 0, pend = 0; rows.forEach(b => { billed += num(b.total); coll += num(b.paid); pend += Math.max(0, balance(b)); });
-  const isLatest = m === latestBillMonth();
-  const f = S.bfilter, q = S.q.trim().toLowerCase();
+  const isLatest = m === latestBillMonth(), f = S.bfilter, q = S.q.trim().toLowerCase();
   let list = rows;
   if (f === "unpaid") list = list.filter(b => balance(b) > 0); else if (f === "paid") list = list.filter(b => balance(b) <= 0);
   if (q) list = list.filter(b => (b.no + " " + (b.owner || "")).toLowerCase().includes(q));
   const changed = rows.filter(b => (b.curr ?? null) !== readingOf(b.hid, m)).length;
   const newSold = soldHouses().filter(h => !bill.b[h.id]).length;
-  return sel + `<div class="grid" style="margin-bottom:14px"><div class="stat"><span>Kul bill (${rows.length})</span><b>${money(billed)}</b></div><div class="stat"><span>Wusool</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="stat"><span>Baqi</span><b style="color:var(--red)">${money(pend)}</b></div><div class="stat"><span>Due date</span><b style="font-size:18px">${fmtDate(bill.dueDate)}</b></div></div>
-  ${isLatest && (changed || newSold) ? `<div class="note">${changed ? changed + " gharon ki reading bill banne ke baad badli hai. " : ""}${newSold ? newSold + " naye sold ghar is bill mein nahi hain. " : ""}"Dobara generate" dabayen (payments aur fine mehfooz rahenge).</div>` : ""}
-  ${!isLatest ? `<div class="info">Yeh purana bill hai. Is ka baqaya agle mahine ke bill mein shamil ho chuka hai, payment naye bill par darj karein.</div>` : ""}
-  <div class="row" style="margin-bottom:12px"><button class="btn" data-a="pdfAll">Sab bills PDF</button><button class="btn" data-a="pdfPending">Sirf unpaid PDF</button>${isLatest ? `<button class="btn" data-a="bulkFine">Unpaid par fine</button><button class="btn" data-a="regen">Dobara generate</button>` : ""}</div>
-  <div class="row" style="margin-bottom:12px"><input id="q" type="text" placeholder="Ghar no. ya naam…" value="${esc(S.q)}" style="flex:1;min-width:180px"><div class="chips">${[["all", "Sab"], ["unpaid", "Unpaid"], ["paid", "Paid"]].map(([k, t]) => `<button class="chip ${f === k ? "on" : ""}" data-a="bf" data-v="${k}">${t}</button>`).join("")}</div></div>
-  <div class="list">${list.map(b => `<div class="item" data-a="bill" data-m="${m}" data-id="${esc(b.hid)}"><div class="hno">${esc(b.no)}</div><div class="m"><b>${esc(b.owner || "—")}</b><small>Marla ${money(b.marlaCharge)} · Water ${money(b.water)} (${b.units} u)${num(b.arrears) ? " · Baqaya " + money(b.arrears) : ""}${num(b.fine) ? " · Fine " + money(b.fine) : ""}${b.noReading ? " · reading nahi" : ""}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>`).join("") || `<div class="empty">Koi bill nahi</div>`}</div>`;
+  return sel + `<div class="grid"><div class="stat"><span>Total billed (${rows.length})</span><b>${money(billed)}</b></div><div class="stat"><span>Collected</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="stat"><span>Outstanding</span><b style="color:var(--red)">${money(pend)}</b></div><div class="stat"><span>Due date</span><b>${fmtDate(bill.dueDate)}</b></div></div>
+  ${isLatest && (changed || newSold) ? `<div class="note">${changed ? changed + " reading(s) changed after these bills were generated. " : ""}${newSold ? newSold + " newly sold plot(s) are not in this bill run. " : ""}Tap "Regenerate" — payments and fines are kept.</div>` : ""}
+  ${!isLatest ? `<div class="info">This is an older bill run. Its balances have been carried into the next month's bills; record payments there.</div>` : ""}
+  <div class="actions"><button class="btn" data-a="pdfAll">All bills (PDF)</button><button class="btn" data-a="pdfPending">Unpaid bills (PDF)</button>${isLatest ? `<button class="btn" data-a="bulkFine">Fine all unpaid</button><button class="btn" data-a="regen">Regenerate</button>` : ""}</div>
+  <div class="toolbar"><input id="q" type="search" placeholder="Search plot no. or name…" value="${esc(S.q)}"><div class="chips">${[["all", "All"], ["unpaid", "Unpaid"], ["paid", "Paid"]].map(([k, t]) => `<button class="chip ${f === k ? "on" : ""}" data-a="bf" data-v="${k}">${t}</button>`).join("")}</div></div>
+  <div class="list">${list.map(b => `<div class="item" data-a="bill" data-m="${m}" data-id="${esc(b.hid)}"><div class="hno">${esc(b.no)}</div><div class="m"><b>${esc(b.owner || "—")}</b><small>Marla ${money(b.marlaCharge)} · Water ${money(b.water)} (${b.units} u)${num(b.arrears) ? " · Arrears " + money(b.arrears) : ""}${num(b.fine) ? " · Fine " + money(b.fine) : ""}${b.noReading ? " · no reading" : ""}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>`).join("") || `<div class="empty">No bills</div>`}</div>`;
 }
+
+/* ---- Pending ---- */
 function pendingList() {
-  const lm = latestBillMonth(); const out = [];
-  const months = billMonths().reverse();
+  const out = [], months = billMonths().reverse();
   S.houses.forEach(h => {
     const m = months.find(mm => S.bills[mm].b && S.bills[mm].b[h.id]);
     if (!m) return; const b = S.bills[m].b[h.id];
@@ -317,105 +405,110 @@ function pendingList() {
   return out.sort((a, b) => b.bal - a.bal);
 }
 function vPending() {
-  const list = pendingList(); const tot = list.reduce((s, x) => s + x.bal, 0);
-  return `<div class="grid" style="margin-bottom:14px"><div class="stat"><span>Pending ghar</span><b>${list.length}</b></div><div class="stat"><span>Kul baqaya</span><b style="color:var(--red)">${money(tot)}</b></div></div>
-  <div class="list">${list.map(x => `<div class="item" data-a="bill" data-m="${x.m}" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>${mLabel(x.m)} · Due ${fmtDate(S.bills[x.m].dueDate)}${num(x.b.arrears) > 0 ? " · purana baqaya shamil" : ""}</small></div><div><div class="amt" style="color:var(--red)">${money(x.bal)}</div><div style="text-align:right">${badge(status(x.b))}</div></div></div>`).join("") || `<div class="empty">Koi bill pending nahi 🎉</div>`}</div>`;
+  const list = pendingList(), tot = list.reduce((s, x) => s + x.bal, 0);
+  return `<div class="grid"><div class="stat"><span>Plots with dues</span><b>${list.length}</b></div><div class="stat"><span>Total outstanding</span><b style="color:var(--red)">${money(tot)}</b></div></div>
+  <div class="list">${list.map(x => `<div class="item" data-a="bill" data-m="${x.m}" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>${mLabel(x.m)} · Due ${fmtDate(S.bills[x.m].dueDate)}${num(x.b.arrears) > 0 ? " · includes arrears" : ""}</small></div><div><div class="amt" style="color:var(--red)">${money(x.bal)}</div><div style="text-align:right">${badge(status(x.b))}</div></div></div>`).join("") || `<div class="empty">No pending bills 🎉</div>`}</div>`;
 }
+
+/* ---- Settings ---- */
 function vSettings() {
   const s = st();
   const fld = (k, label, type = "text", extra = "") => `<label class="f"><span>${label}</span><input type="${type}" name="${k}" value="${esc(s[k])}" ${extra}></label>`;
-  return `<form data-f="settings">
-  <div class="card"><h2>Society</h2><div class="f2">${fld("name", "Naam")}${fld("nameUr", "Naam (Urdu, bill par)", "text", 'dir="rtl"')}${fld("address", "Pata (Urdu ya English)")}${fld("phone", "Rabta / WhatsApp number (bill par)", "tel")}</div></div>
-  <div class="card"><h2>Rates</h2><div class="f2">${fld("marlaRate", "Per marla rate (Rs)", "number", 'step="0.01" min="0"')}${fld("unitRate", "Water rate per unit (Rs)", "number", 'step="0.01" min="0"')}${fld("fineDefault", "Default fine (Rs)", "number", 'step="1" min="0"')}${fld("dueDays", "Bill ke kitne din baad due date", "number", 'min="0"')}</div><p class="muted" style="margin:0;font-size:13px">Naya rate agle generate hone wale bill se lagega; purane bills nahi badlenge.</p></div>
+  const tg = (k, label, sub) => `<label class="toggle"><input type="checkbox" name="${k}" ${s[k] !== false ? "checked" : ""}><span><b>${label}</b><small>${sub}</small></span></label>`;
+  return `<form data-f="settings"><div class="cols">
+  <div class="card"><h2>Society</h2><div class="f2">${fld("name", "Name")}${fld("nameUr", "Name in Urdu (printed on bills)", "text", 'dir="rtl"')}${fld("address", "Address (Urdu or English)")}${fld("phone", "Contact / WhatsApp number (printed on bills)", "tel")}</div></div>
+  <div class="card"><h2>Rates</h2><div class="f2">${fld("marlaRate", "Rate per marla (Rs)", "number", 'step="0.01" min="0"')}${fld("unitRate", "Water rate per unit (Rs)", "number", 'step="0.01" min="0"')}${fld("fineDefault", "Default late fine (Rs)", "number", 'step="1" min="0"')}${fld("dueDays", "Days until due date", "number", 'min="0"')}</div><p class="muted" style="margin:0;font-size:13px">New rates apply from the next bill run; existing bills are not changed.</p></div>
   <div class="card"><h2>JazzCash</h2><div class="f2">${fld("jazzNumber", "JazzCash number", "tel")}${fld("jazzTitle", "Account title")}</div></div>
-  <div class="card"><h2>Bank account</h2><div class="f2">${fld("bankName", "Bank ka naam")}${fld("bankTitle", "Account title")}${fld("bankAcc", "Account number")}${fld("iban", "IBAN")}</div></div>
-  <div class="card"><h2>QR code</h2><div class="row"><img class="qrprev" id="qrimg" src="${s.qr ? esc(s.qr) : "data:image/gif;base64,R0lGODlhAQABAAAAACw="}" alt=""><div><input type="file" id="qrfile" accept="image/*"><p class="muted" style="font-size:13px">JazzCash/Raast QR ki tasveer ya screenshot. Bill par chhapega.</p>${s.qr ? '<button type="button" class="btn sm red" data-a="qrdel">QR hatayen</button>' : ""}</div></div></div>
-  <div class="card"><h2>PIN</h2><div class="f2">${fld("readerPin", "Meter reader PIN", "text", 'inputmode="numeric"')}${fld("adminPin", "Admin PIN (doosre admin ke liye, khali = band)", "text")}</div></div>
-  <div class="row" style="margin-bottom:14px"><button class="btn pri">Settings save karein</button></div></form>
-  <div class="card"><h2>Backup</h2><p class="muted" style="margin-top:0">Saara data (ghar, readings, bills) ek JSON file mein.</p><button class="btn" data-a="backup">Backup download</button></div>`;
+  <div class="card"><h2>Bank account</h2><div class="f2">${fld("bankName", "Bank name")}${fld("bankTitle", "Account title")}${fld("bankAcc", "Account number")}${fld("iban", "IBAN")}</div></div>
+  <div class="card"><h2>Payment QR code</h2><div class="row" style="align-items:flex-start;gap:14px"><img class="qrprev" id="qrimg" src="${s.qr ? esc(s.qr) : "data:image/gif;base64,R0lGODlhAQABAAAAACw="}" alt=""><div style="flex:1;min-width:180px"><input type="file" id="qrfile" accept="image/*"><p class="muted" style="font-size:13px">Upload a photo or screenshot of your JazzCash / Raast QR code. It is printed on every bill.</p>${s.qr ? '<button type="button" class="btn sm red" data-a="qrdel">Remove QR</button>' : ""}</div></div></div>
+  <div class="card"><h2>Meter reader access</h2><div class="f2">${fld("readerPin", "Meter reader PIN", "text", 'inputmode="numeric"')}${fld("adminPin", "Admin PIN for a second admin (leave blank to disable)")}</div>
+  ${tg("readerShowPrev", "Show previous reading to the reader", "When off, the reader only sees the plot number and enters the new reading.")}
+  ${tg("readerShowOwner", "Show owner name to the reader", "Helps the reader find the right house.")}</div>
+  </div><div class="row" style="margin-bottom:14px"><button class="btn pri">Save settings</button></div></form>
+  <div class="card"><h2>Backup</h2><p class="muted" style="margin-top:0">Download all data (plots, readings, bills) as one JSON file.</p><button class="btn" data-a="backup">Download backup</button></div>`;
 }
 
 /* ---- READER ---- */
 function viewReader() {
-  const m = S.readMonth, sold = soldHouses(), q = S.q.trim().toLowerCase();
-  let list = sold.map(h => ({ h, prev: prevReading(h, m), cur: readingOf(h.id, m) }));
-  const doneN = list.filter(x => x.cur != null).length;
-  if (S.rfilter === "pending") list = list.filter(x => x.cur == null); else if (S.rfilter === "done") list = list.filter(x => x.cur != null);
-  if (q) list = list.filter(x => (x.h.no + " " + (x.h.owner || "") + " " + (x.h.meter || "")).toLowerCase().includes(q));
-  return header("Meter Reading") + `<main>
-  ${S.writeDenied ? `<div class="err">Aap ki reading save nahi ho rahi. Admin se kahein ke page aap ke saath Contributor ya Editor access par share kare.</div>` : ""}
-  <div class="card"><div class="row"><label style="flex:1;min-width:150px"><span class="muted" style="font-size:13px">Mahina</span><input type="month" id="rm" value="${m}"></label><div style="flex:2;min-width:180px"><div class="row" style="justify-content:space-between;margin-bottom:6px"><b>${doneN} / ${sold.length} ho gayi</b><span class="muted">${sold.length - doneN} baqi</span></div><div class="bar"><i style="width:${sold.length ? doneN / sold.length * 100 : 0}%"></i></div></div></div></div>
-  <div class="row" style="margin-bottom:12px"><input id="q" type="text" inputmode="search" placeholder="Ghar number likhein…" value="${esc(S.q)}" style="flex:1;font-size:18px"></div>
-  <div class="chips" style="margin-bottom:12px">${[["pending", "Baqi"], ["done", "Ho gayi"], ["all", "Sab"]].map(([k, t]) => `<button class="chip ${S.rfilter === k ? "on" : ""}" data-a="rf" data-v="${k}">${t}</button>`).join("")}</div>
-  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>${x.h.meter ? "Meter " + esc(x.h.meter) + " · " : ""}Pichli: ${x.prev}${x.cur != null ? " → " + x.cur : ""}</small></div>${x.cur != null ? '<span class="badge b-paid">✓</span>' : '<span class="badge b-no">Baqi</span>'}</div>`).join("") || `<div class="empty">${S.rfilter === "pending" && sold.length ? "Sab readings ho gayi ✓" : "Koi ghar nahi"}</div>`}</div></main>`;
+  const m = S.readMonth, { sold, list, doneN } = readingRows(m);
+  return `<header class="appbar mob">${S.owner || S.adminViaPin ? `<button class="ibtn" data-a="toAdmin" aria-label="Back">${icon("back")}</button>` : ""}<div class="t"><b>Meter Reading</b><small>${esc(st().name)}</small></div>${!S.owner ? `<button class="ibtn" data-a="logout" aria-label="Log out">${icon("lock")}</button>` : ""}</header>
+  <main>${S.writeDenied ? `<div class="err">Your readings are not being saved. Ask the admin to share this page with you with Contributor or Editor access.</div>` : ""}
+  ${progressCard(m, doneN, sold.length)}
+  <div class="toolbar"><input id="q" type="search" inputmode="search" placeholder="Search plot number…" value="${esc(S.q)}" style="font-size:18px">${rChips()}</div>
+  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${showOwner() ? esc(x.h.owner || "Plot " + x.h.no) : "Plot " + esc(x.h.no)}</b><small>${x.h.street ? "Street " + esc(x.h.street) : ""}${x.h.meter ? (x.h.street ? " · " : "") + "Meter " + esc(x.h.meter) : ""}${showPrev() ? ((x.h.street || x.h.meter) ? " · " : "") + "Previous: " + x.prev : ""}${x.cur != null ? " · Entered: " + x.cur : ""}</small></div>${x.cur != null ? '<span class="badge b-paid">✓ Done</span>' : '<span class="badge b-no">Remaining</span>'}</div>`).join("") || `<div class="empty">${S.rfilter === "pending" && sold.length ? "All readings are done ✓" : "No plots found"}</div>`}</div></main>`;
 }
 
 /* ============ modal ============ */
 function openModal(html, wide) { const sh = $("#sheet"); sh.className = "sheet" + (wide ? " wide" : ""); sh.innerHTML = html; $("#modal").classList.remove("hidden"); }
 function closeModal() { $("#modal").classList.add("hidden"); $("#sheet").innerHTML = ""; }
 $("#modal").addEventListener("click", e => { if (e.target.id === "modal") closeModal(); });
-function ask(title, msg, okText = "Haan", danger) {
+function ask(title, msg, okText = "Yes", danger) {
   return new Promise(res => {
-    openModal(`<h3>${esc(title)}<button class="x" data-r="0">×</button></h3><p>${msg}</p><div class="row"><button class="btn ${danger ? "red" : "pri"}" data-r="1">${esc(okText)}</button><button class="btn" data-r="0">Wapas</button></div>`);
+    openModal(`<h3>${esc(title)}<button class="x" data-r="0">×</button></h3><p>${msg}</p><div class="row"><button class="btn ${danger ? "red" : "pri"}" data-r="1">${esc(okText)}</button><button class="btn" data-r="0">Cancel</button></div>`);
     $("#sheet").onclick = e => { const b = e.target.closest("[data-r]"); if (!b) return; $("#sheet").onclick = null; closeModal(); res(b.dataset.r === "1"); };
   });
 }
 
-/* ---- house edit ---- */
+/* ---- plot edit ---- */
 function houseModal(h) {
   const isNew = !h; h = Object.assign({ id: "", no: "", street: "", code: "", owner: "", phone: "", phone2: "", marla: 5, meter: "", sold: true, opening: 0, prevBal: 0 }, h || {});
   const hist = isNew ? "" : billMonths().reverse().filter(m => S.bills[m].b && S.bills[m].b[h.id]).map(m => { const b = S.bills[m].b[h.id]; return `<tr data-a="bill" data-m="${m}" data-id="${esc(h.id)}" style="cursor:pointer"><td>${mLabel(m)}</td><td>${b.units}</td><td>${money(b.total)}</td><td>${money(b.paid)}</td><td>${badge(status(b))}</td></tr>`; }).join("");
-  openModal(`<h3>${isNew ? "Naya ghar" : "Plot # " + esc(h.no)}<button class="x" data-a="close">×</button></h3>
+  openModal(`<h3>${isNew ? "Add plot" : "Plot " + esc(h.no)}<button class="x" data-a="close">×</button></h3>
   <form data-f="house" data-id="${esc(h.id)}"><div class="f2">
-  <label class="f"><span>Plot / ghar number</span><input type="text" name="no" value="${esc(h.no)}" required></label>
+  <label class="f"><span>Plot / house number</span><input type="text" name="no" value="${esc(h.no)}" required></label>
   <label class="f"><span>Street #</span><input type="text" name="street" value="${esc(h.street)}"></label>
-  <label class="f"><span>Subs. code</span><input type="text" name="code" value="${esc(h.code)}"></label>
-  <label class="f"><span>Marla</span><input type="number" name="marla" value="${esc(h.marla)}" step="0.5" min="0"></label>
-  <label class="f"><span>Maalik ka naam</span><input type="text" name="owner" value="${esc(h.owner)}"></label>
-  <label class="f"><span>Mobile (WhatsApp)</span><input type="tel" name="phone" value="${esc(h.phone)}" placeholder="03xx xxxxxxx"></label>
+  <label class="f"><span>Owner name</span><input type="text" name="owner" value="${esc(h.owner)}"></label>
+  <label class="f"><span>Area (marla)</span><input type="number" name="marla" value="${esc(h.marla)}" step="0.01" min="0"></label>
+  <label class="f"><span>Mobile (WhatsApp)</span><input type="tel" name="phone" value="${esc(h.phone)}" placeholder="03xx-xxxxxxx"></label>
   <label class="f"><span>Mobile 2</span><input type="tel" name="phone2" value="${esc(h.phone2)}"></label>
-  <label class="f"><span>Meter number</span><input type="text" name="meter" value="${esc(h.meter)}"></label>
-  <label class="f"><span>Shuru ki meter reading</span><input type="number" name="opening" value="${esc(h.opening)}" step="0.01"></label>
-  <label class="f"><span>Previous balance (pehle bill mein judega)</span><input type="number" name="prevBal" value="${esc(h.prevBal)}" step="1"></label>
-  </div><label class="row" style="margin:4px 0 14px"><input type="checkbox" name="sold" ${h.sold ? "checked" : ""} style="width:20px;height:20px"> <b>Sold hai</b> <span class="muted">(sirf sold gharon ka bill banta hai)</span></label>
+  <label class="f"><span>Subscriber code</span><input type="text" name="code" value="${esc(h.code)}"></label>
+  <label class="f"><span>Water meter number</span><input type="text" name="meter" value="${esc(h.meter)}"></label>
+  <label class="f"><span>Opening meter reading</span><input type="number" name="opening" value="${esc(h.opening)}" step="0.01"></label>
+  <label class="f"><span>Opening balance (added to the first bill)</span><input type="number" name="prevBal" value="${esc(h.prevBal)}" step="1"></label>
+  </div><label class="toggle" style="margin-bottom:14px"><input type="checkbox" name="sold" ${h.sold ? "checked" : ""}><span><b>Sold</b><small>Bills are generated only for sold plots.</small></span></label>
   <div class="row"><button class="btn pri">Save</button>${isNew ? "" : `<span class="sp"></span><button type="button" class="btn red" data-a="delHouse" data-id="${esc(h.id)}">Delete</button>`}</div></form>
-  ${hist ? `<h3 style="margin-top:20px">Bill history</h3><table class="tbl"><tr><th>Mahina</th><th>Units</th><th>Bill</th><th>Ada</th><th></th></tr>${hist}</table>` : ""}`);
+  ${hist ? `<h3 style="margin-top:22px">Bill history</h3><table class="tbl"><tr><th>Month</th><th>Units</th><th>Bill</th><th>Paid</th><th></th></tr>${hist}</table>` : ""}`);
 }
 async function saveHouse(form) {
   const fd = new FormData(form); const id = form.dataset.id;
-  const no = String(fd.get("no") || "").trim(); if (!no) return toast("Ghar number likhein");
+  const no = String(fd.get("no") || "").trim(); if (!no) return toast("Enter a plot number");
   const list = S.houses.slice();
-  if (list.some(x => String(x.no).toLowerCase() === no.toLowerCase() && x.id !== id)) return toast("Yeh ghar number pehle se mojood hai");
+  if (list.some(x => String(x.no).toLowerCase() === no.toLowerCase() && x.id !== id)) return toast("This plot number already exists");
   const rec = { no, street: String(fd.get("street") || "").trim(), code: String(fd.get("code") || "").trim(), phone2: String(fd.get("phone2") || "").trim(), prevBal: num(fd.get("prevBal")), owner: String(fd.get("owner") || "").trim(), phone: String(fd.get("phone") || "").trim(), marla: num(fd.get("marla")), meter: String(fd.get("meter") || "").trim(), opening: num(fd.get("opening")), sold: !!fd.get("sold") };
   if (id) { const i = list.findIndex(x => x.id === id); list[i] = Object.assign({}, list[i], rec); }
   else { let nid = hidFor(no); while (list.some(x => x.id === nid)) nid += "_"; list.push(Object.assign({ id: nid }, rec)); }
-  if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); toast("Save ho gaya"); }
+  if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); toast("Saved"); }
 }
 
-/* ---- reading ---- */
+/* ---- reading entry ---- */
 function readingModal(hid) {
   const h = S.houses.find(x => x.id === hid); if (!h) return;
-  const m = S.readMonth, prev = prevReading(h, m), cur = readingOf(hid, m);
+  const m = S.readMonth, prev = prevReading(h, m), cur = readingOf(hid, m), sp = showPrev();
   const e = S.readings[m] && S.readings[m].r && S.readings[m].r[hid];
-  openModal(`<h3>Plot # ${esc(h.no)}<button class="x" data-a="close">×</button></h3>
-  <div class="kv"><span>Maalik</span><b>${esc(h.owner || "—")}</b></div>
-  <div class="kv"><span>Meter no.</span><b>${esc(h.meter || "—")}</b></div>
-  <div class="kv"><span>Mahina</span><b>${mLabel(m)}</b></div>
-  <div class="kv"><span>Pichli reading</span><b>${prev}</b></div>
-  ${e && e.at ? `<div class="kv"><span>Pehle darj</span><b>${cur} (${fmtDate(e.at.slice(0, 10))})</b></div>` : ""}
-  <form data-f="reading" data-id="${esc(hid)}" style="margin-top:14px">
-  <label class="f"><span>Nayi reading</span><input id="rv" type="number" inputmode="decimal" step="0.01" name="v" value="${cur != null ? cur : ""}" style="font-size:28px;text-align:center;font-weight:700" autofocus></label>
-  <div id="rinfo" class="info" style="text-align:center">Units: —</div>
-  <div class="row"><button class="btn pri" name="go" value="next" style="flex:1;justify-content:center">Save & agla ghar</button><button class="btn" name="go" value="close">Save</button>${S.mode === "admin" && cur != null ? `<button type="button" class="btn red" data-a="delReading" data-id="${esc(hid)}">Hatayen</button>` : ""}</div></form>`);
-  const inp = $("#rv"), info = $("#rinfo");
-  const upd = () => { if (inp.value === "") { info.className = "info"; info.textContent = "Units: —"; return; } const u = r2(num(inp.value) - prev); if (u < 0) { info.className = "err"; info.textContent = "Nayi reading pichli (" + prev + ") se kam hai! Dobara check karein."; } else { info.className = u > 500 ? "note" : "info"; info.textContent = "Units: " + u + (u > 500 ? " (bohat zyada, check karein)" : ""); } };
-  inp.addEventListener("input", upd); upd(); setTimeout(() => inp.focus(), 50);
+  openModal(`<h3><span class="muted" style="font-weight:500;font-size:14px">${mLabel(m)}</span><button class="x" data-a="close">×</button></h3>
+  <div class="rd-plot">Plot ${esc(h.no)}</div>
+  <div class="rd-sub">${showOwner() && h.owner ? esc(h.owner) : ""}${h.street ? (showOwner() && h.owner ? " · " : "") + "Street " + esc(h.street) : ""}${h.meter ? " · Meter " + esc(h.meter) : ""}</div>
+  ${sp ? `<div class="prevbox"><div><span>Previous reading</span><b>${prev}</b></div><div><span>Units</span><b id="runits">—</b></div></div>` : ""}
+  ${cur != null ? `<div class="info">Already entered: <b>${cur}</b>${e && e.at ? " on " + fmtDate(e.at.slice(0, 10)) : ""}. Saving again will replace it.</div>` : ""}
+  <form data-f="reading" data-id="${esc(hid)}">
+  <label class="f"><span>New meter reading</span><input id="rv" class="readin" type="number" inputmode="decimal" step="0.01" name="v" value="${cur != null ? cur : ""}" placeholder="0"></label>
+  <div id="rinfo"></div>
+  <div class="row"><button class="btn pri" name="go" value="next" style="flex:2">Save &amp; next plot</button><button class="btn" name="go" value="close" style="flex:1">Save</button>${S.mode === "admin" && cur != null ? `<button type="button" class="btn red" data-a="delReading" data-id="${esc(hid)}">Delete</button>` : ""}</div></form>`);
+  const inp = $("#rv"), info = $("#rinfo"), uel = $("#runits");
+  const upd = () => {
+    info.className = ""; info.textContent = ""; if (uel) uel.textContent = "—";
+    if (inp.value === "") return;
+    const u = r2(num(inp.value) - prev); if (uel) uel.textContent = u;
+    if (u < 0) { info.className = "err"; info.textContent = sp ? "The new reading is lower than the previous reading (" + prev + "). Please check the meter again." : "This reading looks lower than the last recorded reading. Please check the meter again."; }
+    else if (u > 500) { info.className = "note"; info.textContent = "This is unusually high. Please double-check the reading."; }
+  };
+  inp.addEventListener("input", upd); upd(); setTimeout(() => inp.focus(), 60);
 }
 async function saveReading(form, go) {
   const hid = form.dataset.id, m = S.readMonth; const raw = form.v.value;
-  if (raw === "" || !isFinite(+raw)) return toast("Reading likhein");
+  if (raw === "" || !isFinite(+raw)) return toast("Enter the reading");
   const v = num(raw); const h = S.houses.find(x => x.id === hid); const prev = prevReading(h, m);
-  if (v < prev && !form.dataset.ok) { form.dataset.ok = "1"; toast("Reading pichli se kam hai. Dobara Save dabayen agar yahi sahi hai."); return; }
+  if (v < prev && !form.dataset.ok) { form.dataset.ok = "1"; toast("The reading is lower than expected. Tap Save again if it is correct."); return; }
   const entry = { v, at: new Date().toISOString(), by: S.mode === "reader" ? "reader" : "admin" };
   const ref = S.db.doc("readings/" + m);
   const ok = await write(async () => {
@@ -423,12 +516,12 @@ async function saveReading(form, go) {
     else { const s = await ref.get(); if (s.exists) await ref.update({ r: { [hid]: entry } }); else await ref.set({ month: m, r: { [hid]: entry } }); }
   });
   if (!ok) return;
-  toast("Plot # " + h.no + ": " + v + " save ho gayi");
+  toast("Plot " + h.no + ": " + v + " saved");
   if (go === "next") {
     const sold = soldHouses(); const i = sold.findIndex(x => x.id === hid);
     const nxt = sold.slice(i + 1).concat(sold.slice(0, i)).find(x => x.id !== hid && readingOf(x.id, m) == null);
     if (nxt) { readingModal(nxt.id); return; }
-    toast("Sab readings mukammal ✓");
+    toast("All readings are done ✓");
   }
   closeModal();
 }
@@ -436,7 +529,7 @@ async function saveReading(form, go) {
 /* ---- bills ---- */
 async function generateBills(m, dueDate) {
   const s = st(); const sold = soldHouses();
-  const months = billMonths(); if (months.some(x => x > m)) return toast("Is se naya bill pehle se mojood hai");
+  const months = billMonths(); if (months.some(x => x > m)) return toast("Bills for a later month already exist");
   const prevM = months.filter(x => x < m).pop(); const prev = prevM ? S.bills[prevM] : null;
   const ex = S.bills[m];
   const b = {};
@@ -454,25 +547,25 @@ async function generateBills(m, dueDate) {
     await S.db.doc("bills/" + m).set({ month: m, generatedAt: (ex && ex.generatedAt) || new Date().toISOString(), dueDate, b });
     if (prev) { const u = {}; Object.keys(b).forEach(id => { if (prev.b[id]) u[id] = { carried: true, carriedTo: m }; }); if (Object.keys(u).length) await S.db.doc("bills/" + prevM).update({ b: u }); }
   });
-  if (ok) { S.billMonth = m; toast(Object.keys(b).length + " bills ban gaye"); }
+  if (ok) { S.billMonth = m; toast(Object.keys(b).length + " bills generated"); }
 }
 function billModal(m, hid) {
   const bill = S.bills[m] && S.bills[m].b && S.bills[m].b[hid]; if (!bill) return;
   const s = status(bill), bal = balance(bill), isLatest = m === latestBillMonth();
   const pays = (bill.payments || []).map((p, i) => `<tr><td>${fmtDate(p.date)}</td><td>${esc(p.method)}</td><td>${money(p.amt)}</td><td>${esc(p.note || "")}</td><td>${isLatest && !bill.carried ? `<button class="btn sm red" data-a="delPay" data-m="${m}" data-id="${esc(hid)}" data-i="${i}">×</button>` : ""}</td></tr>`).join("");
-  openModal(`<h3>Plot # ${esc(bill.no)} · ${mLabel(m)} ${badge(s)}<button class="x" data-a="close">×</button></h3>
-  <div id="bprev" class="muted" style="text-align:center;padding:30px">Bill ban raha hai…</div>
-  <div class="row" style="margin:12px 0"><button class="btn pri" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">PDF download</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Image download</button><a class="btn grn" target="_blank" rel="noopener" href="${waLink(m, bill)}">WhatsApp</a></div>
-  <p class="muted" style="font-size:13px;margin:0 0 12px">WhatsApp button paigham ke saath chat kholta hai; PDF ya image wahan attach kar dein.${bill.phone ? "" : " <b>Is ghar ka mobile number save nahi.</b>"}</p>
-  <div class="kv"><span>Kul bill</span><b>${money(bill.total)}</b></div><div class="kv"><span>Ada shuda</span><b style="color:var(--grn)">${money(bill.paid)}</b></div><div class="kv"><span>Baqi</span><b style="color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(bal)}</b></div>
-  ${bill.carried ? `<div class="info" style="margin-top:12px">Yeh baqaya ${mLabel(bill.carriedTo)} ke bill mein shamil ho chuka hai. Payment wahan darj karein. <button class="btn sm" data-a="bill" data-m="${bill.carriedTo}" data-id="${esc(hid)}">${mLabel(bill.carriedTo)} ka bill</button></div>` : ""}
-  ${isLatest && !bill.carried ? `<div class="row" style="margin-top:14px"><button class="btn pri" data-a="pay" data-m="${m}" data-id="${esc(hid)}">Payment darj karein</button><button class="btn" data-a="fine" data-m="${m}" data-id="${esc(hid)}">Fine lagayen</button>${num(bill.fine) ? `<button class="btn red" data-a="unfine" data-m="${m}" data-id="${esc(hid)}">Fine hatayen</button>` : ""}</div>` : ""}
-  ${pays ? `<h3 style="margin-top:18px">Payments</h3><table class="tbl"><tr><th>Tareekh</th><th>Tareeqa</th><th>Raqam</th><th>Note</th><th></th></tr>${pays}</table>` : ""}`, true);
-  billCanvas(m, bill).then(c => { const el = $("#bprev"); if (el) { el.outerHTML = `<img class="preview" id="bimg" src="${c.toDataURL("image/jpeg", 0.85)}" alt="Bill">`; } }).catch(e => { console.error(e); const el = $("#bprev"); if (el) el.textContent = "Bill ki tasveer nahi ban saki"; });
+  openModal(`<h3>Plot ${esc(bill.no)} · ${mLabel(m)} ${badge(s)}<button class="x" data-a="close">×</button></h3>
+  <div class="kv"><span>Total bill</span><b>${money(bill.total)}</b></div><div class="kv"><span>Paid</span><b style="color:var(--grn)">${money(bill.paid)}</b></div><div class="kv"><span>Balance</span><b style="color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(bal)}</b></div>
+  ${bill.carried ? `<div class="info" style="margin-top:12px">This balance has been carried into the ${mLabel(bill.carriedTo)} bill. Record payments there. <button class="btn sm" data-a="bill" data-m="${bill.carriedTo}" data-id="${esc(hid)}">Open ${mLabel(bill.carriedTo)} bill</button></div>` : ""}
+  ${isLatest && !bill.carried ? `<div class="actions" style="margin-top:14px"><button class="btn pri" data-a="pay" data-m="${m}" data-id="${esc(hid)}">Record payment</button><button class="btn" data-a="fine" data-m="${m}" data-id="${esc(hid)}">Add fine</button>${num(bill.fine) ? `<button class="btn red" data-a="unfine" data-m="${m}" data-id="${esc(hid)}">Remove fine</button>` : ""}</div>` : ""}
+  <div class="actions" style="margin-top:6px"><button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">Download PDF</button><button class="btn" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Download image</button><a class="btn grn" target="_blank" rel="noopener" href="${waLink(m, bill)}">Send on WhatsApp</a></div>
+  <p class="muted" style="font-size:13px;margin:0 0 12px">WhatsApp opens the chat with the bill message; attach the PDF or image there.${bill.phone ? "" : " <b>No mobile number is saved for this plot.</b>"}</p>
+  ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th><th>Note</th><th></th></tr>${pays}</table>` : ""}
+  <div id="bprev" class="muted" style="text-align:center;padding:30px">Preparing bill…</div>`, true);
+  billCanvas(m, bill).then(c => { const el = $("#bprev"); if (el) { el.outerHTML = `<img class="preview" id="bimg" src="${c.toDataURL("image/jpeg", 0.85)}" alt="Bill">`; } }).catch(e => { console.error(e); const el = $("#bprev"); if (el) el.textContent = "Could not draw the bill"; });
 }
 function waLink(m, b) {
   const s = st(), doc = S.bills[m], bal = balance(b);
-  let t = `محترم ${b.owner || "صاحب"}،\n${s.nameUr || s.name}\nمکان نمبر ${b.no} کا ${mUr(m)} کا بل:\n`;
+  let t = `محترم ${b.owner || "صاحب"}،\n${s.nameUr || s.name}\nپلاٹ نمبر ${b.no} کا ${mUr(m)} کا بل:\n`;
   t += `مرلہ چارجز: Rs ${Math.round(b.marlaCharge)}\nپانی (${b.units} یونٹ): Rs ${Math.round(b.water)}\n`;
   if (num(b.arrears)) t += `سابقہ بقایا: Rs ${Math.round(b.arrears)}\n`;
   if (num(b.fine)) t += `جرمانہ: Rs ${Math.round(b.fine)}\n`;
@@ -486,23 +579,23 @@ function waLink(m, b) {
 }
 function payModal(m, hid) {
   const b = S.bills[m].b[hid];
-  openModal(`<h3>Payment · Plot # ${esc(b.no)}<button class="x" data-a="close">×</button></h3><p class="muted">Baqi: <b>${money(balance(b))}</b></p>
-  <form data-f="pay" data-m="${m}" data-id="${esc(hid)}"><div class="f2"><label class="f"><span>Raqam (Rs)</span><input type="number" name="amt" value="${Math.max(0, Math.round(balance(b)))}" min="1" step="1" required></label>
-  <label class="f"><span>Tareekh</span><input type="date" name="date" value="${todayISO()}"></label>
-  <label class="f"><span>Tareeqa</span><select name="method"><option>Cash</option><option>JazzCash</option><option>Bank</option><option>Easypaisa</option></select></label>
-  <label class="f"><span>Note / TID</span><input type="text" name="note"></label></div>
-  <button class="btn pri">Payment save karein</button></form>`);
+  openModal(`<h3>Record payment · Plot ${esc(b.no)}<button class="x" data-a="close">×</button></h3><p class="muted">Balance due: <b>${money(balance(b))}</b></p>
+  <form data-f="pay" data-m="${m}" data-id="${esc(hid)}"><div class="f2"><label class="f"><span>Amount (Rs)</span><input type="number" name="amt" value="${Math.max(0, Math.round(balance(b)))}" min="1" step="1" required></label>
+  <label class="f"><span>Date</span><input type="date" name="date" value="${todayISO()}"></label>
+  <label class="f"><span>Method</span><select name="method"><option>Cash</option><option>JazzCash</option><option>Bank</option><option>Easypaisa</option></select></label>
+  <label class="f"><span>Note / transaction ID</span><input type="text" name="note"></label></div>
+  <button class="btn pri block">Save payment</button></form>`);
 }
 async function savePay(form) {
   const m = form.dataset.m, hid = form.dataset.id, b = S.bills[m].b[hid]; const fd = new FormData(form);
-  const amt = num(fd.get("amt")); if (amt <= 0) return toast("Raqam likhein");
+  const amt = num(fd.get("amt")); if (amt <= 0) return toast("Enter an amount");
   const payments = (b.payments || []).concat([{ amt, date: fd.get("date") || todayISO(), method: fd.get("method"), note: String(fd.get("note") || "").trim(), at: new Date().toISOString() }]);
   const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0));
-  if (await write(() => S.db.doc("bills/" + m).update({ b: { [hid]: { payments, paid } } }))) { toast("Payment darj ho gayi"); billModal(m, hid); }
+  if (await write(() => S.db.doc("bills/" + m).update({ b: { [hid]: { payments, paid } } }))) { toast("Payment recorded"); billModal(m, hid); }
 }
 function fineModal(m, hid) {
   const b = S.bills[m].b[hid];
-  openModal(`<h3>Fine · Plot # ${esc(b.no)}<button class="x" data-a="close">×</button></h3><form data-f="fine" data-m="${m}" data-id="${esc(hid)}"><label class="f"><span>Fine ki raqam (Rs) — pehle se mojood fine: ${money(b.fine)}</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" step="1" required></label><button class="btn pri">Fine add karein</button></form>`);
+  openModal(`<h3>Add fine · Plot ${esc(b.no)}<button class="x" data-a="close">×</button></h3><form data-f="fine" data-m="${m}" data-id="${esc(hid)}"><label class="f"><span>Fine amount (Rs) — current fine: ${money(b.fine)}</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" step="1" required></label><button class="btn pri block">Add fine</button></form>`);
 }
 async function setFine(m, hid, fine) {
   const b = S.bills[m].b[hid]; fine = Math.max(0, r2(fine));
@@ -611,37 +704,38 @@ function makePdf(imgs) {
   push(t); push("trailer\n<< /Size " + total + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF\n");
   return new Blob(parts, { type: "application/pdf" });
 }
+
 async function saveFile(name, blob) {
-  if (!S.dl) { toast("Is view mein download available nahi. Image par long-press kar ke save karein."); return; }
-  try { await S.dl.save({ filename: name, data: blob }); toast("File save ho gayi"); }
-  catch (e) { if (e && e.code !== "declined") toast("Download nahi ho saka (" + (e.code || "error") + ")"); }
+  if (!S.dl) { toast("Downloads are not available here. Long-press the bill image to save it."); return; }
+  try { await S.dl.save({ filename: name, data: blob }); toast("File saved"); }
+  catch (e) { if (e && e.code !== "declined") toast("Download failed (" + (e.code || "error") + ")"); }
 }
 async function pdfFor(m, list, name) {
-  if (!list.length) return toast("Koi bill nahi");
-  openModal(`<h3>PDF ban rahi hai…</h3><div class="bar"><i id="pbar" style="width:0"></i></div><p class="muted" id="ptxt">0 / ${list.length}</p>`);
+  if (!list.length) return toast("No bills to export");
+  openModal(`<h3>Creating PDF…</h3><div class="bar"><i id="pbar" style="width:0"></i></div><p class="muted" id="ptxt">0 / ${list.length}</p>`);
   const imgs = [];
   for (let i = 0; i < list.length; i++) { const c = await billCanvas(m, list[i]); imgs.push(await canvasJpeg(c)); const pb = $("#pbar"); if (pb) { pb.style.width = ((i + 1) / list.length * 100) + "%"; $("#ptxt").textContent = (i + 1) + " / " + list.length; } }
   const blob = makePdf(imgs);
-  openModal(`<h3>PDF tayyar hai<button class="x" data-a="close">×</button></h3><p>${list.length} bills · ${(blob.size / 1048576).toFixed(1)} MB</p><button class="btn pri" id="pdfsave">Download karein</button>`);
+  openModal(`<h3>PDF ready<button class="x" data-a="close">×</button></h3><p>${list.length} bills · ${(blob.size / 1048576).toFixed(1)} MB</p><button class="btn pri block" id="pdfsave">Download</button>`);
   $("#pdfsave").onclick = () => saveFile(name, blob);
 }
 
+/* ============ Excel import ============ */
 function hidFor(no) { return String(no).replace(/\./g, "-").replace(/[^A-Za-z0-9_-]/g, "") || "h"; }
 function cleanName(n) { n = String(n ?? "").replace(/\s+/g, " ").trim(); const w = n.split(" "); if (w.length === 2 && w[0].toLowerCase() === w[1].toLowerCase()) n = w[0]; return n; }
 function plotStr(v) { if (typeof v === "number") return v.toFixed(2); return String(v ?? "").trim(); }
 let xlsxP = null;
 function loadXlsx() { if (window.XLSX) return Promise.resolve(window.XLSX); if (!xlsxP) xlsxP = new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; sc.onload = () => res(window.XLSX); sc.onerror = () => { xlsxP = null; rej(new Error("load")); }; document.head.appendChild(sc); }); return xlsxP; }
 function parseProfile(rows) {
-  // find header row with a PLOT column
-  let hi = rows.findIndex(r => r.some(c => /plot/i.test(String(c || ""))));
+  const hi = rows.findIndex(r => r.some(c => /plot/i.test(String(c || ""))));
   if (hi < 0) return null;
   const hd = rows[hi].map(c => String(c || "").toLowerCase().replace(/[^a-z0-9]/g, ""));
   const col = (...keys) => hd.findIndex(h => keys.some(k => h === k || h.startsWith(k)));
-  const ci = { no: col("plotname", "plotno", "plot"), street: col("street"), area: col("area", "marla"), code: col("subscode", "code"), owner: col("owner", "name"), phone: col("mobile1", "mobile", "phone"), phone2: col("mobile2"), bal: col("previousbalance", "prevbalance", "balance"), meter: col("meter"), opening: col("openingreading", "reading") };
+  const ci = { no: col("plotname", "plotno", "plot"), street: col("street"), area: col("area", "marla"), code: col("subscode", "code"), owner: col("owner", "name"), phone: col("mobile1", "mobile", "phone"), phone2: col("mobile2"), bal: col("previousbalance", "prevbalance", "openingbalance", "balance"), meter: col("watermeter", "meter"), opening: col("openingreading", "reading") };
   if (ci.no < 0) return null;
   const out = [];
   for (const r of rows.slice(hi + 1)) {
-    const no = plotStr(r[ci.no]); if (!no) continue;
+    const no = plotStr(r[ci.no]); if (!no || /^total$/i.test(no)) continue;
     const g = k => ci[k] >= 0 ? r[ci[k]] : "";
     let ph = String(g("phone") ?? "").trim(), ph2 = String(g("phone2") ?? "").trim();
     const parts = ph.split(/\s+(?=\d)/); if (parts.length > 1 && !ph2) { ph = parts[0]; ph2 = parts.slice(1).join(" "); }
@@ -650,25 +744,25 @@ function parseProfile(rows) {
   return out;
 }
 async function importExcel(file) {
-  openModal(`<h3>Excel parh rahe hain…</h3>`);
-  let X; try { X = await loadXlsx(); } catch (e) { openModal(`<h3>Excel reader load nahi hua<button class="x" data-a="close">×</button></h3><p>Internet check kar ke dobara koshish karein.</p>`); return; }
+  openModal(`<h3>Reading Excel file…</h3>`);
+  let X; try { X = await loadXlsx(); } catch (e) { openModal(`<h3>Could not load the Excel reader<button class="x" data-a="close">×</button></h3><p>Check your internet connection and try again.</p>`); return; }
   const wb = X.read(await file.arrayBuffer(), { type: "array" });
   let rows = null, sheet = "";
   for (const n of wb.SheetNames) { const r = X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: "" }); const p = parseProfile(r); if (p && p.length) { rows = p; sheet = n; break; } }
-  if (!rows) { openModal(`<h3>Data nahi mila<button class="x" data-a="close">×</button></h3><p>Excel mein "PLOT NAME", "AREA", "Owner", "MOBILE 1" wale columns hone chahiye.</p>`); return; }
+  if (!rows) { openModal(`<h3>No plot data found<button class="x" data-a="close">×</button></h3><p>The sheet needs columns such as "PLOT NAME", "AREA", "Owner" and "MOBILE 1".</p>`); return; }
   const byNo = new Map(S.houses.map(h => [String(h.no), h]));
   const nNew = rows.filter(r => !byNo.has(r.no)).length;
   S.pendingImport = rows;
-  openModal(`<h3>Excel import<button class="x" data-a="close">×</button></h3>
-  <p>Sheet <b>${esc(sheet)}</b> se <b>${rows.length}</b> plot mile: ${rows.length - nNew} pehle se list mein (update honge), ${nNew} naye.</p>
-  <label class="row" style="margin-bottom:8px"><input type="radio" name="imode" value="merge" checked> Merge: Excel wale plot update/add, baqi list waise hi</label>
-  <label class="row" style="margin-bottom:14px"><input type="radio" name="imode" value="replace"> Replace: purani list hata kar sirf Excel ke plot rakhen</label>
-  <p class="muted" style="font-size:13px">Excel ke sab plot "Sold" mark honge. Bills aur readings pe asar nahi hoga.</p>
-  <button class="btn pri" data-a="importGo">Import karein</button>`);
+  openModal(`<h3>Import from Excel<button class="x" data-a="close">×</button></h3>
+  <p>Found <b>${rows.length}</b> plots on sheet <b>${esc(sheet)}</b>: ${rows.length - nNew} already in the list (will be updated), ${nNew} new.</p>
+  <label class="toggle"><input type="radio" name="imode" value="merge" checked><span><b>Merge</b><small>Update and add the plots from Excel; keep everything else.</small></span></label>
+  <label class="toggle" style="margin-bottom:14px"><input type="radio" name="imode" value="replace"><span><b>Replace</b><small>Remove the current list and keep only the plots from Excel.</small></span></label>
+  <p class="muted" style="font-size:13px">All imported plots are marked as sold. Bills and readings are not affected.</p>
+  <button class="btn pri block" data-a="importGo">Import</button>`);
 }
 async function applyImport(mode) {
   const rows = S.pendingImport || []; if (!rows.length) return;
-  let list = mode === "replace" ? [] : S.houses.map(h => Object.assign({}, h));
+  const list = mode === "replace" ? [] : S.houses.map(h => Object.assign({}, h));
   rows.forEach(r => {
     const i = list.findIndex(h => String(h.no) === r.no);
     const rec = { no: r.no, street: r.street, marla: r.marla, code: r.code, owner: r.owner, phone: r.phone, phone2: r.phone2, prevBal: r.prevBal, sold: true };
@@ -676,7 +770,7 @@ async function applyImport(mode) {
     if (i >= 0) list[i] = Object.assign({}, list[i], rec);
     else { const old = S.houses.find(h => String(h.no) === r.no); let id = old ? old.id : hidFor(r.no); while (list.some(h => h.id === id)) id += "_"; list.push(Object.assign({ id, meter: "", opening: 0 }, rec)); }
   });
-  if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); S.pendingImport = null; toast(rows.length + " plots import ho gaye"); }
+  if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); S.pendingImport = null; toast(rows.length + " plots imported"); }
 }
 
 /* ============ events ============ */
@@ -690,30 +784,30 @@ document.addEventListener("click", async e => {
     case "hf": S.hfilter = t.dataset.v; render(true); break;
     case "rf": S.rfilter = t.dataset.v; render(true); break;
     case "bf": S.bfilter = t.dataset.v; render(true); break;
-    case "toReader": S.mode = "reader"; S.q = ""; render(true); break;
-    case "toAdmin": S.mode = "admin"; render(true); break;
-    case "logout": ss("rg_mode", null); S.mode = "pin"; render(true); break;
+    case "toReader": S.mode = "reader"; S.q = ""; S.rfilter = "pending"; render(true); window.scrollTo(0, 0); break;
+    case "toAdmin": S.mode = "admin"; S.q = ""; render(true); break;
+    case "logout": ss("rg_mode", null); S.adminViaPin = false; S.mode = "pin"; render(true); break;
     case "addHouse": houseModal(null); break;
     case "importXl": { const fi = document.createElement("input"); fi.type = "file"; fi.accept = ".xlsx,.xlsm,.xls,.csv"; fi.onchange = () => { if (fi.files[0]) importExcel(fi.files[0]); }; fi.click(); break; }
-    case "importGo": { const md = (document.querySelector("input[name=imode]:checked") || {}).value || "merge"; if (md === "replace" && !(await ask("Purani list hatayen?", "Jo plot Excel mein nahi, woh list se hat jayenge.", "Replace", true))) break; applyImport(md); break; }
+    case "importGo": { const md = (document.querySelector("input[name=imode]:checked") || {}).value || "merge"; if (md === "replace" && !(await ask("Replace the plot list?", "Plots that are not in the Excel file will be removed from the list.", "Replace", true))) break; applyImport(md); break; }
     case "editHouse": houseModal(S.houses.find(h => h.id === id)); break;
-    case "delHouse": { const h = S.houses.find(x => x.id === id); if (await ask("Ghar delete karein?", "Plot # " + esc(h.no) + " list se hat jayega. Purane bills mehfooz rahenge.", "Delete", true)) { if (await write(() => S.db.doc("society/houses").set({ list: S.houses.filter(x => x.id !== id) }))) toast("Delete ho gaya"); } break; }
-    case "bulkSold": openModal(`<h3>Kai ghar Sold karein<button class="x" data-a="close">×</button></h3><form data-f="bulkSold"><label class="f"><span>Ghar number (maslan 1-50, 61, 70-80)</span><textarea name="nos" rows="3"></textarea></label><label class="row" style="margin-bottom:12px"><input type="radio" name="v" value="1" checked> Sold &nbsp; <input type="radio" name="v" value="0"> Unsold</label><button class="btn pri">Apply</button></form>`); break;
+    case "delHouse": { const h = S.houses.find(x => x.id === id); if (await ask("Delete this plot?", "Plot " + esc(h.no) + " will be removed from the list. Existing bills are kept.", "Delete", true)) { if (await write(() => S.db.doc("society/houses").set({ list: S.houses.filter(x => x.id !== id) }))) toast("Plot deleted"); } break; }
+    case "bulkSold": openModal(`<h3>Mark several plots<button class="x" data-a="close">×</button></h3><form data-f="bulkSold"><label class="f"><span>Plot numbers, separated by commas (e.g. 4.10, 4.11, 5.02)</span><textarea name="nos" rows="3"></textarea></label><label class="toggle"><input type="radio" name="v" value="1" checked><span><b>Sold</b></span></label><label class="toggle" style="margin-bottom:12px"><input type="radio" name="v" value="0"><span><b>Unsold</b></span></label><button class="btn pri block">Apply</button></form>`); break;
     case "reading": readingModal(id); break;
-    case "delReading": { if (await ask("Reading hatayen?", "Is ghar ki is mahine ki reading delete ho jayegi.", "Hatayen", true)) { const d = S.readings[S.readMonth]; const r = Object.assign({}, d.r); delete r[id]; if (await write(() => S.db.doc("readings/" + S.readMonth).set({ month: S.readMonth, r }))) toast("Reading hat gayi"); } break; }
-    case "otherMonth": openModal(`<h3>Mahina chunein<button class="x" data-a="close">×</button></h3><input type="month" id="om" value="${S.billMonth || curMonth()}"><div style="height:12px"></div><button class="btn pri" data-a="omGo">Kholein</button>`); break;
+    case "delReading": { if (await ask("Delete this reading?", "This plot's reading for this month will be removed.", "Delete", true)) { const d = S.readings[S.readMonth]; const r = Object.assign({}, d.r); delete r[id]; if (await write(() => S.db.doc("readings/" + S.readMonth).set({ month: S.readMonth, r }))) toast("Reading deleted"); } break; }
+    case "otherMonth": openModal(`<h3>Choose a month<button class="x" data-a="close">×</button></h3><input type="month" id="om" value="${S.billMonth || curMonth()}"><div style="height:12px"></div><button class="btn pri block" data-a="omGo">Open</button>`); break;
     case "omGo": { const v = $("#om").value; if (v) { S.billMonth = v; closeModal(); render(true); } break; }
-    case "gen": { const due = $("#due").value || addDays(todayISO(), 10); if (!num(st().unitRate) && !(await ask("Water rate set nahi", "Water rate per unit 0 hai, is liye water bill 0 aayega. Phir bhi generate karein?", "Generate"))) break; t.disabled = true; t.textContent = "Ban rahe hain…"; await generateBills(S.billMonth, due); render(true); break; }
-    case "regen": { if (await ask("Dobara generate karein?", "Is mahine ke bills nayi readings aur sold gharon ke hisaab se dobara banenge. Payments, fine aur purane rates mehfooz rahenge.", "Generate")) { await generateBills(S.billMonth, S.bills[S.billMonth].dueDate); render(true); } break; }
+    case "gen": { const due = $("#due").value || addDays(todayISO(), 10); if (!num(st().unitRate) && !(await ask("Water rate not set", "The water rate per unit is 0, so every water charge will be 0. Generate anyway?", "Generate"))) break; t.disabled = true; t.textContent = "Generating…"; await generateBills(S.billMonth, due); render(true); break; }
+    case "regen": { if (await ask("Regenerate bills?", "Bills for this month will be rebuilt from the latest readings and sold plots. Payments, fines and the rates used are kept.", "Regenerate")) { await generateBills(S.billMonth, S.bills[S.billMonth].dueDate); render(true); } break; }
     case "bill": billModal(m, id); break;
     case "pay": payModal(m, id); break;
     case "fine": fineModal(m, id); break;
-    case "unfine": if (await setFine(m, id, 0)) { toast("Fine hat gaya"); billModal(m, id); } break;
-    case "delPay": { if (!(await ask("Payment hatayen?", "Yeh payment record delete ho jayega.", "Hatayen", true))) { billModal(m, id); break; } const b = S.bills[m].b[id]; const payments = (b.payments || []).filter((_, i) => i !== +t.dataset.i); const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0)); if (await write(() => S.db.doc("bills/" + m).update({ b: { [id]: { payments, paid } } }))) toast("Payment hat gayi"); billModal(m, id); break; }
-    case "bulkFine": { const mm = S.billMonth, bill = S.bills[mm]; const list = Object.values(bill.b).filter(b => balance(b) > 0 && !num(b.fine)); if (!list.length) { toast("Koi unpaid bill baghair fine ke nahi"); break; } openModal(`<h3>Unpaid bills par fine<button class="x" data-a="close">×</button></h3><p>${list.length} unpaid bills (jin par abhi fine nahi) par fine lagega.</p><form data-f="bulkFine"><label class="f"><span>Fine (Rs)</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" required></label><button class="btn pri">Apply</button></form>`); break; }
+    case "unfine": if (await setFine(m, id, 0)) { toast("Fine removed"); billModal(m, id); } break;
+    case "delPay": { if (!(await ask("Delete this payment?", "This payment record will be removed.", "Delete", true))) { billModal(m, id); break; } const b = S.bills[m].b[id]; const payments = (b.payments || []).filter((_, i) => i !== +t.dataset.i); const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0)); if (await write(() => S.db.doc("bills/" + m).update({ b: { [id]: { payments, paid } } }))) toast("Payment deleted"); billModal(m, id); break; }
+    case "bulkFine": { const mm = S.billMonth, bill = S.bills[mm]; const list = Object.values(bill.b).filter(b => balance(b) > 0 && !num(b.fine)); if (!list.length) { toast("No unpaid bills without a fine"); break; } openModal(`<h3>Fine all unpaid bills<button class="x" data-a="close">×</button></h3><p>A fine will be added to ${list.length} unpaid bill(s) that don't have one yet.</p><form data-f="bulkFine"><label class="f"><span>Fine (Rs)</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" required></label><button class="btn pri block">Apply</button></form>`); break; }
     case "pdf1": case "img1": { const b = S.bills[m].b[id]; t.disabled = true; const c = await billCanvas(m, b); t.disabled = false; const fn = "Bill-" + b.no + "-" + m; if (a === "img1") c.toBlob(bl => saveFile(fn + ".jpg", bl), "image/jpeg", 0.9); else saveFile(fn + ".pdf", makePdf([await canvasJpeg(c)])); break; }
     case "pdfAll": case "pdfPending": { const mm = S.billMonth; let list = Object.values(S.bills[mm].b).sort((x, y) => hsort({ no: x.no }, { no: y.no })); if (a === "pdfPending") list = list.filter(b => balance(b) > 0); pdfFor(mm, list, (a === "pdfAll" ? "Bills-" : "Unpaid-Bills-") + mm + ".pdf"); break; }
-    case "qrdel": if (await write(() => S.db.doc("society/settings").set(Object.assign({}, st(), { qr: "" })))) toast("QR hat gaya"); break;
+    case "qrdel": if (await write(() => S.db.doc("society/settings").set(Object.assign({}, st(), { qr: "" })))) toast("QR removed"); break;
     case "backup": { const data = { exportedAt: new Date().toISOString(), settings: Object.assign({}, S.settings, { qr: S.settings && S.settings.qr ? "(image)" : "" }), houses: S.houses, readings: S.readings, bills: S.bills }; saveFile("royal-garden-backup-" + todayISO() + ".json", JSON.stringify(data, null, 1)); break; }
   }
 });
@@ -723,15 +817,16 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("change", async e => {
   const t = e.target;
+  if (t.closest("#app form[data-f]")) S.dirty = true;
   if (t.id === "rm") { if (t.value) { S.readMonth = t.value; render(true); } }
   else if (t.id === "bm") { S.billMonth = t.value; S.q = ""; render(true); }
   else if (t.id === "qrfile" && t.files[0]) {
     const f = t.files[0]; const url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
-    const img = await loadImg(url); if (!img) return toast("Tasveer nahi khul saki");
+    const img = await loadImg(url); if (!img) return toast("Could not open that image");
     const mx = 600, sc = Math.min(1, mx / Math.max(img.width, img.height)); const c = document.createElement("canvas"); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
     const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
     let d = c.toDataURL("image/png"); if (d.length > 180000) d = c.toDataURL("image/jpeg", 0.85);
-    if (await write(() => S.db.doc("society/settings").set(Object.assign({}, st(), { qr: d })))) { const im = $("#qrimg"); if (im) im.src = d; toast("QR save ho gaya"); }
+    if (await write(() => S.db.doc("society/settings").set(Object.assign({}, st(), { qr: d })))) { const im = $("#qrimg"); if (im) im.src = d; toast("QR code saved"); }
   }
 });
 document.addEventListener("submit", async e => {
@@ -739,33 +834,34 @@ document.addEventListener("submit", async e => {
   if (k === "pin") {
     const p = String($("#pin").value || "").trim(), s = st();
     if (p && p === String(s.readerPin)) { S.mode = "reader"; ss("rg_mode", "reader"); S.rfilter = "pending"; render(true); }
-    else if (p && s.adminPin && p === String(s.adminPin)) { S.mode = "admin"; ss("rg_mode", "admin"); render(true); }
-    else toast("PIN ghalat hai");
+    else if (p && s.adminPin && p === String(s.adminPin)) { S.mode = "admin"; S.adminViaPin = true; ss("rg_mode", "admin"); render(true); }
+    else toast("Incorrect PIN");
   } else if (k === "setup") {
     const total = Math.min(2000, Math.max(1, Math.round(num(fd.get("total"))))), marla = num(fd.get("marla"));
     const sold = parseRanges(fd.get("sold"));
     const list = []; for (let i = 1; i <= total; i++) list.push({ id: String(i), no: String(i), owner: "", phone: "", marla, meter: "", opening: 0, sold: sold.has(String(i)) });
     const s = Object.assign({}, st(), { name: String(fd.get("name") || DEF.name), nameUr: String(fd.get("nameUr") || ""), marlaRate: num(fd.get("marlaRate")), unitRate: num(fd.get("unitRate")), readerPin: String(fd.get("readerPin") || "1234") });
     const ok = await write(async () => { await S.db.doc("society/settings").set(s); if (!S.housesExists) await S.db.doc("society/houses").set({ list }); });
-    if (ok) { toast("Setup ho gaya"); S.view = "houses"; render(true); }
+    if (ok) { toast("Setup complete"); S.view = "houses"; render(true); }
   } else if (k === "settings") {
     const s = Object.assign({}, st());
     ["name", "nameUr", "address", "phone", "jazzNumber", "jazzTitle", "bankName", "bankTitle", "bankAcc", "iban", "readerPin", "adminPin"].forEach(n => s[n] = String(fd.get(n) || "").trim());
     ["marlaRate", "unitRate", "fineDefault", "dueDays"].forEach(n => s[n] = num(fd.get(n)));
-    if (!s.readerPin) return toast("Reader PIN khali nahi ho sakta");
-    if (await write(() => S.db.doc("society/settings").set(s))) toast("Settings save ho gayi");
+    s.readerShowPrev = !!fd.get("readerShowPrev"); s.readerShowOwner = !!fd.get("readerShowOwner");
+    if (!s.readerPin) return toast("The reader PIN can't be empty");
+    if (await write(() => S.db.doc("society/settings").set(s))) toast("Settings saved");
   } else if (k === "house") saveHouse(f);
   else if (k === "reading") saveReading(f, (e.submitter && e.submitter.value) || "next");
   else if (k === "pay") savePay(f);
-  else if (k === "fine") { const m = f.dataset.m, id = f.dataset.id; const amt = num(fd.get("amt")); if (amt <= 0) return; if (await setFine(m, id, num(S.bills[m].b[id].fine) + amt)) { toast("Fine lag gaya"); billModal(m, id); } }
+  else if (k === "fine") { const m = f.dataset.m, id = f.dataset.id; const amt = num(fd.get("amt")); if (amt <= 0) return; if (await setFine(m, id, num(S.bills[m].b[id].fine) + amt)) { toast("Fine added"); billModal(m, id); } }
   else if (k === "bulkFine") {
     const m = S.billMonth, amt = num(fd.get("amt")); if (amt <= 0) return; const u = {};
     Object.values(S.bills[m].b).forEach(b => { if (balance(b) > 0 && !num(b.fine)) u[b.hid] = { fine: amt, total: r2(num(b.total) + amt) }; });
-    if (await write(() => S.db.doc("bills/" + m).update({ b: u }))) { closeModal(); toast(Object.keys(u).length + " bills par fine lag gaya"); }
+    if (await write(() => S.db.doc("bills/" + m).update({ b: u }))) { closeModal(); toast("Fine added to " + Object.keys(u).length + " bills"); }
   } else if (k === "bulkSold") {
-    const set = parseRanges(fd.get("nos")), v = fd.get("v") === "1"; if (!set.size) return toast("Number likhein");
-    let n = 0; const list = S.houses.map(h => { if (set.has(String(h.no)) || set.has(String(parseInt(h.no)))) { n++; return Object.assign({}, h, { sold: v }); } return h; });
-    if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); toast(n + " ghar update ho gaye"); }
+    const set = parseRanges(fd.get("nos")), v = fd.get("v") === "1"; if (!set.size) return toast("Enter plot numbers");
+    let n = 0; const list = S.houses.map(h => { if (set.has(String(h.no))) { n++; return Object.assign({}, h, { sold: v }); } return h; });
+    if (await write(() => S.db.doc("society/houses").set({ list }))) { closeModal(); toast(n + " plots updated"); }
   }
 });
 boot();
