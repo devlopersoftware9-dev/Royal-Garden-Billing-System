@@ -215,6 +215,7 @@ const IC = {
   plots: '<path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M8 8h3M8 12h3M8 16h3M3 21h18"/>',
   readings: '<path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/>',
   bills: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3"/>',
+  report: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
   pending: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   users: '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
@@ -528,16 +529,16 @@ function viewLogin() {
 
 /* ---- ADMIN shell ---- */
 const NAV = [["home", "Dashboard", "home"], ["houses", "Plots", "plots"], ["readings", "Readings", "readings"], ["bills", "Bills", "bills"], ["pending", "Pending", "pending"]];
-const TITLES = { home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings", logins: "Logins", inbox: "Inbox", colors: "Color Scheme" };
+const TITLES = { home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings", logins: "Logins", inbox: "Inbox", colors: "Color Scheme", creport: "Complaints Report" };
 function viewAdmin() {
   const s = st();
   let body;
   if (!S.settingsExists || !S.housesExists) { if (S.view !== "settings") body = viewSetup(); }
-  if (!body) body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings, logins: vLogins, inbox: vInbox, colors: vColors }[S.view] || vHome)();
+  if (!body) body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings, logins: vLogins, inbox: vInbox, colors: vColors, creport: vCReport }[S.view] || vHome)();
   const pc = S.proofs.length;
   const ic = unreadAdmin();
   const navBtn = ([k, t, i]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(i)}<span>${t}${k === "pending" && pc ? ` <span class="badge b-unpaid">${pc}</span>` : ""}${k === "inbox" && ic ? ` <span class="badge b-unpaid">${ic}</span>` : ""}</span></button>`;
-  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["inbox", "Inbox", "chat"])}${navBtn(["logins", "Logins", "users"])}${navBtn(["colors", "Colors", "palette"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
+  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["inbox", "Inbox", "chat"])}${navBtn(["creport", "Complaints report", "report"])}${navBtn(["logins", "Logins", "users"])}${navBtn(["colors", "Colors", "palette"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
   <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "inbox" ? "on" : ""}" data-a="tab" data-v="inbox" aria-label="Inbox">${icon("chat")}${ic ? `<span class="dot">${ic}</span>` : ""}</button><button class="ibtn ${S.view === "logins" ? "on" : ""}" data-a="tab" data-v="logins" aria-label="Logins">${icon("users")}</button><button class="ibtn ${S.view === "colors" ? "on" : ""}" data-a="tab" data-v="colors" aria-label="Colors">${icon("palette")}</button><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button></header>
   <main><div class="pagehead"><h1>${esc(TITLES[S.view] || "")}</h1></div>${S.slow ? `<div class="note">Some data has not loaded yet; what you see may be out of date.</div>` : ""}${body}</main>
   <nav class="bnav">${NAV.map(([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t === "Dashboard" ? "Home" : t}${k === "pending" && pc ? " (" + pc + ")" : ""}</span></button>`).join("")}</nav>`;
@@ -789,7 +790,7 @@ const unreadAdmin = () => S.msgs.filter(m => m.from === "resident" && !m.seenByA
 const unreadRes = () => S.msgs.filter(m => m.from === "admin" && !m.seenByResident).length;
 const lastLine = m => m ? (m.from === "admin" ? "Office: " : "You: ") + (m.text || (m.image ? "Photo" : "")) : "";
 function kindBadge(m) { const k = KINDS[m.kind] || KINDS.message; return `<span class="badge ${k[1]}">${k[0]}</span>${m.kind === "complaint" ? ` <span class="badge ${m.status === "resolved" ? "b-paid" : "b-part"}">${m.status === "resolved" ? "Resolved" : "Open"}</span>` : ""}`; }
-function fmtAt(iso) { const d = new Date(iso); if (isNaN(d)) return ""; return fmtDate(iso.slice(0, 10)) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+function fmtAt(iso) { const d = new Date(iso); if (isNaN(d)) return ""; return pad(d.getDate()) + "-" + pad(d.getMonth() + 1) + "-" + d.getFullYear() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
 function msgHtml(m, admin) {
   const mine = admin ? m.from === "admin" : m.from === "resident";
   const who = m.from === "admin" ? "Office" + (admin && m.by ? " · " + esc(m.by) : "") : (admin ? "Resident" : "You");
@@ -838,7 +839,7 @@ function vInbox() {
   if (f === "unread") rows = rows.filter(r => r.unread); else if (f === "open") rows = rows.filter(r => r.open);
   const chip = (k, t) => `<button class="chip ${f === k ? "on" : ""}" data-a="ifilter" data-v="${k}">${t}</button>`;
   const opts = soldHouses().map(h => `<option value="${esc(h.id)}">${esc(h.no)}${h.owner ? " · " + esc(h.owner) : ""}</option>`).join("");
-  return `<div class="toolbar">${chip("all", "All")}${chip("unread", "Unread")}${chip("open", "Open complaints")}<span class="sp"></span>${S.mode === "admin" ? `<select id="newchat" style="max-width:220px"><option value="">Message a plot…</option>${opts}</select>` : ""}</div>
+  return `<div class="toolbar">${chip("all", "All")}${chip("unread", "Unread")}${chip("open", "Open complaints")}<span class="sp"></span>${S.mode === "admin" ? `<button class="btn sm" data-a="tab" data-v="creport">${icon("report")} Report</button><select id="newchat" style="max-width:220px"><option value="">Message a plot…</option>${opts}</select>` : ""}</div>
   <div class="list">${rows.map(r => `<div class="item" data-a="chat" data-id="${esc(r.h.id)}"><div class="hno">${esc(r.h.no)}</div><div class="m"><b>${esc(r.h.owner || "—")}</b><small>${esc((r.last.from === "admin" ? "You: " : "") + (r.last.text || (r.last.amount ? "Payment " + money(r.last.amount) : "Photo")))} · ${fmtAt(r.last.at)}</small></div><div style="text-align:right">${r.unread ? `<span class="badge b-unpaid">${r.unread} new</span>` : ""}${r.open ? `<div><span class="badge b-part">${r.open} open</span></div>` : ""}</div></div>`).join("") || `<div class="empty">No messages${f === "all" ? " yet" : ""}.</div>`}</div>`;
 }
 function replyTopic(hid) {
@@ -878,6 +879,60 @@ function viewStaff() {
   const n = unreadAdmin();
   return `<header class="appbar mob"><div class="t"><b>Inbox${n ? " (" + n + ")" : ""}</b><small>${esc(S.me.name || S.me.username)} · ${esc(st().name)}</small></div><button class="ibtn" data-a="myAccount" aria-label="Account">${icon("lock")}</button><button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button></header>
   <main>${!sr("inbox") ? `<div class="card"><h2>No access</h2><p class="muted" style="margin:0">The admin has turned off Inbox access for staff logins.</p></div>` : `<div class="info">You can see ${["complaints"].concat(sr("payments") ? ["payment screenshots"] : [], sr("messages") ? ["general messages"] : []).join(", ")}.</div>` + vInbox()}</main>`;
+}
+
+/* ---- Complaints report (admin) ---- */
+const DAY = 86400000;
+const dayDiff = (a, b) => Math.max(0, (new Date(b) - new Date(a)) / DAY);
+const fmtDays = d => d == null ? "—" : d < 1 ? (d * 24 < 1 ? "< 1 hour" : Math.round(d * 24) + " h") : (Math.round(d * 10) / 10) + " d";
+function complaintRows() {
+  const target = num(st().complaintDays) || 3, now = new Date().toISOString();
+  return S.msgs.filter(m => m.from === "resident" && (m.kind === "complaint" || topicOf(m) === "complaint") && m.kind === "complaint").map(m => {
+    const h = S.houses.find(x => x.id === m.hid) || { no: m.hid, owner: "" };
+    const reply = S.msgs.filter(x => x.hid === m.hid && x.from === "admin" && String(x.at) > String(m.at)).sort(byAt)[0];
+    const resolved = m.status === "resolved";
+    const days = resolved && m.resolvedAt ? dayDiff(m.at, m.resolvedAt) : null;
+    const age = dayDiff(m.at, now);
+    return { m, h, resolved, days, age, firstReply: reply ? dayDiff(m.at, reply.at) : null, replyBy: reply ? (reply.by || "Office") : "", overdue: resolved ? (days != null && days > target) : age > target, target };
+  }).sort((a, b) => String(b.m.at).localeCompare(String(a.m.at)));
+}
+function crPeriod(rows) {
+  const p = S.crp || "month", d = new Date(), ym = x => x.toISOString().slice(0, 7);
+  if (p === "month") return rows.filter(r => String(r.m.at).slice(0, 7) === ym(d));
+  if (p === "last") { const l = new Date(d.getFullYear(), d.getMonth() - 1, 15); return rows.filter(r => String(r.m.at).slice(0, 7) === ym(l)); }
+  if (p === "30") return rows.filter(r => dayDiff(r.m.at, d.toISOString()) <= 30);
+  if (p === "custom") { const f = S.crFrom || "0000", t = (S.crTo || "9999") + "T99"; return rows.filter(r => String(r.m.at) >= f && String(r.m.at) <= t); }
+  return rows;
+}
+function vCReport() {
+  const all = crPeriod(complaintRows()), f = S.crf || "all", target = num(st().complaintDays) || 3;
+  const res = all.filter(r => r.resolved), open = all.filter(r => !r.resolved), od = all.filter(r => r.overdue);
+  const timed = res.filter(r => r.days != null), avg = timed.length ? timed.reduce((s, r) => s + r.days, 0) / timed.length : null;
+  const replied = all.filter(r => r.firstReply != null), avgR = replied.length ? replied.reduce((s, r) => s + r.firstReply, 0) / replied.length : null;
+  const onTime = timed.filter(r => r.days <= target).length;
+  let rows = all; if (f === "open") rows = open; else if (f === "resolved") rows = res; else if (f === "overdue") rows = od;
+  const by = {}; res.forEach(r => { const k = r.m.resolvedBy || "—"; (by[k] = by[k] || []).push(r); });
+  const chip = (k, t, v) => `<button class="chip ${v === k ? "on" : ""}" data-a="${t}" data-v="${k}">`;
+  const pc = S.crp || "month";
+  return `<div class="toolbar"><div class="chips">${[["month", "This month"], ["last", "Last month"], ["30", "Last 30 days"], ["all", "All time"], ["custom", "From – to"]].map(([k, t]) => chip(k, "crp", pc) + t + "</button>").join("")}</div></div>
+  ${pc === "custom" ? `<div class="row" style="gap:8px;margin-bottom:12px"><label class="f" style="margin:0"><span>From</span><input type="date" id="crFrom" value="${esc(S.crFrom || "")}"></label><label class="f" style="margin:0"><span>To</span><input type="date" id="crTo" value="${esc(S.crTo || "")}"></label></div>` : ""}
+  <div class="grid"><div class="stat"><span>Complaints</span><b>${all.length}</b></div><div class="stat"><span>Resolved</span><b style="color:var(--grn)">${res.length}</b><em>${onTime} within ${target} days</em></div><div class="stat"><span>Still open</span><b style="color:${open.length ? "var(--red)" : "inherit"}">${open.length}</b></div><div class="stat"><span>Late (over ${target} days)</span><b style="color:${od.length ? "var(--amb)" : "inherit"}">${od.length}</b></div><div class="stat"><span>Average time to resolve</span><b>${fmtDays(avg)}</b></div><div class="stat"><span>Average first reply</span><b>${fmtDays(avgR)}</b><em>${all.length - replied.length} not replied</em></div></div>
+  ${Object.keys(by).length ? `<div class="card"><h2>Resolved by</h2><table class="tbl"><tr><th>Staff / admin</th><th>Resolved</th><th>Average time</th><th>On time</th></tr>${Object.entries(by).sort((a, b) => b[1].length - a[1].length).map(([k, l]) => { const t = l.filter(r => r.days != null); return `<tr><td>${esc(k)}</td><td>${l.length}</td><td>${fmtDays(t.length ? t.reduce((s, r) => s + r.days, 0) / t.length : null)}</td><td>${t.filter(r => r.days <= target).length} / ${t.length}</td></tr>`; }).join("")}</table></div>` : ""}
+  <div class="toolbar"><div class="chips">${[["all", "All"], ["open", "Open"], ["resolved", "Resolved"], ["overdue", "Late"]].map(([k, t]) => chip(k, "crf", f) + t + "</button>").join("")}</div><span class="sp"></span><button class="btn sm" data-a="crCsv">Download Excel (CSV)</button><button class="btn sm" data-a="crPrint">Print</button></div>
+  <div class="card" style="overflow-x:auto" id="crtable"><table class="tbl"><tr><th>Date</th><th>Plot</th><th>Complaint</th><th>Status</th><th>First reply</th><th>Resolved on</th><th>Took</th><th>By</th></tr>
+  ${rows.map(r => `<tr data-a="chat" data-id="${esc(r.h.id || r.m.hid)}" style="cursor:pointer"><td>${fmtAt(r.m.at)}</td><td><b>${esc(r.h.no)}</b><div class="muted" style="font-size:12px">${esc(r.h.owner || "")}</div></td><td style="min-width:180px">${esc((r.m.text || "(photo)").slice(0, 140))}</td><td>${r.resolved ? `<span class="badge b-paid">Resolved</span>` : `<span class="badge b-unpaid">Open · ${fmtDays(r.age)}</span>`}${r.overdue ? ` <span class="badge b-part">Late</span>` : ""}</td><td>${fmtDays(r.firstReply)}</td><td>${r.resolved && r.m.resolvedAt ? fmtAt(r.m.resolvedAt) : "—"}</td><td>${fmtDays(r.days)}</td><td>${esc(r.resolved ? (r.m.resolvedBy || "—") : "")}</td></tr>`).join("") || `<tr><td colspan="8" class="muted" style="text-align:center;padding:20px">No complaints in this period.</td></tr>`}</table></div>
+  <form data-f="crTarget" class="row" style="gap:8px;align-items:flex-end;margin-top:4px"><label class="f" style="margin:0;max-width:220px"><span>Target: resolve within (days)</span><input type="number" name="d" min="1" step="1" value="${target}"></label><button class="btn sm">Save</button></form>`;
+}
+function crCsv() {
+  const rows = crPeriod(complaintRows()), q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+  const head = ["Date", "Plot", "Owner", "Complaint", "Status", "Late", "First reply (days)", "First reply by", "Resolved on", "Days to resolve", "Resolved by"];
+  const r2d = d => d == null ? "" : (Math.round(d * 10) / 10);
+  const body = rows.map(r => [fmtAt(r.m.at), r.h.no, r.h.owner, r.m.text || "", r.resolved ? "Resolved" : "Open", r.overdue ? "Yes" : "", r2d(r.firstReply), r.replyBy, r.resolved && r.m.resolvedAt ? fmtAt(r.m.resolvedAt) : "", r2d(r.days), r.resolved ? r.m.resolvedBy || "" : ""].map(q).join(","));
+  saveFile("Complaints-report-" + todayISO() + ".csv", new Blob(["﻿" + [head.map(q).join(",")].concat(body).join("\r\n")], { type: "text/csv" }));
+}
+function crPrint() {
+  const el = $("#crtable"); if (!el) return; const w = window.open("", "_blank"); if (!w) return toast("Allow pop-ups to print");
+  w.document.write(`<html><head><title>Complaints report</title><style>body{font:13px Arial;padding:16px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:5px;text-align:left;vertical-align:top}.badge{font-weight:bold}.muted{color:#666}</style></head><body><h2>${esc(st().name)} — Complaints report</h2><p>${esc($(".grid") ? $(".grid").innerText.replace(/\n+/g, " · ") : "")}</p>${el.innerHTML}<script>print()<\/script></body></html>`); w.document.close();
 }
 
 /* ---- RESIDENT portal ---- */
@@ -1490,13 +1545,19 @@ document.addEventListener("click", async e => {
     case "rf": S.rfilter = t.dataset.v; render(true); break;
     case "bf": S.bfilter = t.dataset.v; render(true); break;
     case "ifilter": S.ifilter = t.dataset.v; render(true); break;
+    case "crp": S.crp = t.dataset.v; render(true); break;
+    case "crf": S.crf = t.dataset.v; render(true); break;
+    case "crCsv": crCsv(); break;
+    case "crPrint": crPrint(); break;
     case "readNext": { const m2 = S.readMonth, sold = soldHouses(), i = sold.findIndex(x => x.id === id); const nxt = sold.slice(i + 1).concat(sold.slice(0, i)).find(x => x.id !== id && readingOf(x.id, m2) == null); if (nxt) readingModal(nxt.id); else { toast("All readings are done ✓"); closeModal(); } break; }
     case "regenFor": { closeModal(); S.billMonth = t.dataset.m; S.view = "bills"; render(true); const rb = document.querySelector('[data-a="regen"]'); if (rb) rb.click(); break; }
     case "theme": { const v = t.dataset.v; if (await write(() => D.saveSettings(Object.assign({}, st(), { theme: v })))) toast("Colours changed"); break; }
     case "themeCustom": { const v = ($("#tcustom") || {}).value; if (/^#[0-9a-f]{6}$/i.test(v || "") && await write(() => D.saveSettings(Object.assign({}, st(), { theme: v.toLowerCase() })))) toast("Colours changed"); break; }
     case "chat": chatModal(id); break;
     case "myInbox": chatModal(S.me.hid, t.dataset.k); break;
-    case "msgStatus": if (await write(() => D.updateMsg(id, { status: t.dataset.v }))) toast(t.dataset.v === "resolved" ? "Complaint marked resolved" : "Complaint reopened"); break;
+    case "msgStatus": { const res = t.dataset.v === "resolved", now = new Date().toISOString(), who = S.me.name || S.me.username || "";
+      const f = res ? { status: "resolved", resolvedAt: now, resolvedBy: who } : { status: "open", resolvedAt: "", resolvedBy: "", reopenedAt: now };
+      if (await write(() => D.updateMsg(id, f))) toast(res ? "Complaint marked resolved" : "Complaint reopened"); break; }
     case "zoomImg": window.open().document.write(`<img src="${t.src}" style="max-width:100%">`); break;
     case "toReader": S.mode = "reader"; S.q = ""; S.rfilter = "pending"; render(true); window.scrollTo(0, 0); break;
     case "toAdmin": S.mode = "admin"; S.q = ""; render(true); break;
@@ -1566,6 +1627,7 @@ document.addEventListener("change", async e => {
   if (t.closest("#app form[data-f]")) S.dirty = true;
   if (t.id === "rm") { if (t.value) { S.readMonth = t.value; render(true); } }
   else if (t.id === "bm") { S.billMonth = t.value; S.q = ""; render(true); }
+  else if (t.id === "crFrom" || t.id === "crTo") { S[t.id] = t.value; render(true); }
   else if (t.id === "newchat") { if (t.value) chatModal(t.value); t.value = ""; }
   else if (t.name === "kind" && t.closest("form[data-f=msg]")) { const pf = $("#payf"); if (pf) pf.style.display = t.value === "payment" ? "" : "none"; }
   else if (t.id === "qrfile" && t.files[0]) {
@@ -1592,6 +1654,7 @@ document.addEventListener("submit", async e => {
     const btn = f.querySelector("button"); btn.disabled = true;
     try { const c = await D.createLogin(fd.get("role"), fd.get("u"), String(fd.get("p") || ""), null, String(fd.get("name") || "").trim()); credModal([c]); } catch (err) { toast(err.message || "Could not create the login"); btn.disabled = false; }
   } else if (k === "msg") { sendMsgForm(f);
+  } else if (k === "crTarget") { const d = Math.max(1, Math.round(num(fd.get("d")))); if (await write(() => D.saveSettings(Object.assign({}, st(), { complaintDays: d })))) toast("Target saved: " + d + " days");
   } else if (k === "mailcfg") {
     const c = Object.assign({}, mcfg(), { name: String(fd.get("name") || "").trim(), subject: String(fd.get("subject") || "").trim() || MAILDEF.subject, body: String(fd.get("body") || "").trim() || MAILDEF.body, url: String(fd.get("url") || "").trim() });
     if (c.url && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(c.url)) return toast("The script link should look like https://script.google.com/macros/s/…/exec");

@@ -125,7 +125,7 @@ service cloud.firestore {
         || (isStaff() && staffTopicOk(resource.data.topic)
           && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenByAdmin'])
             || (sr('resolve', true) && resource.data.topic == 'complaint'
-              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'seenByAdmin']))))
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'seenByAdmin', 'resolvedAt', 'resolvedBy', 'reopenedAt']))))
         || (isResident() && resource.data.hid == myHid() && resource.data.from == 'admin'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenByResident']));
       allow delete: if isAdmin();
