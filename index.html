@@ -100,7 +100,7 @@ label.f>span{display:block;font-size:13px;color:var(--mute);margin-bottom:5px;fo
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .toolbar input{flex:1;min-width:200px}
 .note{background:var(--amb2);color:#5c3b00;border-radius:11px;padding:11px 13px;font-size:14px;margin-bottom:12px}
-.info{background:var(--pri2);color:#0c4a3e;border-radius:11px;padding:11px 13px;font-size:14px;margin-bottom:12px}
+.info{background:var(--pri2);color:var(--pri-ink,#0c4a3e);border-radius:11px;padding:11px 13px;font-size:14px;margin-bottom:12px}
 .err{background:var(--red2);color:var(--red);border-radius:11px;padding:11px 13px;font-size:14px;margin-bottom:12px}
 .muted{color:var(--mute)}
 .bar{height:8px;background:#e6ecea;border-radius:99px;overflow:hidden}
@@ -130,9 +130,17 @@ label.f>span{display:block;font-size:13px;color:var(--mute);margin-bottom:5px;fo
 .msg p{margin:0;white-space:pre-wrap;word-break:break-word}
 .msg img{display:block;max-width:100%;max-height:260px;border-radius:9px;margin-top:7px;cursor:zoom-in;border:1px solid var(--line)}
 .msg .actions{margin:8px 0 0}
-.fab{position:fixed;right:16px;bottom:calc(18px + var(--sab));z-index:20;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:99px;padding:13px 18px 13px 15px;background:var(--pri);color:#fff;font:inherit;font-weight:700;font-size:15px;box-shadow:0 6px 18px rgba(15,92,77,.35);cursor:pointer}
+.fab{position:fixed;right:16px;bottom:calc(18px + var(--sab));z-index:20;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:99px;padding:13px 18px 13px 15px;background:var(--pri);color:#fff;font:inherit;font-weight:700;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
 .fab .i{width:22px;height:22px}.fab .dot{position:absolute;top:-5px;right:-3px;background:var(--red);color:#fff;border-radius:99px;font-size:12px;font-weight:700;min-width:20px;height:20px;line-height:20px;padding:0 5px;text-align:center;border:2px solid #fff}
-.ibtn{position:relative}.ibtn .dot{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:99px;font-size:11px;font-weight:700;min-width:18px;height:18px;line-height:18px;padding:0 4px;text-align:center}
+.ibtn{position:relative}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.sw{border:2px solid var(--line);border-radius:14px;background:#fff;padding:0;overflow:hidden;cursor:pointer;text-align:left;font:inherit;color:var(--ink)}
+.sw.on{border-color:var(--ink);box-shadow:0 0 0 2px #fff inset}
+.sw .top{height:46px;display:flex;align-items:center;padding:0 12px;color:#fff;font-weight:700;font-size:13px}
+.sw .bd{padding:10px 12px;display:flex;flex-direction:column;gap:7px}
+.sw .pill{height:22px;border-radius:7px;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.sw .tint{height:14px;border-radius:5px}
+.sw .nm{font-weight:650;font-size:14px;display:flex;align-items:center;gap:6px}.ibtn .dot{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:99px;font-size:11px;font-weight:700;min-width:18px;height:18px;line-height:18px;padding:0 4px;text-align:center}
 .boot{padding:70px 24px;text-align:center;color:var(--mute)}
 .qrprev{width:130px;height:130px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
@@ -208,6 +216,7 @@ const IC = {
   pending: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   users: '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  palette: '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.9 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.3-4-7.7-9-7.7z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/>',
   chat: '<path d="M20 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 12.5h5"/>',
   inbox: '<path d="M4 13h4l2 3h4l2-3h4"/><path d="M5.5 5h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
@@ -219,6 +228,27 @@ const icon = k => `<svg class="i" viewBox="0 0 24 24">${IC[k]}</svg>`;
 const DEF = { name: "Royal Garden", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerShowPrev: true, readerShowOwner: true, btns: {} };
 /* Which buttons show on a bill, per login type (Settings → Bill buttons). Missing = shown. */
 const BTNS = [["pay", "Record payment", 1, 0], ["fine", "Add fine", 1, 0], ["unfine", "Remove fine", 1, 0], ["delPay", "Delete a payment (×)", 1, 0], ["payNow", "Pay now", 0, 1], ["print", "Print", 1, 1], ["pdf", "Download PDF", 1, 1], ["img", "Download image", 1, 1], ["wa", "Send picture on WhatsApp", 1, 0]];
+/* Colour scheme (Colors tab). Saved in settings/main.theme, so every login sees the same colours. */
+const THEMES = [["green", "Garden green", "#0f5c4d"], ["teal", "Teal", "#0e6e78"], ["blue", "Royal blue", "#1d4f91"], ["indigo", "Indigo", "#3b3f9e"], ["purple", "Purple", "#6a3d9a"], ["maroon", "Maroon", "#8c1f33"], ["brown", "Brown", "#7a4a1e"], ["orange", "Orange", "#b54d12"], ["olive", "Olive", "#556b1f"], ["slate", "Slate grey", "#334155"], ["black", "Charcoal", "#1f2326"]];
+function mix(hex, to, t) { const a = hex.replace("#", ""), b = to.replace("#", ""); const c = i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, "0"); return "#" + c(0) + c(2) + c(4); }
+function themeColor() { const t = (S.settings && S.settings.theme) || (() => { try { return localStorage.getItem("rg-theme"); } catch (e) { return null; } })() || "green"; if (/^#[0-9a-f]{6}$/i.test(t)) return t; const f = THEMES.find(x => x[0] === t); return f ? f[2] : THEMES[0][2]; }
+function themeVars(c) { return { pri: c, priD: mix(c, "#000000", .22), pri2: mix(c, "#ffffff", .88), ink: mix(c, "#000000", .35), soft: mix(c, "#ffffff", .8), soft2: mix(c, "#ffffff", .7) }; }
+let lastTheme = null;
+function applyTheme() {
+  const c = themeColor(); if (c === lastTheme) return; lastTheme = c; const v = themeVars(c), r = document.documentElement.style;
+  r.setProperty("--pri", v.pri); r.setProperty("--pri-d", v.priD); r.setProperty("--pri2", v.pri2); r.setProperty("--pri-ink", v.ink);
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = c;
+  if (S.settings && S.settings.theme) { try { localStorage.setItem("rg-theme", S.settings.theme); } catch (e) { } }
+}
+function vColors() {
+  const cur = (S.settings && S.settings.theme) || "green";
+  const card = (k, name, c) => `<button class="sw ${cur === k ? "on" : ""}" data-a="theme" data-v="${esc(k)}"><div class="top" style="background:${c}">${esc(st().name)}</div><div class="bd"><div class="pill" style="background:${c}">Button</div><div class="tint" style="background:${mix(c, "#ffffff", .88)}"></div><div class="nm">${cur === k ? "✓ " : ""}${esc(name)}</div></div></button>`;
+  const custom = /^#[0-9a-f]{6}$/i.test(cur) ? cur : "";
+  return `<div class="info">Tap a colour to change the whole app: menus, buttons, headers and the bills. Every login (admin, staff, readers and residents) sees the same colours.</div>
+  <div class="swatches">${THEMES.map(([k, n, c]) => card(k, n, c)).join("")}${custom ? card(custom, "Custom", custom) : ""}</div>
+  <div class="card" style="margin-top:16px"><h2>Your own colour</h2><div class="row" style="gap:12px"><input type="color" id="tcustom" value="${custom || themeColor()}" style="width:64px;height:44px;padding:2px;border-radius:10px"><button class="btn" data-a="themeCustom">Use this colour</button></div><p class="muted" style="margin:10px 0 0;font-size:13px">Dark colours work best, because text on buttons and headers is white.</p></div>`;
+}
+
 /* Complaints staff rights (Settings → Complaints staff). Also enforced in firestore.rules. */
 const SR = [["inbox", "Open the Inbox", "Without this the staff login sees nothing.", true], ["reply", "Reply to residents", "Send replies in the chat.", true], ["resolve", "Mark complaints resolved", "Close or reopen a complaint.", true], ["payments", "See payment screenshots", "Payment messages and screenshots sent by residents.", false], ["messages", "See general messages", "Messages that are not complaints or payments.", false]];
 const sr = k => { const r = st().staffRights || {}; const d = SR.find(x => x[0] === k); return r[k] === undefined ? (d ? d[3] : false) : !!r[k]; };
@@ -464,6 +494,7 @@ function render(force) {
   S.dirty = false;
   const a = document.activeElement, aid = a && a.id, sel = a && a.selectionStart;
   const app = $("#app");
+  applyTheme();
   document.body.classList.toggle("reader", S.mode !== "admin");
   if (S.mode === "loading") app.innerHTML = `<div class="boot">Loading…</div>`;
   else if (S.mode === "noconfig") app.innerHTML = `<div class="boot"><b>Firebase is not connected yet.</b><br>Paste your Firebase config into index.html (see README).</div>`;
@@ -488,17 +519,17 @@ function viewLogin() {
 
 /* ---- ADMIN shell ---- */
 const NAV = [["home", "Dashboard", "home"], ["houses", "Plots", "plots"], ["readings", "Readings", "readings"], ["bills", "Bills", "bills"], ["pending", "Pending", "pending"]];
-const TITLES = { home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings", logins: "Logins", inbox: "Inbox" };
+const TITLES = { home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings", logins: "Logins", inbox: "Inbox", colors: "Color Scheme" };
 function viewAdmin() {
   const s = st();
   let body;
   if (!S.settingsExists || !S.housesExists) { if (S.view !== "settings") body = viewSetup(); }
-  if (!body) body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings, logins: vLogins, inbox: vInbox }[S.view] || vHome)();
+  if (!body) body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings, logins: vLogins, inbox: vInbox, colors: vColors }[S.view] || vHome)();
   const pc = S.proofs.length;
   const ic = unreadAdmin();
   const navBtn = ([k, t, i]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(i)}<span>${t}${k === "pending" && pc ? ` <span class="badge b-unpaid">${pc}</span>` : ""}${k === "inbox" && ic ? ` <span class="badge b-unpaid">${ic}</span>` : ""}</span></button>`;
-  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["inbox", "Inbox", "chat"])}${navBtn(["logins", "Logins", "users"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
-  <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "inbox" ? "on" : ""}" data-a="tab" data-v="inbox" aria-label="Inbox">${icon("chat")}${ic ? `<span class="dot">${ic}</span>` : ""}</button><button class="ibtn ${S.view === "logins" ? "on" : ""}" data-a="tab" data-v="logins" aria-label="Logins">${icon("users")}</button><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button></header>
+  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["inbox", "Inbox", "chat"])}${navBtn(["logins", "Logins", "users"])}${navBtn(["colors", "Colors", "palette"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
+  <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "inbox" ? "on" : ""}" data-a="tab" data-v="inbox" aria-label="Inbox">${icon("chat")}${ic ? `<span class="dot">${ic}</span>` : ""}</button><button class="ibtn ${S.view === "logins" ? "on" : ""}" data-a="tab" data-v="logins" aria-label="Logins">${icon("users")}</button><button class="ibtn ${S.view === "colors" ? "on" : ""}" data-a="tab" data-v="colors" aria-label="Colors">${icon("palette")}</button><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button></header>
   <main><div class="pagehead"><h1>${esc(TITLES[S.view] || "")}</h1></div>${S.slow ? `<div class="note">Some data has not loaded yet; what you see may be out of date.</div>` : ""}${body}</main>
   <nav class="bnav">${NAV.map(([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t === "Dashboard" ? "Home" : t}${k === "pending" && pc ? " (" + pc + ")" : ""}</span></button>`).join("")}</nav>`;
 }
@@ -1086,17 +1117,17 @@ async function billCanvas(m, b) {
   const s = st(), doc = S.bills[m];
   const W = 1240, H = 1754, c = document.createElement("canvas"); c.width = W; c.height = H;
   const x = c.getContext("2d"); x.textBaseline = "middle";
-  const P = "#0f5c4d", R = W - 70, L = 70;
+  const TV = themeVars(themeColor()), P = TV.pri, R = W - 70, L = 70;
   x.fillStyle = "#fff"; x.fillRect(0, 0, W, H);
   const tx = (t, px, y, size, o = {}) => { x.save(); x.textAlign = o.align || "left"; x.font = (o.bold ? "700 " : "400 ") + size + "px " + LAT; x.fillStyle = o.color || "#16201c"; x.fillText(String(t), px, y); const w = x.measureText(String(t)).width; x.restore(); return w; };
   const rs = n => (n < 0 ? "- " : "") + "Rs " + Math.abs(Math.round(n) || 0).toLocaleString("en-PK");
   // header
   x.fillStyle = P; x.fillRect(0, 0, W, 210);
   tx(s.name, L, 78, 56, { bold: true, color: "#fff" });
-  tx("Water & Maintenance Bill", L, 140, 30, { color: "#d8efe9" });
-  if (s.address) tx(s.address, L, 182, 22, { color: "#bfe0d8" });
+  tx("Water & Maintenance Bill", L, 140, 30, { color: TV.soft });
+  if (s.address) tx(s.address, L, 182, 22, { color: TV.soft2 });
   tx(mLabel(m).toUpperCase(), R, 78, 40, { bold: true, color: "#fff", align: "right" });
-  tx("Billing month", R, 128, 22, { color: "#bfe0d8", align: "right" });
+  tx("Billing month", R, 128, 22, { color: TV.soft2, align: "right" });
   // info box
   let y = 250; x.strokeStyle = "#d5dedb"; x.lineWidth = 2; x.strokeRect(L, y, W - 2 * L, 290);
   const kv = (label, val, left, yy) => { tx(label, left, yy, 24, { color: "#66736e" }); tx(String(val), left, yy + 34, 30, { bold: true }); };
@@ -1126,7 +1157,7 @@ async function billCanvas(m, b) {
   const arr = num(b.arrears);
   row(arr < 0 ? "Advance payment (deducted)" : "Previous balance (arrears)", arr);
   row("Late fine", num(b.fine));
-  row("Total amount payable", b.total, { bg: "#e4f1ed", bold: true, size: 33, h: 80, color: P });
+  row("Total amount payable", b.total, { bg: TV.pri2, bold: true, size: 33, h: 80, color: P });
   if (num(b.paid) > 0) { row("Amount paid", b.paid, { color: "#1b7a3d" }); row("Balance due", balance(b), { bold: true, color: balance(b) > 0 ? "#b3261e" : "#1b7a3d" }); }
   // due
   y += 24;
@@ -1334,6 +1365,8 @@ document.addEventListener("click", async e => {
     case "rf": S.rfilter = t.dataset.v; render(true); break;
     case "bf": S.bfilter = t.dataset.v; render(true); break;
     case "ifilter": S.ifilter = t.dataset.v; render(true); break;
+    case "theme": { const v = t.dataset.v; if (await write(() => D.saveSettings(Object.assign({}, st(), { theme: v })))) toast("Colours changed"); break; }
+    case "themeCustom": { const v = ($("#tcustom") || {}).value; if (/^#[0-9a-f]{6}$/i.test(v || "") && await write(() => D.saveSettings(Object.assign({}, st(), { theme: v.toLowerCase() })))) toast("Colours changed"); break; }
     case "chat": chatModal(id); break;
     case "myInbox": chatModal(S.me.hid, t.dataset.k); break;
     case "msgStatus": if (await write(() => D.updateMsg(id, { status: t.dataset.v }))) toast(t.dataset.v === "resolved" ? "Complaint marked resolved" : "Complaint reopened"); break;
