@@ -1221,7 +1221,10 @@ async function pdfFor(m, list, name) {
 /* ============ WhatsApp picture sending ============ */
 const isTouch = () => matchMedia("(pointer:coarse)").matches;
 const canShareFiles = () => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([new Blob(["x"], { type: "image/jpeg" })], "t.jpg", { type: "image/jpeg" })] })); } catch (e) { return false; } };
-function chatUrl(phone) { const p = waPhone(phone); if (!p) return ""; return isTouch() ? "https://wa.me/" + p : "https://web.whatsapp.com/send?phone=" + p; }
+/* How chats open on a computer: "app" = WhatsApp Desktop app (whatsapp://), "web" = one reused WhatsApp Web tab. Saved per device. */
+const waMode = () => { try { return localStorage.getItem("rg-wa") || "app"; } catch (e) { return "app"; } };
+function chatUrl(phone, mode) { const p = waPhone(phone); if (!p) return ""; if (isTouch()) return "https://wa.me/" + p; return (mode || waMode()) === "app" ? "whatsapp://send?phone=" + p : "https://web.whatsapp.com/send?phone=" + p; }
+function openChat(phone) { const url = chatUrl(phone); if (!url) return false; if (url.startsWith("whatsapp:")) { const l = document.createElement("a"); l.href = url; l.rel = "noopener"; document.body.appendChild(l); l.click(); l.remove(); } else window.open(url, "rgwhatsapp"); return true; }
 function caption(m, b) { const s = st(); return `${s.name} — ${mLabel(m)} bill, Plot ${b.no}: ${money(b.total)}${num(b.paid) ? " (balance " + money(Math.max(0, balance(b))) + ")" : ""}. Due ${fmtDate((S.bills[m] || {}).dueDate)}.`; }
 function waPickModal() {
   const m = S.billMonth, rows = Object.values(S.bills[m].b).sort((x, y) => hsort({ no: x.no }, { no: y.no }));
@@ -1244,39 +1247,51 @@ function startWa(m, list) {
   if (!list.length) return toast("No bills match");
   S.waQ = { m, list: list.map(b => b.hid), i: 0, sent: 0 }; waStep();
 }
+function waPic(q, hid) {
+  q.cache = q.cache || {};
+  if (!q.cache[hid]) q.cache[hid] = billCanvas(q.m, S.bills[q.m].b[hid]).then(async c => ({ png: await new Promise(r => c.toBlob(r, "image/png")), jpg: await new Promise(r => c.toBlob(r, "image/jpeg", 0.9)) }));
+  return q.cache[hid];
+}
 async function waStep() {
   const q = S.waQ; if (!q) return;
   if (q.i >= q.list.length) { openModal(`<h3>Done<button class="x" data-a="close">×</button></h3><p>${q.sent} of ${q.list.length} bills marked as sent.</p><button class="btn pri block" data-a="close">Close</button>`); S.waQ = null; return; }
-  const b = S.bills[q.m].b[q.list[q.i]], url = chatUrl(b.phone), touch = isTouch(), share = canShareFiles();
+  const hid = q.list[q.i], b = S.bills[q.m].b[hid], hasPhone = !!waPhone(b.phone), touch = isTouch(), share = canShareFiles(), mode = waMode(), last = q.i === q.list.length - 1;
+  const modeChips = touch ? "" : `<div class="row" style="gap:6px;margin-bottom:10px;align-items:center"><span class="muted" style="font-size:13px">Open chats in:</span><button class="chip ${mode === "app" ? "on" : ""}" data-a="waMode" data-v="app">WhatsApp Desktop app</button><button class="chip ${mode === "web" ? "on" : ""}" data-a="waMode" data-v="web">WhatsApp Web</button></div>`;
   openModal(`<h3>WhatsApp · ${q.i + 1} of ${q.list.length}<button class="x" data-a="waStop">×</button></h3>
   <div class="bar" style="margin-bottom:12px"><i style="width:${q.i / q.list.length * 100}%"></i></div>
+  ${modeChips}
   <div class="row" style="align-items:center;margin-bottom:10px"><div class="hno">${esc(b.no)}</div><div style="flex:1"><b>${esc(b.owner || "—")}</b><div class="muted">${esc(b.phone || "No mobile number")} · ${money(b.total)}${b.waSentAt ? " · sent before" : ""}</div></div></div>
   ${touch && share ? `<div class="info"><b>1.</b> Tap <b>Share picture</b> → choose <b>WhatsApp</b> → pick <b>${esc(b.owner || "the owner")}</b> → send.<br><b>2.</b> Come back and tap <b>Sent · next</b>.</div>`
-    : `<div class="info"><b>1.</b> Click <b>Copy picture &amp; open chat</b>. WhatsApp opens this owner's chat.<br><b>2.</b> In the chat press <b>Ctrl + V</b>, then <b>Enter</b> to send the picture.<br><b>3.</b> Come back here and click <b>Sent · next</b>.</div>`}
-  <div class="actions">${touch && share ? `<button class="btn grn" data-a="waShare" id="wabtn" disabled>Share picture</button>${url ? `<a class="btn" target="_blank" rel="noopener" href="${url}">Open chat</a>` : ""}` : `<button class="btn grn" data-a="waCopy" id="wabtn" disabled ${url ? "" : "title=\"No mobile number\""}>Copy picture &amp; open chat</button>`}<button class="btn pri" data-a="waNext">Sent · next</button><button class="btn" data-a="waSkip">Skip</button>${q.i ? `<button class="btn" data-a="waBack">Back</button>` : ""}</div>
+    : `<div class="info">${q.auto ? `The picture is copied and this owner's chat is open.<br>` : `<b>1.</b> Click <b>Copy picture &amp; open chat</b>.<br>`}<b>${q.auto ? "1" : "2"}.</b> In WhatsApp press <b>Ctrl + V</b>, then <b>Enter</b>.<br><b>${q.auto ? "2" : "3"}.</b> Come back and click <b>${last ? "Sent · finish" : "Sent · next bill"}</b>. The next owner's chat opens with their picture already copied.${mode === "app" ? `<br><span style="font-size:13px">First time only: if the browser asks "Open WhatsApp?", tick <b>Always allow</b>. If nothing opens, install the WhatsApp Desktop app or choose <b>WhatsApp Web</b> above.</span>` : `<br><span style="font-size:13px">Close any other WhatsApp Web tab; this app reuses one tab.</span>`}</div>`}
+  <div class="actions">${touch && share ? `<button class="btn grn" data-a="waShare" id="wabtn" disabled>Share picture</button>${hasPhone ? `<a class="btn" target="_blank" rel="noopener" href="${chatUrl(b.phone)}">Open chat</a>` : ""}`
+    : `<button class="btn ${q.auto ? "" : "grn"}" data-a="waCopy" id="wabtn" ${hasPhone ? "" : "disabled title=\"No mobile number\""}>${q.auto ? "Copy &amp; open again" : "Copy picture &amp; open chat"}</button>`}<button class="btn pri" data-a="waNext">${last ? "Sent · finish" : "Sent · next bill"}</button><button class="btn" data-a="waSkip">Skip</button>${q.i ? `<button class="btn" data-a="waBack">Back</button>` : ""}</div>
   <div id="waprev" class="muted" style="text-align:center;padding:20px">Preparing picture…</div>`, true);
-  const c = await billCanvas(q.m, b);
-  if (S.waQ !== q || q.list[q.i] !== b.hid) return;
-  q.png = await new Promise(r => c.toBlob(r, "image/png"));
-  q.jpg = await new Promise(r => c.toBlob(r, "image/jpeg", 0.9));
-  const el = $("#waprev"); if (el) el.outerHTML = `<img class="preview" src="${URL.createObjectURL(q.jpg)}" alt="Bill" style="max-height:60vh;object-fit:contain">`;
-  const btn = $("#wabtn"); if (btn) btn.disabled = false;
+  const pic = await waPic(q, hid);
+  if (q.i + 1 < q.list.length) waPic(q, q.list[q.i + 1]);
+  if (S.waQ !== q || q.list[q.i] !== hid) return;
+  q.jpg = pic.jpg; q.png = pic.png;
+  const el = $("#waprev"); if (el) el.outerHTML = `<img class="preview" src="${URL.createObjectURL(pic.jpg)}" alt="Bill" style="max-height:52vh;object-fit:contain">`;
+  const btn = $("#wabtn"); if (btn && (hasPhone || touch)) btn.disabled = false;
 }
 async function waShareNow() {
   const q = S.waQ, b = S.bills[q.m].b[q.list[q.i]];
   const file = new File([q.jpg], "Bill-" + b.no + "-" + q.m + ".jpg", { type: "image/jpeg" });
   try { await navigator.share({ files: [file], text: caption(q.m, b) }); } catch (e) { if (e && e.name !== "AbortError") toast("Sharing failed: " + e.message); }
 }
-async function waCopyNow() {
-  const q = S.waQ, b = S.bills[q.m].b[q.list[q.i]], url = chatUrl(b.phone);
-  try { await navigator.clipboard.write([new ClipboardItem({ "image/png": q.png })]); toast("Picture copied — press Ctrl+V in the chat"); }
+function waCopyNow() {
+  const q = S.waQ; if (!q) return; const hid = q.list[q.i], b = S.bills[q.m].b[hid];
+  if (!waPhone(b.phone)) { toast("No mobile number for this plot"); return; }
+  // Copy inside the click itself (the picture may still be drawing), then open the chat
+  try { navigator.clipboard.write([new ClipboardItem({ "image/png": waPic(q, hid).then(x => x.png) })]).then(() => toast("Picture copied. Press Ctrl+V, then Enter in WhatsApp"), () => toast("Could not copy the picture. Use Download image instead.")); }
   catch (e) { toast("Could not copy the picture. Use Download image instead."); }
-  if (url) window.open(url, "rgwhatsapp"); else toast("No mobile number for this plot");
+  openChat(b.phone); q.auto = true;
 }
-async function waMark(sent) {
+function waMark(sent) {
   const q = S.waQ; if (!q) return;
   if (sent) { q.sent++; const hid = q.list[q.i]; write(() => D.updateBill(q.m, hid, { waSentAt: new Date().toISOString() })); }
-  q.i++; waStep();
+  q.i++; q.auto = false;
+  if (!isTouch() && q.i < q.list.length && waPhone(S.bills[q.m].b[q.list[q.i]].phone)) waCopyNow();
+  waStep();
 }
 
 /* ============ printing ============ */
@@ -1411,7 +1426,8 @@ document.addEventListener("click", async e => {
     case "waPick": waPickModal(); break;
     case "waOne": startWa(m, [S.bills[m].b[id]]); break;
     case "waShare": waShareNow(); break;
-    case "waCopy": waCopyNow(); break;
+    case "waCopy": waCopyNow(); waStep(); break;
+    case "waMode": try { localStorage.setItem("rg-wa", t.dataset.v); } catch (e) { } waStep(); break;
     case "waNext": waMark(true); break;
     case "waSkip": waMark(false); break;
     case "waBack": if (S.waQ && S.waQ.i > 0) { S.waQ.i--; waStep(); } break;
