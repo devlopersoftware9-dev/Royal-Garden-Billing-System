@@ -896,13 +896,18 @@ function complaintRows() {
     return { m, h, resolved, days, age, firstReply: reply ? dayDiff(m.at, reply.at) : null, replyBy: reply ? (reply.by || "Office") : "", overdue: resolved ? (days != null && days > target) : age > target, target };
   }).sort((a, b) => String(b.m.at).localeCompare(String(a.m.at)));
 }
+const localISO = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+function crRange() {
+  const p = S.crp || "month", d = new Date();
+  if (p === "month") return [localISO(new Date(d.getFullYear(), d.getMonth(), 1)), localISO(d)];
+  if (p === "last") return [localISO(new Date(d.getFullYear(), d.getMonth() - 1, 1)), localISO(new Date(d.getFullYear(), d.getMonth(), 0))];
+  if (p === "30") return [localISO(new Date(d - 30 * DAY)), localISO(d)];
+  if (p === "custom") return [S.crFrom || "", S.crTo || ""];
+  return ["", ""];
+}
 function crPeriod(rows) {
-  const p = S.crp || "month", d = new Date(), ym = x => x.toISOString().slice(0, 7);
-  if (p === "month") return rows.filter(r => String(r.m.at).slice(0, 7) === ym(d));
-  if (p === "last") { const l = new Date(d.getFullYear(), d.getMonth() - 1, 15); return rows.filter(r => String(r.m.at).slice(0, 7) === ym(l)); }
-  if (p === "30") return rows.filter(r => dayDiff(r.m.at, d.toISOString()) <= 30);
-  if (p === "custom") { const f = S.crFrom || "0000", t = (S.crTo || "9999") + "T99"; return rows.filter(r => String(r.m.at) >= f && String(r.m.at) <= t); }
-  return rows;
+  const [f, t] = crRange();
+  return rows.filter(r => { const day = localISO(new Date(r.m.at)); return (!f || day >= f) && (!t || day <= t); });
 }
 function vCReport() {
   const all = crPeriod(complaintRows()), f = S.crf || "all", target = num(st().complaintDays) || 3;
@@ -914,8 +919,10 @@ function vCReport() {
   const by = {}; res.forEach(r => { const k = r.m.resolvedBy || "—"; (by[k] = by[k] || []).push(r); });
   const chip = (k, t, v) => `<button class="chip ${v === k ? "on" : ""}" data-a="${t}" data-v="${k}">`;
   const pc = S.crp || "month";
-  return `<div class="toolbar"><div class="chips">${[["month", "This month"], ["last", "Last month"], ["30", "Last 30 days"], ["all", "All time"], ["custom", "From – to"]].map(([k, t]) => chip(k, "crp", pc) + t + "</button>").join("")}</div></div>
-  ${pc === "custom" ? `<div class="row" style="gap:8px;margin-bottom:12px"><label class="f" style="margin:0"><span>From</span><input type="date" id="crFrom" value="${esc(S.crFrom || "")}"></label><label class="f" style="margin:0"><span>To</span><input type="date" id="crTo" value="${esc(S.crTo || "")}"></label></div>` : ""}
+  const [rf, rt] = crRange(), fmtD = x => x ? fmtDate(x) : "";
+  return `<div class="card" style="padding:14px"><div class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap"><label class="f" style="margin:0"><span>From date</span><input type="date" id="crFrom" value="${esc(rf)}"></label><label class="f" style="margin:0"><span>To date</span><input type="date" id="crTo" value="${esc(rt)}"></label>
+  <div class="chips" style="flex-wrap:wrap">${[["month", "This month"], ["last", "Last month"], ["30", "Last 30 days"], ["all", "All time"]].map(([k, t]) => chip(k, "crp", pc) + t + "</button>").join("")}</div></div>
+  <p style="margin:12px 0 0;font-size:15px">${rf || rt ? `<b>${rf ? fmtD(rf) : "Start"}</b> to <b>${rt ? fmtD(rt) : "today"}</b>` : "<b>All time</b>"}: <b>${all.length}</b> complaints received, <b style="color:var(--grn)">${res.length}</b> resolved, <b style="color:${open.length ? "var(--red)" : "inherit"}">${open.length}</b> pending.</p></div>
   <div class="grid"><div class="stat"><span>Complaints</span><b>${all.length}</b></div><div class="stat"><span>Resolved</span><b style="color:var(--grn)">${res.length}</b><em>${onTime} within ${target} days</em></div><div class="stat"><span>Still open</span><b style="color:${open.length ? "var(--red)" : "inherit"}">${open.length}</b></div><div class="stat"><span>Late (over ${target} days)</span><b style="color:${od.length ? "var(--amb)" : "inherit"}">${od.length}</b></div><div class="stat"><span>Average time to resolve</span><b>${fmtDays(avg)}</b></div><div class="stat"><span>Average first reply</span><b>${fmtDays(avgR)}</b><em>${all.length - replied.length} not replied</em></div></div>
   ${Object.keys(by).length ? `<div class="card"><h2>Resolved by</h2><table class="tbl"><tr><th>Staff / admin</th><th>Resolved</th><th>Average time</th><th>On time</th></tr>${Object.entries(by).sort((a, b) => b[1].length - a[1].length).map(([k, l]) => { const t = l.filter(r => r.days != null); return `<tr><td>${esc(k)}</td><td>${l.length}</td><td>${fmtDays(t.length ? t.reduce((s, r) => s + r.days, 0) / t.length : null)}</td><td>${t.filter(r => r.days <= target).length} / ${t.length}</td></tr>`; }).join("")}</table></div>` : ""}
   <div class="toolbar"><div class="chips">${[["all", "All"], ["open", "Open"], ["resolved", "Resolved"], ["overdue", "Late"]].map(([k, t]) => chip(k, "crf", f) + t + "</button>").join("")}</div><span class="sp"></span><button class="btn sm" data-a="crCsv">Download Excel (CSV)</button><button class="btn sm" data-a="crPrint">Print</button></div>
@@ -1627,7 +1634,7 @@ document.addEventListener("change", async e => {
   if (t.closest("#app form[data-f]")) S.dirty = true;
   if (t.id === "rm") { if (t.value) { S.readMonth = t.value; render(true); } }
   else if (t.id === "bm") { S.billMonth = t.value; S.q = ""; render(true); }
-  else if (t.id === "crFrom" || t.id === "crTo") { S[t.id] = t.value; render(true); }
+  else if (t.id === "crFrom" || t.id === "crTo") { const [f, to] = crRange(); S.crFrom = f; S.crTo = to; S[t.id] = t.value; S.crp = "custom"; render(true); }
   else if (t.id === "newchat") { if (t.value) chatModal(t.value); t.value = ""; }
   else if (t.name === "kind" && t.closest("form[data-f=msg]")) { const pf = $("#payf"); if (pf) pf.style.display = t.value === "payment" ? "" : "none"; }
   else if (t.id === "qrfile" && t.files[0]) {
