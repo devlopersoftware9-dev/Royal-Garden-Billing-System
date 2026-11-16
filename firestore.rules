@@ -51,6 +51,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Admin-only private config (e.g. the email script link and its secret key)
+    match /private/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // Plots: residents can only read their own plot
     match /houses/{hid} {
       allow read: if isAdmin() || isReader() || (isStaff() && sr('inbox', true)) || (isResident() && myHid() == hid);

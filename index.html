@@ -133,6 +133,8 @@ label.f>span{display:block;font-size:13px;color:var(--mute);margin-bottom:5px;fo
 .fab{position:fixed;right:16px;bottom:calc(18px + var(--sab));z-index:20;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:99px;padding:13px 18px 13px 15px;background:var(--pri);color:#fff;font:inherit;font-weight:700;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
 .fab .i{width:22px;height:22px}.fab .dot{position:absolute;top:-5px;right:-3px;background:var(--red);color:#fff;border-radius:99px;font-size:12px;font-weight:700;min-width:20px;height:20px;line-height:20px;padding:0 5px;text-align:center;border:2px solid #fff}
 .ibtn{position:relative}
+.codebox{background:#16201c;color:#e8f0ec;border-radius:10px;padding:12px;font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre;overflow:auto;max-height:240px;margin:8px 0}
+.steps{margin:6px 0 10px;padding-left:20px;font-size:14px;line-height:1.6}
 .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .sw{border:2px solid var(--line);border-radius:14px;background:#fff;padding:0;overflow:hidden;cursor:pointer;text-align:left;font:inherit;color:var(--ink)}
 .sw.on{border-color:var(--ink);box-shadow:0 0 0 2px #fff inset}
@@ -227,7 +229,7 @@ const icon = k => `<svg class="i" viewBox="0 0 24 24">${IC[k]}</svg>`;
 
 const DEF = { name: "Royal Garden", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerShowPrev: true, readerShowOwner: true, btns: {} };
 /* Which buttons show on a bill, per login type (Settings → Bill buttons). Missing = shown. */
-const BTNS = [["pay", "Record payment", 1, 0], ["fine", "Add fine", 1, 0], ["unfine", "Remove fine", 1, 0], ["delPay", "Delete a payment (×)", 1, 0], ["payNow", "Pay now", 0, 1], ["print", "Print", 1, 1], ["pdf", "Download PDF", 1, 1], ["img", "Download image", 1, 1], ["wa", "Send picture on WhatsApp", 1, 0]];
+const BTNS = [["pay", "Record payment", 1, 0], ["fine", "Add fine", 1, 0], ["unfine", "Remove fine", 1, 0], ["delPay", "Delete a payment (×)", 1, 0], ["payNow", "Pay now", 0, 1], ["print", "Print", 1, 1], ["pdf", "Download PDF", 1, 1], ["img", "Download image", 1, 1], ["wa", "Send picture on WhatsApp", 1, 0], ["email", "Send by email", 1, 0]];
 /* Colour scheme (Colors tab). Saved in settings/main.theme, so every login sees the same colours. */
 const THEMES = [["green", "Garden green", "#0f5c4d"], ["teal", "Teal", "#0e6e78"], ["blue", "Royal blue", "#1d4f91"], ["indigo", "Indigo", "#3b3f9e"], ["purple", "Purple", "#6a3d9a"], ["maroon", "Maroon", "#8c1f33"], ["brown", "Brown", "#7a4a1e"], ["orange", "Orange", "#b54d12"], ["olive", "Olive", "#556b1f"], ["slate", "Slate grey", "#334155"], ["black", "Charcoal", "#1f2326"]];
 function mix(hex, to, t) { const a = hex.replace("#", ""), b = to.replace("#", ""); const c = i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, "0"); return "#" + c(0) + c(2) + c(4); }
@@ -321,6 +323,7 @@ function subscribeAdmin() {
   listen(query(collection(fs, "bills"), where("month", ">=", monthsBack(curMonth(), 14))), q => { S.billDocs = docsToMap(q); rebuildBills(); });
   listen(query(collection(fs, "proofs"), where("status", "==", "pending")), q => { S.proofs = q.docs.map(d => Object.assign({ id: d.id }, d.data())); });
   listen(collection(fs, "users"), q => { S.users = q.docs.map(d => Object.assign({ uid: d.id }, d.data())); });
+  listen(doc(fs, "private", "email"), d => { S.mail = d.exists() ? d.data() : {}; });
   listen(query(collection(fs, "messages"), orderBy("at", "desc"), limit(800)), q => { S.msgs = q.docs.map(d => Object.assign({ id: d.id }, d.data())); refreshChat(); });
 }
 function subscribeReader() {
@@ -409,6 +412,7 @@ const D = {
     await D.batched(ops);
   },
   saveSettings: s => setDoc(doc(fs, "settings", "main"), s),
+  saveMail: m => setDoc(doc(fs, "private", "email"), m),
   saveReading: (m, hid, entry) => setDoc(doc(fs, "readings", m), { month: m, r: { [hid]: entry } }, { merge: true }),
   deleteReading: (m, hid) => updateDoc(doc(fs, "readings", m), new FieldPath("r", hid), deleteField()),
   async saveBillRun(m, meta, bills, prevM, prevIds) {
@@ -641,7 +645,7 @@ function vBills() {
   return sel + `<div class="grid"><div class="stat"><span>Total billed (${rows.length})</span><b>${money(billed)}</b></div><div class="stat"><span>Collected</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="stat"><span>Outstanding</span><b style="color:var(--red)">${money(pend)}</b></div><div class="stat"><span>Due date</span><b>${fmtDate(bill.dueDate)}</b></div></div>
   ${isLatest && (changed || newSold) ? `<div class="note">${changed ? changed + " reading(s) changed after these bills were generated. " : ""}${newSold ? newSold + " newly sold plot(s) are not in this bill run. " : ""}Tap "Regenerate" — payments and fines are kept.</div>` : ""}
   ${!isLatest ? `<div class="info">This is an older bill run. Its balances have been carried into the next month's bills; record payments there.</div>` : ""}
-  <div class="actions"><button class="btn grn" data-a="waPick">Send on WhatsApp…</button><button class="btn pri" data-a="printAll">Print all (2 per A4)</button><button class="btn" data-a="printPending">Print unpaid (2 per A4)</button><button class="btn" data-a="pdfAll">All bills (PDF)</button><button class="btn" data-a="pdfPending">Unpaid bills (PDF)</button>${isLatest ? `<button class="btn" data-a="bulkFine">Fine all unpaid</button><button class="btn" data-a="regen">Regenerate</button>` : ""}</div>
+  <div class="actions"><button class="btn grn" data-a="waPick">Send on WhatsApp…</button><button class="btn" data-a="emailPick">Email bills…</button><button class="btn pri" data-a="printAll">Print all (2 per A4)</button><button class="btn" data-a="printPending">Print unpaid (2 per A4)</button><button class="btn" data-a="pdfAll">All bills (PDF)</button><button class="btn" data-a="pdfPending">Unpaid bills (PDF)</button>${isLatest ? `<button class="btn" data-a="bulkFine">Fine all unpaid</button><button class="btn" data-a="regen">Regenerate</button>` : ""}</div>
   <div class="toolbar"><input id="q" type="search" placeholder="Search plot no. or name…" value="${esc(S.q)}"><div class="chips">${[["all", "All"], ["unpaid", "Unpaid"], ["paid", "Paid"]].map(([k, t]) => `<button class="chip ${f === k ? "on" : ""}" data-a="bf" data-v="${k}">${t}</button>`).join("")}</div></div>
   <div class="list">${list.map(b => `<div class="item" data-a="bill" data-m="${m}" data-id="${esc(b.hid)}"><div class="hno">${esc(b.no)}</div><div class="m"><b>${esc(b.owner || "—")}</b><small>Marla ${money(b.marlaCharge)} · Water ${money(b.water)} (${b.units} u)${num(b.arrears) ? " · Arrears " + money(b.arrears) : ""}${num(b.fine) ? " · Fine " + money(b.fine) : ""}${b.noReading ? " · no reading" : ""}${b.waSentAt ? " · ✓ sent on WhatsApp" : ""}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>`).join("") || `<div class="empty">No bills</div>`}</div>`;
 }
@@ -684,6 +688,7 @@ function vSettings() {
   <div class="card"><h2>Complaints staff rights</h2><p class="muted" style="margin:0 0 10px;font-size:13px">For "Complaints staff" logins (Logins → + Staff login). They only see the Inbox, never bills, payments to approve or settings. Complaints are always included when the Inbox is on.</p>
   ${SR.map(([k, label, sub]) => `<label class="toggle"><input type="checkbox" name="sr_${k}" ${sr(k) ? "checked" : ""}><span><b>${label}</b><small>${sub}</small></span></label>`).join("")}</div>
   </div><div class="row" style="margin-bottom:14px"><button class="btn pri">Save settings</button></div></form>
+  ${vEmailSettings()}
   <div class="card"><h2>Backup</h2><p class="muted" style="margin-top:0">Download all data (plots, readings, bills) as one JSON file.</p><button class="btn" data-a="backup">Download backup</button></div>`;
 }
 
@@ -956,7 +961,7 @@ function ask(title, msg, okText = "Yes", danger) {
 
 /* ---- plot edit ---- */
 function houseModal(h) {
-  const isNew = !h; h = Object.assign({ id: "", no: "", street: "", code: "", owner: "", phone: "", phone2: "", marla: 5, meter: "", sold: true, opening: 0, prevBal: 0 }, h || {});
+  const isNew = !h; h = Object.assign({ id: "", no: "", street: "", code: "", owner: "", phone: "", phone2: "", email: "", marla: 5, meter: "", sold: true, opening: 0, prevBal: 0 }, h || {});
   const hist = isNew ? "" : billMonths().reverse().filter(m => S.bills[m].b && S.bills[m].b[h.id]).map(m => { const b = S.bills[m].b[h.id]; return `<tr data-a="bill" data-m="${m}" data-id="${esc(h.id)}" style="cursor:pointer"><td>${mLabel(m)}</td><td>${b.units}</td><td>${money(b.total)}</td><td>${money(b.paid)}</td><td>${badge(status(b))}</td></tr>`; }).join("");
   openModal(`<h3>${isNew ? "Add plot" : "Plot " + esc(h.no)}<button class="x" data-a="close">×</button></h3>
   <form data-f="house" data-id="${esc(h.id)}"><div class="f2">
@@ -966,6 +971,7 @@ function houseModal(h) {
   <label class="f"><span>Area (marla)</span><input type="number" name="marla" value="${esc(h.marla)}" step="0.01" min="0"></label>
   <label class="f"><span>Mobile (WhatsApp)</span><input type="tel" name="phone" value="${esc(h.phone)}" placeholder="03xx-xxxxxxx"></label>
   <label class="f"><span>Mobile 2</span><input type="tel" name="phone2" value="${esc(h.phone2)}"></label>
+  <label class="f"><span>Email (bills are emailed here)</span><input type="email" name="email" value="${esc(h.email || "")}" placeholder="name@example.com" autocapitalize="none"></label>
   <label class="f"><span>Subscriber code</span><input type="text" name="code" value="${esc(h.code)}"></label>
   <label class="f"><span>Water meter number</span><input type="text" name="meter" value="${esc(h.meter)}"></label>
   <label class="f"><span>Opening meter reading</span><input type="number" name="opening" value="${esc(h.opening)}" step="0.01"></label>
@@ -979,7 +985,7 @@ async function saveHouse(form) {
   const no = String(fd.get("no") || "").trim(); if (!no) return toast("Enter a plot number");
   const list = S.houses.slice();
   if (list.some(x => String(x.no).toLowerCase() === no.toLowerCase() && x.id !== id)) return toast("This plot number already exists");
-  const rec = { no, street: String(fd.get("street") || "").trim(), code: String(fd.get("code") || "").trim(), phone2: String(fd.get("phone2") || "").trim(), prevBal: num(fd.get("prevBal")), owner: String(fd.get("owner") || "").trim(), phone: String(fd.get("phone") || "").trim(), marla: num(fd.get("marla")), meter: String(fd.get("meter") || "").trim(), opening: num(fd.get("opening")), sold: !!fd.get("sold") };
+  const rec = { no, street: String(fd.get("street") || "").trim(), code: String(fd.get("code") || "").trim(), phone2: String(fd.get("phone2") || "").trim(), email: String(fd.get("email") || "").trim(), prevBal: num(fd.get("prevBal")), owner: String(fd.get("owner") || "").trim(), phone: String(fd.get("phone") || "").trim(), marla: num(fd.get("marla")), meter: String(fd.get("meter") || "").trim(), opening: num(fd.get("opening")), sold: !!fd.get("sold") };
   if (id) { const i = list.findIndex(x => x.id === id); list[i] = Object.assign({}, list[i], rec); }
   else { let nid = hidFor(no); while (list.some(x => x.id === nid)) nid += "_"; list.push(Object.assign({ id: nid }, rec)); }
   if (await write(() => D.saveHouses(list))) { closeModal(); toast("Saved"); }
@@ -1056,7 +1062,7 @@ function billModal(m, hid) {
   const pays = (bill.payments || []).map((p, i) => `<tr><td>${fmtDate(p.date)}</td><td>${esc(p.method)}</td><td>${money(p.amt)}</td><td>${esc(p.note || "")}</td><td>${isLatest && !bill.carried && bOn("admin", "delPay") ? `<button class="btn sm red" data-a="delPay" data-m="${m}" data-id="${esc(hid)}" data-i="${i}">×</button>` : ""}</td></tr>`).join("");
   const open = isLatest && !bill.carried;
   const btns = [open && bOn("admin", "pay") && `<button class="btn sm pri" data-a="pay" data-m="${m}" data-id="${esc(hid)}">Record payment</button>`, open && bOn("admin", "fine") && `<button class="btn sm" data-a="fine" data-m="${m}" data-id="${esc(hid)}">Add fine</button>`, open && num(bill.fine) && bOn("admin", "unfine") && `<button class="btn sm red" data-a="unfine" data-m="${m}" data-id="${esc(hid)}">Remove fine</button>`,
-    bOn("admin", "wa") && `<button class="btn sm grn" data-a="waOne" data-m="${m}" data-id="${esc(hid)}">WhatsApp</button>`, bOn("admin", "print") && `<button class="btn sm" data-a="print1" data-m="${m}" data-id="${esc(hid)}">Print</button>`, bOn("admin", "pdf") && `<button class="btn sm" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">PDF</button>`, bOn("admin", "img") && `<button class="btn sm" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Image</button>`];
+    bOn("admin", "wa") && `<button class="btn sm grn" data-a="waOne" data-m="${m}" data-id="${esc(hid)}">WhatsApp</button>`, bOn("admin", "email") && `<button class="btn sm" data-a="email1" data-m="${m}" data-id="${esc(hid)}" title="${esc(emailOf(hid) || "No email address")}">Email${bill.emailSentAt ? " ✓" : ""}</button>`, bOn("admin", "print") && `<button class="btn sm" data-a="print1" data-m="${m}" data-id="${esc(hid)}">Print</button>`, bOn("admin", "pdf") && `<button class="btn sm" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">PDF</button>`, bOn("admin", "img") && `<button class="btn sm" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Image</button>`];
   const rows = Math.ceil(btns.filter(Boolean).length / 4);
   openModal(`<h3>Plot ${esc(bill.no)} · ${mLabel(m)} ${badge(s)}<button class="x" data-a="close">×</button></h3>
   <div class="bview" id="bprev" style="--bh:calc(92dvh - ${130 + rows * 42}px)"><span class="muted">Preparing bill…</span></div>
@@ -1218,6 +1224,90 @@ async function pdfFor(m, list, name) {
   $("#pdfsave").onclick = () => saveFile(name, blob);
 }
 
+/* ============ Email (through the owner's own Gmail, via a Google Apps Script web app) ============ */
+const MAILDEF = { url: "", key: "", name: "", subject: "{society} — {month} bill, Plot {plot}", body: "Dear {owner},\n\nPlease find attached your {month} water & maintenance bill for Plot {plot}.\n\nTotal payable: {total}\nBalance due: {balance}\nDue date: {due}\n\nRegards,\n{society}" };
+const mcfg = () => Object.assign({}, MAILDEF, S.mail || {});
+const emailOf = hid => { const h = S.houses.find(x => x.id === hid); return h && h.email ? String(h.email).trim() : ""; };
+const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || "");
+function fillTpl(t, m, b) { const s = st(); const v = { society: s.name, owner: b.owner || "Resident", plot: b.no, month: mLabel(m), total: money(b.total), balance: money(Math.max(0, balance(b))), due: fmtDate((S.bills[m] || {}).dueDate) }; return String(t).replace(/\{(\w+)\}/g, (x, k) => v[k] != null ? v[k] : x); }
+function scriptCode(key) {
+  return `// Royal Garden — send bills from your Gmail
+const KEY = '${key}';
+function doPost(e) {
+  try {
+    const d = JSON.parse(e.postData.contents);
+    if (d.key !== KEY) return out({ ok: false, error: 'Wrong key' });
+    if (d.test) return out({ ok: true, remaining: MailApp.getRemainingDailyQuota() });
+    const att = d.file ? [Utilities.newBlob(Utilities.base64Decode(d.file), d.mime || 'application/pdf', d.filename || 'bill.pdf')] : [];
+    MailApp.sendEmail({ to: d.to, subject: d.subject, body: d.body, name: d.name || 'Royal Garden', attachments: att });
+    return out({ ok: true, remaining: MailApp.getRemainingDailyQuota() });
+  } catch (err) { return out({ ok: false, error: String(err) }); }
+}
+function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }`;
+}
+function genKey() { const a = new Uint8Array(18); crypto.getRandomValues(a); return Array.from(a, x => x.toString(16).padStart(2, "0")).join(""); }
+async function mailPost(payload) {
+  const c = mcfg(); if (!c.url || !c.key) throw new Error("Email is not set up yet (Settings → Email)");
+  const r = await fetch(c.url, { method: "POST", body: JSON.stringify(Object.assign({ key: c.key }, payload)) });
+  let j; try { j = await r.json(); } catch (e) { throw new Error("The email script did not answer. Check the script link in Settings → Email."); }
+  if (!j.ok) throw new Error(j.error || "Email failed"); return j;
+}
+const b64 = blob => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(",")[1]); fr.readAsDataURL(blob); });
+async function emailBill(m, b) {
+  const to = emailOf(b.hid); if (!validEmail(to)) throw new Error("No valid email address for plot " + b.no);
+  const c = mcfg(), pdf = makePdf([await canvasJpeg(await billCanvas(m, b))]);
+  const j = await mailPost({ to, subject: fillTpl(c.subject, m, b), body: fillTpl(c.body, m, b), name: c.name || st().name, file: await b64(pdf), mime: "application/pdf", filename: "Bill-" + b.no + "-" + m + ".pdf" });
+  await D.updateBill(m, b.hid, { emailSentAt: new Date().toISOString() });
+  return j;
+}
+function vEmailSettings() {
+  const c = mcfg(), ready = c.url && c.key;
+  return `<div class="card"><h2>Email ${ready ? `<span class="badge b-paid">Connected</span>` : `<span class="badge b-no">Not set up</span>`}</h2>
+  <p class="muted" style="margin:0 0 10px;font-size:13px">Bills are emailed as a PDF from your own Gmail. A free Gmail account can send to about 100 people a day. Only admins can see this section.</p>
+  <form data-f="mailcfg"><div class="f2">
+  <label class="f"><span>Sender name</span><input type="text" name="name" value="${esc(c.name || st().name)}"></label>
+  <label class="f"><span>Subject</span><input type="text" name="subject" value="${esc(c.subject)}"></label></div>
+  <label class="f"><span>Message (you can use {owner} {plot} {month} {total} {balance} {due} {society})</span><textarea name="body" rows="7">${esc(c.body)}</textarea></label>
+  <label class="f"><span>Script link (Web app URL)</span><input type="url" name="url" value="${esc(c.url)}" placeholder="https://script.google.com/macros/s/…/exec"></label>
+  <input type="hidden" name="key" value="${esc(c.key || "")}">
+  <div class="row" style="gap:8px;margin-bottom:12px"><button class="btn pri">Save email settings</button>${ready ? `<button type="button" class="btn" data-a="mailTest">Check connection</button>` : ""}<button type="button" class="btn" data-a="mailSetup">${ready ? "Setup steps" : "How to set up (one time)"}</button></div></form></div>`;
+}
+function mailSetupModal() {
+  let c = mcfg(); if (!c.key) { c.key = genKey(); S.mail = Object.assign({}, S.mail || {}, { key: c.key }); write(() => D.saveMail(Object.assign({}, mcfg()))); }
+  openModal(`<h3>Set up email (one time)<button class="x" data-a="close">×</button></h3>
+  <ol class="steps"><li>Open <a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener"><b>script.google.com</b> → New project</a> while signed in to the Gmail you want to send from.</li>
+  <li>Delete what is in the editor and paste the code below (<b>Copy code</b>). Click <b>Save</b>.</li>
+  <li>Click <b>Deploy → New deployment</b> → gear icon → <b>Web app</b>. Set <b>Execute as: Me</b> and <b>Who has access: Anyone</b>. Click <b>Deploy</b>.</li>
+  <li>Click <b>Authorize access</b>, choose your Gmail, then <b>Advanced → Go to project (unsafe) → Allow</b>. (It says "unsafe" only because you wrote the script yourself.)</li>
+  <li>Copy the <b>Web app URL</b> (ends with <code>/exec</code>), paste it in <b>Settings → Email → Script link</b>, and click <b>Save email settings</b>, then <b>Check connection</b>.</li></ol>
+  <div class="codebox" id="mcode">${esc(scriptCode(c.key))}</div>
+  <div class="row" style="gap:8px"><button class="btn pri" data-a="mailCopy">Copy code</button><span class="muted" style="font-size:13px">The code has a secret key so only this app can use your script. Don't share it.</span></div>`, true);
+}
+function emailPickModal() {
+  const m = S.billMonth, rows = Object.values(S.bills[m].b);
+  const withE = rows.filter(b => validEmail(emailOf(b.hid))), nSent = withE.filter(b => b.emailSentAt).length, nUnpaid = withE.filter(b => balance(b) > 0).length;
+  if (!mcfg().url) { openModal(`<h3>Email is not set up<button class="x" data-a="close">×</button></h3><p>Set it up once in <b>Settings → Email</b>.</p><button class="btn pri block" data-a="tab" data-v="settings">Open Settings</button>`); return; }
+  openModal(`<h3>Email bills · ${mLabel(m)}<button class="x" data-a="close">×</button></h3>
+  <p class="muted" style="margin-top:0">${rows.length} bills · ${withE.length} plots have an email address · ${nSent} already emailed</p>
+  <form data-f="emailPick">
+  <label class="toggle"><input type="radio" name="mode" value="notsent" checked><span><b>Not emailed yet</b><small>${withE.length - nSent} bills</small></span></label>
+  <label class="toggle"><input type="radio" name="mode" value="unpaid"><span><b>Unpaid only</b><small>${nUnpaid} bills</small></span></label>
+  <label class="toggle" style="margin-bottom:12px"><input type="radio" name="mode" value="all"><span><b>All with an email</b><small>${withE.length} bills</small></span></label>
+  <button class="btn pri block" ${withE.length ? "" : "disabled"}>Send emails</button></form>`);
+}
+async function emailRun(m, list) {
+  if (!list.length) return toast("No bills to email");
+  S.mailRun = { stop: false }; const run = S.mailRun; let ok = 0; const fails = [];
+  const draw = i => openModal(`<h3>Sending emails…<button class="x" data-a="mailStop">×</button></h3><div class="bar"><i style="width:${i / list.length * 100}%"></i></div><p class="muted">${i} / ${list.length} · sent ${ok}${fails.length ? " · failed " + fails.length : ""}</p><button class="btn block" data-a="mailStop">Stop</button>`);
+  for (let i = 0; i < list.length && !run.stop; i++) {
+    draw(i);
+    try { await emailBill(m, list[i]); ok++; } catch (e) { fails.push(list[i].no + ": " + e.message); if (/quota|too many|limit/i.test(e.message)) break; }
+    await new Promise(r => setTimeout(r, 600));
+  }
+  S.mailRun = null;
+  openModal(`<h3>Emails sent<button class="x" data-a="close">×</button></h3><p><b>${ok}</b> of ${list.length} bills emailed.</p>${fails.length ? `<div class="err" style="white-space:pre-wrap">${esc(fails.join("\n"))}</div>` : ""}<button class="btn pri block" data-a="close">Close</button>`);
+}
+
 /* ============ WhatsApp picture sending ============ */
 const isTouch = () => matchMedia("(pointer:coarse)").matches;
 const canShareFiles = () => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([new Blob(["x"], { type: "image/jpeg" })], "t.jpg", { type: "image/jpeg" })] })); } catch (e) { return false; } };
@@ -1326,7 +1416,7 @@ function parseProfile(rows) {
   if (hi < 0) return null;
   const hd = rows[hi].map(c => String(c || "").toLowerCase().replace(/[^a-z0-9]/g, ""));
   const col = (...keys) => hd.findIndex(h => keys.some(k => h === k || h.startsWith(k)));
-  const ci = { no: col("plotname", "plotno", "plot"), street: col("street"), area: col("area", "marla"), code: col("subscode", "code"), owner: col("owner", "name"), phone: col("mobile1", "mobile", "phone"), phone2: col("mobile2"), bal: col("previousbalance", "prevbalance", "openingbalance", "balance"), meter: col("watermeter", "meter"), opening: col("openingreading", "reading") };
+  const ci = { no: col("plotname", "plotno", "plot"), street: col("street"), area: col("area", "marla"), code: col("subscode", "code"), owner: col("owner", "name"), phone: col("mobile1", "mobile", "phone"), phone2: col("mobile2"), email: col("email", "emailaddress", "mail"), bal: col("previousbalance", "prevbalance", "openingbalance", "balance"), meter: col("watermeter", "meter"), opening: col("openingreading", "reading") };
   if (ci.no < 0) return null;
   const out = [];
   for (const r of rows.slice(hi + 1)) {
@@ -1334,7 +1424,7 @@ function parseProfile(rows) {
     const g = k => ci[k] >= 0 ? r[ci[k]] : "";
     let ph = String(g("phone") ?? "").trim(), ph2 = String(g("phone2") ?? "").trim();
     const parts = ph.split(/\s+(?=\d)/); if (parts.length > 1 && !ph2) { ph = parts[0]; ph2 = parts.slice(1).join(" "); }
-    out.push({ no, street: String(g("street") ?? "").trim(), marla: num(g("area")), code: String(g("code") ?? "").trim(), owner: cleanName(g("owner")), phone: ph, phone2: ph2, prevBal: num(g("bal")), meter: String(g("meter") ?? "").trim(), opening: num(g("opening")) });
+    out.push({ no, street: String(g("street") ?? "").trim(), marla: num(g("area")), code: String(g("code") ?? "").trim(), owner: cleanName(g("owner")), phone: ph, phone2: ph2, email: String(g("email") ?? "").trim(), prevBal: num(g("bal")), meter: String(g("meter") ?? "").trim(), opening: num(g("opening")) });
   }
   return out;
 }
@@ -1344,7 +1434,7 @@ async function importExcel(file) {
   const wb = X.read(await file.arrayBuffer(), { type: "array" });
   let rows = null, sheet = "";
   for (const n of wb.SheetNames) { const r = X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: "" }); const p = parseProfile(r); if (p && p.length) { rows = p; sheet = n; break; } }
-  if (!rows) { openModal(`<h3>No plot data found<button class="x" data-a="close">×</button></h3><p>The sheet needs columns such as "PLOT NAME", "AREA", "Owner" and "MOBILE 1".</p>`); return; }
+  if (!rows) { openModal(`<h3>No plot data found<button class="x" data-a="close">×</button></h3><p>The sheet needs columns such as "PLOT NAME", "AREA", "Owner", "MOBILE 1" and (optional) "EMAIL".</p>`); return; }
   const byNo = new Map(S.houses.map(h => [String(h.no), h]));
   const nNew = rows.filter(r => !byNo.has(r.no)).length;
   S.pendingImport = rows;
@@ -1361,7 +1451,7 @@ async function applyImport(mode) {
   rows.forEach(r => {
     const i = list.findIndex(h => String(h.no) === r.no);
     const rec = { no: r.no, street: r.street, marla: r.marla, code: r.code, owner: r.owner, phone: r.phone, phone2: r.phone2, prevBal: r.prevBal, sold: true };
-    if (r.meter) rec.meter = r.meter; if (r.opening) rec.opening = r.opening;
+    if (r.meter) rec.meter = r.meter; if (r.opening) rec.opening = r.opening; if (r.email) rec.email = r.email;
     if (i >= 0) list[i] = Object.assign({}, list[i], rec);
     else { const old = S.houses.find(h => String(h.no) === r.no); let id = old ? old.id : hidFor(r.no); while (list.some(h => h.id === id)) id += "_"; list.push(Object.assign({ id, meter: "", opening: 0 }, rec)); }
   });
@@ -1425,6 +1515,12 @@ document.addEventListener("click", async e => {
     case "pdf1": case "img1": { const b = S.bills[m].b[id]; t.disabled = true; const c = await billCanvas(m, b); t.disabled = false; const fn = "Bill-" + b.no + "-" + m; if (a === "img1") c.toBlob(bl => saveFile(fn + ".jpg", bl), "image/jpeg", 0.9); else saveFile(fn + ".pdf", makePdf([await canvasJpeg(c)])); break; }
     case "waPick": waPickModal(); break;
     case "waOne": startWa(m, [S.bills[m].b[id]]); break;
+    case "email1": { const b = S.bills[m].b[id]; if (!mcfg().url) { toast("Set up email first: Settings → Email"); break; } if (!validEmail(emailOf(id))) { toast("No email address for plot " + b.no + ". Add it in Plots."); break; } t.disabled = true; t.textContent = "Sending…"; try { await emailBill(m, b); toast("Bill emailed to " + emailOf(id)); } catch (e) { toast(e.message); } t.disabled = false; t.textContent = "Email ✓"; break; }
+    case "emailPick": emailPickModal(); break;
+    case "mailStop": if (S.mailRun) S.mailRun.stop = true; break;
+    case "mailSetup": mailSetupModal(); break;
+    case "mailCopy": try { await navigator.clipboard.writeText($("#mcode").textContent); toast("Code copied"); } catch (e) { toast("Select the code and copy it"); } break;
+    case "mailTest": { t.disabled = true; try { const j = await mailPost({ test: true }); toast("Connected. You can send " + j.remaining + " more emails today."); } catch (e) { toast(e.message); } t.disabled = false; break; }
     case "waShare": waShareNow(); break;
     case "waCopy": waCopyNow(); waStep(); break;
     case "waMode": try { localStorage.setItem("rg-wa", t.dataset.v); } catch (e) { } waStep(); break;
@@ -1474,6 +1570,15 @@ document.addEventListener("submit", async e => {
     const btn = f.querySelector("button"); btn.disabled = true;
     try { const c = await D.createLogin(fd.get("role"), fd.get("u"), String(fd.get("p") || ""), null, String(fd.get("name") || "").trim()); credModal([c]); } catch (err) { toast(err.message || "Could not create the login"); btn.disabled = false; }
   } else if (k === "msg") { sendMsgForm(f);
+  } else if (k === "mailcfg") {
+    const c = Object.assign({}, mcfg(), { name: String(fd.get("name") || "").trim(), subject: String(fd.get("subject") || "").trim() || MAILDEF.subject, body: String(fd.get("body") || "").trim() || MAILDEF.body, url: String(fd.get("url") || "").trim() });
+    if (c.url && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(c.url)) return toast("The script link should look like https://script.google.com/macros/s/…/exec");
+    if (!c.key) c.key = genKey();
+    if (await write(() => D.saveMail(c))) { S.mail = c; toast("Email settings saved"); render(true); }
+  } else if (k === "emailPick") {
+    const m = S.billMonth, mode = fd.get("mode"); let rows = Object.values(S.bills[m].b).filter(b => validEmail(emailOf(b.hid))).sort((x, y) => hsort({ no: x.no }, { no: y.no }));
+    if (mode === "notsent") rows = rows.filter(b => !b.emailSentAt); else if (mode === "unpaid") rows = rows.filter(b => balance(b) > 0);
+    emailRun(m, rows);
   } else if (k === "proof") {
     const btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Submitting…";
     const file = f.shot.files[0]; let image = ""; if (file) image = await shrinkImage(file);
