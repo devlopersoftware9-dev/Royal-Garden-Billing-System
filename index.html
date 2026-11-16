@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f5c4d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Royal Garden">
+<title>Royal Garden Water Billing</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#f3f5f4;--card:#fff;--ink:#16201c;--mute:#66736e;--line:#e2e7e5;--pri:#0f5c4d;--pri-d:#0b4639;--pri2:#e4f1ed;--red:#b3261e;--red2:#fbe9e7;--amb:#9a5800;--amb2:#fff3dc;--grn:#1b7a3d;--grn2:#e3f4e8;--r:14px;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit;color:inherit}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* ---- layout: mobile first ---- */
+.appbar{position:sticky;top:0;z-index:10;background:var(--pri);color:#fff;padding:calc(10px + var(--sat)) 16px 10px;display:flex;align-items:center;gap:10px;min-height:56px}
+.appbar .t{flex:1;min-width:0}
+.appbar .t b{display:block;font-size:17px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appbar .t small{opacity:.8;font-size:12px}
+.ibtn{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:12px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.ibtn.on{background:#fff;color:var(--pri)}
+main{padding:16px 16px calc(96px + var(--sab));max-width:1100px;margin:0 auto}
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:10;background:#fff;border-top:1px solid var(--line);display:flex;padding:6px 4px calc(6px + var(--sab))}
+.bnav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;color:var(--mute);font-size:11px;font-weight:600;cursor:pointer;border-radius:12px}
+.bnav button.on{color:var(--pri)}
+.bnav button.on svg{background:var(--pri2);border-radius:99px;padding:3px 14px;width:50px;height:28px}
+.side{display:none}
+.pagehead{display:none}
+@media(min-width:900px){
+  body:not(.reader) #app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+  .appbar.mob{display:none}
+  .bnav{display:none}
+  .side{display:flex;flex-direction:column;position:sticky;top:0;height:100vh;background:var(--pri-d);color:#cfe6df;padding:20px 12px}
+  .side .brand{color:#fff;font-weight:700;font-size:18px;padding:4px 12px 2px}
+  .side .brand small{display:block;font-weight:400;font-size:12px;color:#9fc7bc;margin-top:2px}
+  .side nav{margin-top:22px;display:flex;flex-direction:column;gap:4px}
+  .side nav button{display:flex;align-items:center;gap:12px;border:0;background:none;color:inherit;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:550;text-align:left}
+  .side nav button:hover{background:rgba(255,255,255,.07)}
+  .side nav button.on{background:rgba(255,255,255,.14);color:#fff}
+  .side .foot{margin-top:auto;display:flex;flex-direction:column;gap:4px}
+  main{padding:28px 32px 40px;width:100%}
+  .pagehead{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .pagehead h1{margin:0;font-size:24px;font-weight:700;flex:1}
+}
+/* ---- components ---- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 12px;font-size:16px;font-weight:650}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:14px}
+@media(min-width:700px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.cols{display:grid;gap:14px}
+@media(min-width:900px){.cols{grid-template-columns:1fr 1fr}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.stat span{color:var(--mute);font-size:12.5px;display:block}
+.stat b{display:block;font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat em{font-style:normal;color:var(--mute);font-size:12px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:11px;padding:10px 14px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;min-height:42px}
+.btn:hover{border-color:#b9c6c1}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.red{color:var(--red);border-color:#efc6c2}
+.btn.grn{background:#1f8f4c;border-color:#1f8f4c;color:#fff}
+.btn.sm{padding:6px 11px;font-size:13px;min-height:34px}
+.btn.block{width:100%}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sp{flex:1}
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+@media(min-width:700px){.actions{display:flex;flex-wrap:wrap}}
+input[type=text],input[type=number],input[type=tel],input[type=date],input[type=month],input[type=password],input[type=search],select,textarea{border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:#fff;width:100%;min-height:44px}
+input:focus,select:focus,textarea:focus{outline:2px solid #8cc5b7;border-color:var(--pri)}
+label.f{display:block;margin-bottom:12px}
+label.f>span{display:block;font-size:13px;color:var(--mute);margin-bottom:5px;font-weight:500}
+.f2{display:grid;grid-template-columns:1fr;gap:0 14px}
+@media(min-width:620px){.f2{grid-template-columns:1fr 1fr}}
+.toggle{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+.toggle input{width:22px;height:22px;accent-color:var(--pri);flex:none}
+.toggle small{display:block;color:var(--mute)}
+.list{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;min-height:64px}
+.item:last-child{border-bottom:0}
+.item:hover{background:#fafcfb}
+.hno{min-width:58px;height:42px;border-radius:10px;background:var(--pri2);color:var(--pri);display:flex;align-items:center;justify-content:center;font-weight:700;padding:0 6px;font-variant-numeric:tabular-nums}
+.item .m{flex:1;min-width:0}
+.item .m b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.item .m small{color:var(--mute);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.amt{font-variant-numeric:tabular-nums;font-weight:700;text-align:right;white-space:nowrap}
+.badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:650;white-space:nowrap}
+.b-paid{background:var(--grn2);color:var(--grn)}
+.b-unpaid{background:var(--red2);color:var(--red)}
+.b-part{background:var(--amb2);color:var(--amb)}
+.b-carried{background:#eceff1;color:#546e7a}
+.b-sold{background:var(--pri2);color:var(--pri)}
+.b-no{background:#eceff1;color:#78858a}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.toolbar input{flex:1;min-width:200px}
+.note{background:var(--amb2);color:#5c3b00;border-radius:11px;padding:11px 13px;font-size:14px;margin-bottom:12px}
+.info{background:var(--pri2);color:var(--pri-ink,#0c4a3e);border-radius:11px;padding:11px 13px;font-size:14px;margin-bottom:12px}
+.err{background:var(--red2);color:var(--red);border-radius:11px;padding:11px 13px;font-size:14px;margin-bottom:12px}
+.muted{color:var(--mute)}
+.bar{height:8px;background:#e6ecea;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--pri)}
+.empty{padding:34px 20px;text-align:center;color:var(--mute)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.kv:last-child{border:0}
+.kv b{text-align:right}
+.modal{position:fixed;inset:0;background:rgba(10,20,16,.45);display:flex;align-items:flex-end;justify-content:center;z-index:30}
+@media(min-width:700px){.modal{align-items:center}}
+.modal.hidden{display:none}
+.sheet{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + var(--sab))}
+@media(min-width:700px){.sheet{border-radius:18px}}
+.sheet.wide{max-width:780px}
+.bview{display:flex;align-items:center;justify-content:center;min-height:200px;margin:0 0 10px}
+.bimg{display:block;max-width:100%;width:auto;height:auto;max-height:var(--bh,calc(92dvh - 220px));border:1px solid var(--line);border-radius:8px;cursor:zoom-in;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.bacts{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}.bacts .btn{flex:1 1 auto}
+.sheet h3{margin:0 0 12px;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.x{margin-left:auto;border:0;background:#f0f3f2;border-radius:99px;width:34px;height:34px;cursor:pointer;font-size:19px}
+#toast{position:fixed;left:50%;bottom:calc(90px + var(--sab));transform:translateX(-50%);background:#16201c;color:#fff;padding:11px 16px;border-radius:11px;opacity:0;transition:.25s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+.preview{width:100%;border:1px solid var(--line);border-radius:10px;display:block}
+.chat{display:flex;flex-direction:column;gap:10px;max-height:52vh;overflow-y:auto;padding:4px 2px 10px;margin-bottom:12px}
+.msg{max-width:86%;align-self:flex-start;background:#f1f4f3;border-radius:14px 14px 14px 4px;padding:9px 12px;font-size:14px;line-height:1.45}
+.msg.me{align-self:flex-end;background:var(--pri2);border-radius:14px 14px 4px 14px}
+.msg .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-bottom:4px}
+.msg p{margin:0;white-space:pre-wrap;word-break:break-word}
+.msg img{display:block;max-width:100%;max-height:260px;border-radius:9px;margin-top:7px;cursor:zoom-in;border:1px solid var(--line)}
+.msg .actions{margin:8px 0 0}
+.fab{position:fixed;right:16px;bottom:calc(18px + var(--sab));z-index:20;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:99px;padding:13px 18px 13px 15px;background:var(--pri);color:#fff;font:inherit;font-weight:700;font-size:15px;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
+.fab .i{width:22px;height:22px}.fab .dot{position:absolute;top:-5px;right:-3px;background:var(--red);color:#fff;border-radius:99px;font-size:12px;font-weight:700;min-width:20px;height:20px;line-height:20px;padding:0 5px;text-align:center;border:2px solid #fff}
+.ibtn{position:relative}
+.codebox{background:#16201c;color:#e8f0ec;border-radius:10px;padding:12px;font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre;overflow:auto;max-height:240px;margin:8px 0}
+.steps{margin:6px 0 10px;padding-left:20px;font-size:14px;line-height:1.6}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.sw{border:2px solid var(--line);border-radius:14px;background:#fff;padding:0;overflow:hidden;cursor:pointer;text-align:left;font:inherit;color:var(--ink)}
+.sw.on{border-color:var(--ink);box-shadow:0 0 0 2px #fff inset}
+.sw .top{height:46px;display:flex;align-items:center;padding:0 12px;color:#fff;font-weight:700;font-size:13px}
+.sw .bd{padding:10px 12px;display:flex;flex-direction:column;gap:7px}
+.sw .pill{height:22px;border-radius:7px;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.sw .tint{height:14px;border-radius:5px}
+.sw .nm{font-weight:650;font-size:14px;display:flex;align-items:center;gap:6px}.ibtn .dot{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:99px;font-size:11px;font-weight:700;min-width:18px;height:18px;line-height:18px;padding:0 4px;text-align:center}
+.boot{padding:70px 24px;text-align:center;color:var(--mute)}
+.qrprev{width:130px;height:130px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl td,.tbl th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+.tbl th{color:var(--mute);font-weight:600;font-size:12px}
+.login{max-width:380px;margin:0 auto;padding:40px 20px}
+.login .logo{width:64px;height:64px;border-radius:18px;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.login .logo svg{width:34px;height:34px}
+.pinin{font-size:26px;text-align:center;letter-spacing:10px;font-weight:700}
+.readin::-webkit-inner-spin-button,.readin::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.readin{-moz-appearance:textfield;font-size:32px;text-align:center;font-weight:700;min-height:64px}
+.rd-plot{font-size:34px;font-weight:800;text-align:center;color:var(--pri);margin:4px 0 2px}
+.rd-sub{text-align:center;color:var(--mute);margin-bottom:12px}
+.prevbox{display:flex;justify-content:space-around;text-align:center;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:12px}
+.prevbox span{display:block;font-size:12px;color:var(--mute)}
+.prevbox b{font-size:20px}
+.reader main{padding-bottom:calc(30px + var(--sab))}
+@media(min-width:900px){.reader .appbar.mob{display:flex}.reader main{max-width:720px}}
+#printArea{display:none}
+@media print{
+  body>*:not(#printArea){display:none!important}
+  html,body{background:#fff!important;margin:0;padding:0}
+  #printArea{display:block}
+  .pp{break-after:page;page-break-after:always;overflow:hidden}
+  .pp:last-child{break-after:auto;page-break-after:auto}
+  .pp.one{width:210mm;height:296mm}
+  .pp.one img{width:210mm;height:296mm;object-fit:contain;display:block}
+  .pp.two{width:297mm;height:209mm;display:flex}
+  .pp.two img{width:148.5mm;height:209mm;object-fit:contain;display:block;box-sizing:border-box}
+  .pp.two img:first-child{border-right:0.3mm dashed #999}
+}
+</style>
+</head>
+<body>
+<div id="app"><div class="boot">Loading…</div></div>
+<div id="modal" class="modal hidden"><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+<div id="printArea"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeFirestore, doc, collection, query, where, orderBy, limit, onSnapshot, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, FieldPath, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ====== PASTE YOUR FIREBASE CONFIG BETWEEN THE MARKERS (see README) ====== */
+const FIREBASE_CONFIG = /*CONFIG-START*/{ apiKey: "AIzaSyCjMfH2g94CnzU17oapldTSOTkcChu9WPc", authDomain: "royal-garden-billing.firebaseapp.com", projectId: "royal-garden-billing", storageBucket: "royal-garden-billing.firebasestorage.app", messagingSenderId: "275085189354", appId: "1:275085189354:web:15ddd3e32f653c0b09b793" }/*CONFIG-END*/;
+
+/* ============ helpers ============ */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const r2 = n => Math.round(n * 100) / 100;
+const money = n => "Rs " + (Math.round(n) || 0).toLocaleString("en-PK");
+const pad = n => String(n).padStart(2, "0");
+const todayISO = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
+const curMonth = () => todayISO().slice(0, 7);
+const addDays = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
+const fmtDate = iso => iso ? iso.slice(8, 10) + "-" + iso.slice(5, 7) + "-" + iso.slice(0, 4) : "";
+const EN_M = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const mLabel = m => m ? EN_M[+m.slice(5, 7) - 1] + " " + m.slice(0, 4) : "";
+const monthsBack = (m, n) => { let y = +m.slice(0, 4), mo = +m.slice(5, 7) - n; while (mo <= 0) { mo += 12; y--; } return y + "-" + pad(mo); };
+function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 3000); }
+function waPhone(p) { let d = String(p || "").trim().split(/[\s,\/]+(?=[0+9])/)[0].replace(/\D/g, ""); if (!d) return ""; if (d.startsWith("00")) d = d.slice(2); if (d.startsWith("920") && d.length === 13) d = "92" + d.slice(3); if (d.startsWith("0")) d = "92" + d.slice(1); else if (d.length === 10 && d.startsWith("3")) d = "92" + d; return d; }
+function parseRanges(t) { const out = new Set(); String(t || "").split(/[,\s]+/).forEach(p => { if (!p) return; const m = p.match(/^(\d+)-(\d+)$/); if (m) { for (let i = +m[1]; i <= +m[2] && i - +m[1] < 5000; i++) out.add(String(i)); } else out.add(p); }); return out; }
+function genPassword() { const ch = "abcdefghjkmnpqrstuvwxyz23456789"; const a = new Uint32Array(8); crypto.getRandomValues(a); return Array.from(a, v => ch[v % ch.length]).join(""); }
+const cleanUser = u => String(u || "").trim().toLowerCase().replace(/\s+/g, "");
+const validUser = u => /^[a-z0-9][a-z0-9._-]{0,30}$/.test(u) && !/\.\./.test(u) && !u.endsWith(".");
+const appLink = () => location.href.split("#")[0].split("?")[0];
+const IC = {
+  home: '<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  plots: '<path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M8 8h3M8 12h3M8 16h3M3 21h18"/>',
+  readings: '<path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11z"/>',
+  bills: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6M9 16h3"/>',
+  report: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  pending: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  users: '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  palette: '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.9 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.3-4-7.7-9-7.7z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/>',
+  chat: '<path d="M20 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 12.5h5"/>',
+  inbox: '<path d="M4 13h4l2 3h4l2-3h4"/><path d="M5.5 5h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  back: '<path d="M15 18l-6-6 6-6"/>',
+};
+const icon = k => `<svg class="i" viewBox="0 0 24 24">${IC[k]}</svg>`;
+
+const DEF = { name: "Royal Garden", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerShowPrev: true, readerShowOwner: true, btns: {} };
+/* Which buttons show on a bill, per login type (Settings → Bill buttons). Missing = shown. */
+const BTNS = [["pay", "Record payment", 1, 0], ["fine", "Add fine", 1, 0], ["unfine", "Remove fine", 1, 0], ["delPay", "Delete a payment (×)", 1, 0], ["payNow", "Pay now", 0, 1], ["print", "Print", 1, 1], ["pdf", "Download PDF", 1, 1], ["img", "Download image", 1, 1], ["wa", "Send picture on WhatsApp", 1, 0], ["email", "Send by email", 1, 0]];
+/* Colour scheme (Colors tab). Saved in settings/main.theme, so every login sees the same colours. */
+const THEMES = [["green", "Garden green", "#0f5c4d"], ["teal", "Teal", "#0e6e78"], ["blue", "Royal blue", "#1d4f91"], ["indigo", "Indigo", "#3b3f9e"], ["purple", "Purple", "#6a3d9a"], ["maroon", "Maroon", "#8c1f33"], ["brown", "Brown", "#7a4a1e"], ["orange", "Orange", "#b54d12"], ["olive", "Olive", "#556b1f"], ["slate", "Slate grey", "#334155"], ["black", "Charcoal", "#1f2326"]];
+function mix(hex, to, t) { const a = hex.replace("#", ""), b = to.replace("#", ""); const c = i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, "0"); return "#" + c(0) + c(2) + c(4); }
+function themeColor() { const t = (S.settings && S.settings.theme) || (() => { try { return localStorage.getItem("rg-theme"); } catch (e) { return null; } })() || "green"; if (/^#[0-9a-f]{6}$/i.test(t)) return t; const f = THEMES.find(x => x[0] === t); return f ? f[2] : THEMES[0][2]; }
+function themeVars(c) { return { pri: c, priD: mix(c, "#000000", .22), pri2: mix(c, "#ffffff", .88), ink: mix(c, "#000000", .35), soft: mix(c, "#ffffff", .8), soft2: mix(c, "#ffffff", .7) }; }
+let lastTheme = null;
+function applyTheme() {
+  const c = themeColor(); if (c === lastTheme) return; lastTheme = c; const v = themeVars(c), r = document.documentElement.style;
+  r.setProperty("--pri", v.pri); r.setProperty("--pri-d", v.priD); r.setProperty("--pri2", v.pri2); r.setProperty("--pri-ink", v.ink);
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = c;
+  if (S.settings && S.settings.theme) { try { localStorage.setItem("rg-theme", S.settings.theme); } catch (e) { } }
+}
+function vColors() {
+  const cur = (S.settings && S.settings.theme) || "green";
+  const card = (k, name, c) => `<button class="sw ${cur === k ? "on" : ""}" data-a="theme" data-v="${esc(k)}"><div class="top" style="background:${c}">${esc(st().name)}</div><div class="bd"><div class="pill" style="background:${c}">Button</div><div class="tint" style="background:${mix(c, "#ffffff", .88)}"></div><div class="nm">${cur === k ? "✓ " : ""}${esc(name)}</div></div></button>`;
+  const custom = /^#[0-9a-f]{6}$/i.test(cur) ? cur : "";
+  return `<div class="info">Tap a colour to change the whole app: menus, buttons, headers and the bills. Every login (admin, staff, readers and residents) sees the same colours.</div>
+  <div class="swatches">${THEMES.map(([k, n, c]) => card(k, n, c)).join("")}${custom ? card(custom, "Custom", custom) : ""}</div>
+  <div class="card" style="margin-top:16px"><h2>Your own colour</h2><div class="row" style="gap:12px"><input type="color" id="tcustom" value="${custom || themeColor()}" style="width:64px;height:44px;padding:2px;border-radius:10px"><button class="btn" data-a="themeCustom">Use this colour</button></div><p class="muted" style="margin:10px 0 0;font-size:13px">Dark colours work best, because text on buttons and headers is white.</p></div>`;
+}
+
+/* Complaints staff rights (Settings → Complaints staff). Also enforced in firestore.rules. */
+const SR = [["inbox", "Open the Inbox", "Without this the staff login sees nothing.", true], ["reply", "Reply to residents", "Send replies in the chat.", true], ["resolve", "Mark complaints resolved", "Close or reopen a complaint.", true], ["payments", "See payment screenshots", "Payment messages and screenshots sent by residents.", false], ["messages", "See general messages", "Messages that are not complaints or payments.", false]];
+const sr = k => { const r = st().staffRights || {}; const d = SR.find(x => x[0] === k); return r[k] === undefined ? (d ? d[3] : false) : !!r[k]; };
+const isSuper = () => !!(S.me && S.me.role === "admin");
+const isOffice = () => S.mode === "admin" || S.mode === "staff";
+const staffTopics = () => !sr("inbox") ? [] : ["complaint"].concat(sr("payments") ? ["payment"] : [], sr("messages") ? ["message"] : []);
+const topicOf = m => m.topic || m.kind || "message";
+const bOn = (role, k) => { const b = st().btns || {}; return !(b[role] && b[role][k] === false); };
+
+/* ============ state ============ */
+const S = {
+  me: null, uid: null, owner: false,
+  mode: "loading", // loading | noconfig | login | admin | reader | resident | norole
+  settings: null, settingsExists: false, houses: [], housesExists: false,
+  bills: {}, billRuns: {}, billDocs: {}, readings: {}, proofs: [], users: [], msgs: [], chat: null,
+  ready: { s: false, h: false }, slow: false, writeDenied: false,
+  view: "home", q: "", hfilter: "all", rfilter: "pending", billMonth: null, readMonth: curMonth(), bfilter: "all", lfilter: "all",
+};
+const st = () => Object.assign({}, DEF, S.settings || {});
+const soldHouses = () => S.houses.filter(h => h.sold).sort(hsort);
+function hsort(a, b) { const x = parseFloat(a.no), y = parseFloat(b.no); if (!isNaN(x) && !isNaN(y) && x !== y) return x - y; return String(a.no).localeCompare(String(b.no)); }
+const billMonths = () => Object.keys(S.bills).sort();
+const latestBillMonth = () => billMonths().slice(-1)[0] || null;
+function readingOf(hid, month) { const d = S.readings[month]; const e = d && d.r && d.r[hid]; return e && e.v != null ? num(e.v) : null; }
+function prevReading(h, month) {
+  const ms = Object.keys(S.readings).filter(m => m < month).sort().reverse();
+  for (const m of ms) { const v = readingOf(h.id, m); if (v != null) return v; }
+  return num(h.opening);
+}
+function balance(b) { return r2(num(b.total) - num(b.paid)); }
+function status(b) {
+  const bal = balance(b);
+  if (bal <= 0) return { k: "paid", t: "Paid" };
+  if (b.carried) return { k: "carried", t: "Carried forward" };
+  if (num(b.paid) > 0) return { k: "part", t: "Partly paid" };
+  return { k: "unpaid", t: "Unpaid" };
+}
+const badge = s => `<span class="badge b-${s.k}">${s.t}</span>`;
+const isReaderUI = () => S.mode === "reader";
+const showPrev = () => !isReaderUI() || st().readerShowPrev !== false;
+const showOwner = () => !isReaderUI() || st().readerShowOwner !== false;
+const userOfHouse = hid => S.users.find(u => u.role === "resident" && u.hid === hid);
+
+/* ============ Firebase ============ */
+let app = null, auth = null, fs = null, auth2 = null;
+let unsubs = [];
+const unsubAll = () => { unsubs.forEach(f => { try { f(); } catch (e) { } }); unsubs = []; };
+const emailFor = (u, v) => u + "." + v + "@" + (FIREBASE_CONFIG.authDomain || "royalgarden.app");
+function rebuildBills() {
+  const o = {};
+  Object.values(S.billDocs).forEach(b => { if (!o[b.month]) o[b.month] = Object.assign({ month: b.month, b: {} }, S.billRuns[b.month] || {}, { b: {} }); o[b.month].b[b.hid] = b; });
+  S.bills = o;
+}
+function listen(ref, onData, key) {
+  const f = onSnapshot(ref, snap => { onData(snap); if (key) done(key); else render(); }, err => { console.warn(key, err); if (key) done(key); });
+  unsubs.push(f);
+}
+let slowT = null;
+function done(k) { S.ready[k] = true; if (Object.values(S.ready).every(Boolean)) { clearTimeout(slowT); S.slow = false; } render(); }
+function startSlowTimer() { clearTimeout(slowT); slowT = setTimeout(() => { S.slow = true; render(); }, 10000); }
+const docsToMap = (snap) => { const o = {}; snap.forEach(d => { o[d.id] = d.data(); }); return o; };
+
+function subscribeCommon() {
+  listen(doc(fs, "settings", "main"), s => { S.settingsExists = s.exists(); S.settings = s.exists() ? s.data() : null; }, "s");
+}
+function subscribeAdmin() {
+  S.ready = { s: false, h: false }; startSlowTimer(); subscribeCommon();
+  listen(collection(fs, "houses"), q => { S.housesExists = !q.empty; S.houses = q.docs.map(d => Object.assign({ id: d.id }, d.data())); }, "h");
+  listen(query(collection(fs, "readings"), orderBy("month", "desc"), limit(24)), q => { S.readings = docsToMap(q); });
+  listen(query(collection(fs, "billRuns"), orderBy("month", "desc"), limit(24)), q => { S.billRuns = docsToMap(q); rebuildBills(); });
+  listen(query(collection(fs, "bills"), where("month", ">=", monthsBack(curMonth(), 14))), q => { S.billDocs = docsToMap(q); rebuildBills(); });
+  listen(query(collection(fs, "proofs"), where("status", "==", "pending")), q => { S.proofs = q.docs.map(d => Object.assign({ id: d.id }, d.data())); });
+  listen(collection(fs, "users"), q => { S.users = q.docs.map(d => Object.assign({ uid: d.id }, d.data())); });
+  listen(doc(fs, "private", "email"), d => { S.mail = d.exists() ? d.data() : {}; });
+  listen(query(collection(fs, "messages"), orderBy("at", "desc"), limit(800)), q => { S.msgs = q.docs.map(d => Object.assign({ id: d.id }, d.data())); refreshChat(); });
+}
+function subscribeReader() {
+  S.ready = { s: false, h: false }; startSlowTimer(); subscribeCommon();
+  listen(collection(fs, "houses"), q => { S.housesExists = !q.empty; S.houses = q.docs.map(d => Object.assign({ id: d.id }, d.data())); }, "h");
+  listen(query(collection(fs, "readings"), orderBy("month", "desc"), limit(6)), q => { S.readings = docsToMap(q); });
+}
+function subscribeResident() {
+  const hid = S.me.hid; S.ready = { s: false, h: false }; startSlowTimer(); subscribeCommon();
+  listen(doc(fs, "houses", hid), d => { S.housesExists = d.exists(); S.houses = d.exists() ? [Object.assign({ id: d.id }, d.data())] : []; }, "h");
+  listen(collection(fs, "billRuns"), q => { S.billRuns = docsToMap(q); rebuildBills(); });
+  listen(query(collection(fs, "bills"), where("hid", "==", hid)), q => { S.billDocs = docsToMap(q); rebuildBills(); });
+  listen(query(collection(fs, "proofs"), where("hid", "==", hid)), q => { S.proofs = q.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); });
+  listen(query(collection(fs, "messages"), where("hid", "==", hid)), q => { S.msgs = q.docs.map(d => Object.assign({ id: d.id }, d.data())); refreshChat(); });
+}
+let staffMsgUnsubs = [], staffKey = null;
+function syncStaffMsgs() {
+  const t = staffTopics(), key = t.join(",");
+  if (key === staffKey) return; staffKey = key;
+  staffMsgUnsubs.forEach(f => { try { f(); } catch (e) { } }); staffMsgUnsubs = []; const parts = {}; S.msgs = [];
+  t.forEach(tp => { const f = onSnapshot(query(collection(fs, "messages"), where("topic", "==", tp)), q => { parts[tp] = q.docs.map(d => Object.assign({ id: d.id }, d.data())); S.msgs = [].concat(...Object.values(parts)); refreshChat(); render(); }, err => console.warn("msgs", tp, err)); staffMsgUnsubs.push(f); unsubs.push(f); });
+  render();
+}
+function subscribeStaff() {
+  S.ready = { s: false, h: false }; startSlowTimer(); staffKey = null;
+  listen(doc(fs, "settings", "main"), s => { S.settingsExists = s.exists(); S.settings = s.exists() ? s.data() : null; syncStaffMsgs(); }, "s");
+  listen(collection(fs, "houses"), q => { S.housesExists = !q.empty; S.houses = q.docs.map(d => Object.assign({ id: d.id }, d.data())); }, "h");
+}
+let userSeq = 0;
+async function handleUser(u) {
+  const seq = ++userSeq; // a later sign-in/out wins; an older, slower one is ignored
+  unsubAll(); staffMsgUnsubs = []; staffKey = null; S.ifilter = "all"; S.waQ = null; closeModal(); S.bills = {}; S.billDocs = {}; S.billRuns = {}; S.readings = {}; S.proofs = []; S.users = []; S.msgs = []; S.chat = null; S.houses = []; S.settings = null;
+  if (!u) {
+    S.me = null; S.uid = null; S.owner = false;
+    try { const d = await getDoc(doc(fs, "meta", "setup")); S.needsBootstrap = !d.exists(); } catch (e) { S.needsBootstrap = false; }
+    if (seq !== userSeq) return;
+    S.mode = "login"; render(true); return;
+  }
+  S.uid = u.uid;
+  let me = null; try { const d = await getDoc(doc(fs, "users", u.uid)); me = d.exists() ? d.data() : null; } catch (e) { console.warn(e); }
+  if (seq !== userSeq) return;
+  if (!me) { S.mode = "norole"; render(true); return; }
+  S.me = me; S.owner = me.role === "admin"; S.view = "home"; S.q = "";
+  if (me.role === "admin") { S.mode = "admin"; subscribeAdmin(); }
+  else if (me.role === "reader") { S.mode = "reader"; subscribeReader(); }
+  else if (me.role === "resident" && me.hid) { S.mode = "resident"; subscribeResident(); }
+  else if (me.role === "staff") { S.mode = "staff"; subscribeStaff(); }
+  else S.mode = "norole";
+  render(true);
+}
+async function boot() {
+  if (!FIREBASE_CONFIG) { S.mode = "noconfig"; render(true); return; }
+  try {
+    app = initializeApp(FIREBASE_CONFIG); auth = getAuth(app); fs = initializeFirestore(app, { ignoreUndefinedProperties: true });
+    auth2 = getAuth(initializeApp(FIREBASE_CONFIG, "secondary"));
+  } catch (e) { console.error(e); S.mode = "noconfig"; render(true); return; }
+  onAuthStateChanged(auth, u => { if (S.bootstrapping) return; handleUser(u); });
+}
+async function login(username, password) {
+  const u = cleanUser(username);
+  let email = null;
+  try { const d = await getDoc(doc(fs, "logins", u)); if (d.exists()) email = d.data().email; } catch (e) { console.warn(e); }
+  if (!email) throw new Error("Username not found");
+  try { await signInWithEmailAndPassword(auth, email, password); }
+  catch (e) { throw new Error(/too-many/.test(e.code || "") ? "Too many attempts. Please wait a few minutes." : "Incorrect password"); }
+}
+async function bootstrapAdmin(username, password, name) {
+  const u = cleanUser(username); if (!validUser(u)) throw new Error("Username can use letters, numbers, dot, dash and underscore");
+  if (password.length < 6) throw new Error("Password must be at least 6 characters");
+  S.bootstrapping = true;
+  try {
+    const email = emailFor(u, Date.now().toString(36));
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const b = writeBatch(fs);
+    b.set(doc(fs, "users", cred.user.uid), { role: "admin", username: u, name: name || "", hid: null, createdAt: new Date().toISOString() });
+    b.set(doc(fs, "meta", "setup"), { at: new Date().toISOString(), by: cred.user.uid });
+    b.set(doc(fs, "logins", u), { email, uid: cred.user.uid });
+    await b.commit();
+    S.bootstrapping = false; await handleUser(cred.user);
+  } catch (e) { S.bootstrapping = false; throw e; }
+}
+
+/* ============ data layer ============ */
+const D = {
+  async batched(ops) { for (let i = 0; i < ops.length; i += 400) { const b = writeBatch(fs); ops.slice(i, i + 400).forEach(f => f(b)); await b.commit(); } },
+  async saveHouses(list) {
+    const old = new Map(S.houses.map(h => [h.id, h])); const ops = [];
+    list.forEach(h => { const o = old.get(h.id); const { id, ...data } = h; if (!o || JSON.stringify(Object.assign({ id: o.id }, o)) !== JSON.stringify(Object.assign({ id }, h))) ops.push(b => b.set(doc(fs, "houses", id), data)); old.delete(h.id); });
+    old.forEach((h, id) => ops.push(b => b.delete(doc(fs, "houses", id))));
+    await D.batched(ops);
+  },
+  saveSettings: s => setDoc(doc(fs, "settings", "main"), s),
+  saveMail: m => setDoc(doc(fs, "private", "email"), m),
+  saveReading: (m, hid, entry) => setDoc(doc(fs, "readings", m), { month: m, r: { [hid]: entry } }, { merge: true }),
+  deleteReading: (m, hid) => updateDoc(doc(fs, "readings", m), new FieldPath("r", hid), deleteField()),
+  async saveBillRun(m, meta, bills, prevM, prevIds) {
+    const ops = [b => b.set(doc(fs, "billRuns", m), meta)];
+    Object.values(bills).forEach(x => ops.push(b => b.set(doc(fs, "bills", m + "_" + x.hid), Object.assign({ month: m }, x))));
+    (prevIds || []).forEach(hid => ops.push(b => b.update(doc(fs, "bills", prevM + "_" + hid), { carried: true, carriedTo: m })));
+    await D.batched(ops);
+  },
+  updateBill: (m, hid, fields) => updateDoc(doc(fs, "bills", m + "_" + hid), fields),
+  async updateBills(m, map) { await D.batched(Object.entries(map).map(([hid, f]) => b => b.update(doc(fs, "bills", m + "_" + hid), f))); },
+  createProof: p => setDoc(doc(collection(fs, "proofs")), p),
+  newProofId: () => doc(collection(fs, "proofs")).id,
+  createProofWithId: (id, p) => setDoc(doc(fs, "proofs", id), p),
+  sendMsg: m => setDoc(doc(collection(fs, "messages")), m),
+  updateMsg: (id, f) => updateDoc(doc(fs, "messages", id), f),
+  async markSeen(ids, field) { if (!ids.length) return; const b = writeBatch(fs); ids.slice(0, 450).forEach(id => b.update(doc(fs, "messages", id), { [field]: true })); await b.commit(); },
+  async reviewProof(p, approve, note) {
+    const b = writeBatch(fs);
+    if (approve) {
+      const bill = S.billDocs[p.month + "_" + p.hid];
+      let m = p.month, target = bill;
+      if (!target || target.carried) { const lm = billMonths().reverse().find(mm => S.bills[mm].b[p.hid] && !S.bills[mm].b[p.hid].carried); if (lm) { m = lm; target = S.bills[lm].b[p.hid]; } }
+      if (!target) throw new Error("No bill found for this plot");
+      const payments = (target.payments || []).concat([{ amt: num(p.amount), date: p.date || todayISO(), method: p.method || "JazzCash", note: (p.tid ? "TID " + p.tid : "") + (note ? " " + note : ""), proof: p.id, at: new Date().toISOString() }]);
+      b.update(doc(fs, "bills", m + "_" + p.hid), { payments, paid: r2(payments.reduce((s, x) => s + num(x.amt), 0)) });
+    }
+    b.update(doc(fs, "proofs", p.id), { status: approve ? "approved" : "rejected", reviewNote: note || "", reviewedAt: new Date().toISOString() });
+    await b.commit();
+  },
+  async createLogin(role, username, password, hid, name) {
+    const u = cleanUser(username);
+    if (!validUser(u)) throw new Error("Username can use letters, numbers, dot, dash and underscore");
+    if (String(password).length < 6) throw new Error("Password must be at least 6 characters");
+    const ex = await getDoc(doc(fs, "logins", u)); if (ex.exists()) throw new Error("Username \"" + u + "\" is already taken");
+    const email = emailFor(u, Date.now().toString(36));
+    const cred = await createUserWithEmailAndPassword(auth2, email, password); const uid = cred.user.uid; await signOut(auth2).catch(() => { });
+    const b = writeBatch(fs);
+    b.set(doc(fs, "users", uid), { role, username: u, hid: hid || null, name: name || "", createdAt: new Date().toISOString() });
+    b.set(doc(fs, "logins", u), { email, uid });
+    await b.commit();
+    return { username: u, password };
+  },
+  async resetLogin(user, password) {
+    const email = emailFor(user.username, Date.now().toString(36));
+    const cred = await createUserWithEmailAndPassword(auth2, email, password); const uid = cred.user.uid; await signOut(auth2).catch(() => { });
+    const { uid: oldUid, ...data } = user;
+    const b = writeBatch(fs);
+    b.set(doc(fs, "users", uid), Object.assign({}, data, { resetAt: new Date().toISOString() }));
+    b.set(doc(fs, "logins", user.username), { email, uid });
+    b.delete(doc(fs, "users", oldUid));
+    await b.commit();
+    return { username: user.username, password };
+  },
+  async removeLogin(user) { const b = writeBatch(fs); b.delete(doc(fs, "users", user.uid)); b.delete(doc(fs, "logins", user.username)); await b.commit(); },
+  async changeOwnPassword(oldPw, newPw) {
+    const u = auth.currentUser; await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, oldPw)); await updatePassword(u, newPw);
+  },
+  async importBackup(data) {
+    const ops = [];
+    if (data.settings) { const s = Object.assign({}, data.settings); if (!String(s.qr || "").startsWith("data:")) delete s.qr; delete s.readerPin; delete s.adminPin; delete s.nameUr; ops.push(b => b.set(doc(fs, "settings", "main"), Object.assign({}, st(), s))); }
+    (data.houses || []).forEach(h => { const { id, ...d } = h; ops.push(b => b.set(doc(fs, "houses", id), d)); });
+    Object.entries(data.readings || {}).forEach(([m, d]) => ops.push(b => b.set(doc(fs, "readings", m), { month: m, r: d.r || {} })));
+    Object.entries(data.bills || {}).forEach(([m, run]) => {
+      ops.push(b => b.set(doc(fs, "billRuns", m), { month: m, dueDate: run.dueDate || "", generatedAt: run.generatedAt || "" }));
+      Object.values(run.b || {}).forEach(x => ops.push(b => b.set(doc(fs, "bills", m + "_" + x.hid), Object.assign({ month: m }, x))));
+    });
+    await D.batched(ops); return ops.length;
+  },
+};
+async function write(fn) {
+  try { await fn(); return true; }
+  catch (e) {
+    console.warn(e);
+    if (e && /permission/i.test(e.code || e.message || "")) { toast("Not saved: you don't have permission for this."); S.writeDenied = true; }
+    else toast((e && e.message && !/firebase|firestore/i.test(e.message)) ? e.message : "Could not save. Check your internet and try again.");
+    return false;
+  }
+}
+
+/* ============ render ============ */
+function render(force) {
+  if (!force && S.dirty && $("#app form[data-f]")) return; // don't wipe a form the admin is typing in
+  S.dirty = false;
+  const a = document.activeElement, aid = a && a.id, sel = a && a.selectionStart;
+  const app = $("#app");
+  applyTheme();
+  document.body.classList.toggle("reader", S.mode !== "admin");
+  if (S.mode === "loading") app.innerHTML = `<div class="boot">Loading…</div>`;
+  else if (S.mode === "noconfig") app.innerHTML = `<div class="boot"><b>Firebase is not connected yet.</b><br>Paste your Firebase config into index.html (see README).</div>`;
+  else if (S.mode === "login") app.innerHTML = viewLogin();
+  else if (S.mode === "norole") app.innerHTML = `<div class="login"><div class="card"><h2>No access</h2><p class="muted">This account has no access. Please contact the society admin.</p><button class="btn block" data-a="logout">Log out</button></div></div>`;
+  else if (!S.ready.s || !S.ready.h) app.innerHTML = `<div class="boot">Loading data…${S.slow ? "<br><br>The data is taking too long. Please check your internet connection." : ""}</div>`;
+  else if (S.mode === "reader") app.innerHTML = viewReader();
+  else if (S.mode === "resident") app.innerHTML = viewResident();
+  else if (S.mode === "staff") app.innerHTML = viewStaff();
+  else app.innerHTML = viewAdmin();
+  if (aid) { const el = document.getElementById(aid); if (el) { el.focus(); try { if (sel != null) el.setSelectionRange(sel, sel); } catch (e) { } } }
+}
+
+/* ---- Login ---- */
+function viewLogin() {
+  if (S.needsBootstrap) return `<div class="login"><div class="logo">${icon("lock")}</div><h2 style="text-align:center;margin:0 0 4px">Create the admin account</h2><p class="muted" style="text-align:center;margin:0 0 20px">First-time setup. This account will manage the whole system.</p>
+  <form data-f="bootstrap" class="card"><label class="f"><span>Your name</span><input type="text" name="name" autocomplete="name"></label><label class="f"><span>Admin username</span><input type="text" name="u" autocapitalize="none" autocomplete="username" placeholder="e.g. admin" required></label><label class="f"><span>Password (at least 6 characters)</span><input type="password" name="p" autocomplete="new-password" required></label><button class="btn pri block">Create admin account</button></form></div>`;
+  return `<div class="login"><div class="logo">${icon("readings")}</div><h2 style="text-align:center;margin:0 0 4px">Royal Garden</h2><p class="muted" style="text-align:center;margin:0 0 24px">Water &amp; Maintenance Billing</p>
+  <form data-f="login" class="card"><label class="f"><span>Username</span><input id="lu" type="text" name="u" autocapitalize="none" autocomplete="username" placeholder="e.g. your plot number" required></label><label class="f"><span>Password</span><input type="password" name="p" autocomplete="current-password" required></label><div id="lerr"></div><button class="btn pri block">Log in</button></form>
+  <p class="muted" style="text-align:center;font-size:13px">Forgot your password? Contact the society office.</p></div>`;
+}
+
+/* ---- ADMIN shell ---- */
+const NAV = [["home", "Dashboard", "home"], ["houses", "Plots", "plots"], ["readings", "Readings", "readings"], ["bills", "Bills", "bills"], ["pending", "Pending", "pending"]];
+const TITLES = { home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings", logins: "Logins", inbox: "Inbox", colors: "Color Scheme", creport: "Complaints Report" };
+function viewAdmin() {
+  const s = st();
+  let body;
+  if (!S.settingsExists || !S.housesExists) { if (S.view !== "settings") body = viewSetup(); }
+  if (!body) body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings, logins: vLogins, inbox: vInbox, colors: vColors, creport: vCReport }[S.view] || vHome)();
+  const pc = S.proofs.length;
+  const ic = unreadAdmin();
+  const navBtn = ([k, t, i]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(i)}<span>${t}${k === "pending" && pc ? ` <span class="badge b-unpaid">${pc}</span>` : ""}${k === "inbox" && ic ? ` <span class="badge b-unpaid">${ic}</span>` : ""}</span></button>`;
+  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["inbox", "Inbox", "chat"])}${navBtn(["creport", "Complaints report", "report"])}${navBtn(["logins", "Logins", "users"])}${navBtn(["colors", "Colors", "palette"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
+  <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "inbox" ? "on" : ""}" data-a="tab" data-v="inbox" aria-label="Inbox">${icon("chat")}${ic ? `<span class="dot">${ic}</span>` : ""}</button><button class="ibtn ${S.view === "logins" ? "on" : ""}" data-a="tab" data-v="logins" aria-label="Logins">${icon("users")}</button><button class="ibtn ${S.view === "colors" ? "on" : ""}" data-a="tab" data-v="colors" aria-label="Colors">${icon("palette")}</button><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button></header>
+  <main><div class="pagehead"><h1>${esc(TITLES[S.view] || "")}</h1></div>${S.slow ? `<div class="note">Some data has not loaded yet; what you see may be out of date.</div>` : ""}${body}</main>
+  <nav class="bnav">${NAV.map(([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t === "Dashboard" ? "Home" : t}${k === "pending" && pc ? " (" + pc + ")" : ""}</span></button>`).join("")}</nav>`;
+}
+function viewSetup() {
+  return `<div class="card"><h2>Welcome — let's set up the system</h2><p class="muted">Bring in your plots first. The quickest way is to import your Excel profile file (or a backup file from the old app). You can also create a simple numbered list.</p>
+  <div class="actions"><button class="btn pri" data-a="importXl">Import Excel file</button><button class="btn" data-a="importBackup">Import backup (.json)</button></div></div>
+  <div class="card"><h2>Or create a numbered list</h2>
+  <form data-f="setup"><div class="f2">
+  <label class="f"><span>Society name</span><input type="text" name="name" value="${esc(st().name)}"></label>
+  <label class="f"><span>Total houses</span><input type="number" name="total" value="200" min="1" max="2000"></label>
+  <label class="f"><span>Default marla per house</span><input type="number" name="marla" value="5" step="0.5" min="0"></label>
+  <label class="f"><span>Rate per marla (Rs)</span><input type="number" name="marlaRate" value="${esc(st().marlaRate)}"></label>
+  <label class="f"><span>Water rate per unit (Rs)</span><input type="number" name="unitRate" value="${esc(st().unitRate || "")}" step="0.01" placeholder="e.g. 25"></label>
+  </div>
+  <label class="f"><span>Sold house numbers (commas or ranges, e.g. 1-50, 61, 70-99)</span><textarea name="sold" rows="2" placeholder="1-80"></textarea></label>
+  <button class="btn pri">Create list</button></form></div>`;
+}
+
+/* ---- Dashboard ---- */
+function vHome() {
+  const sold = soldHouses(), cm = curMonth();
+  const done = sold.filter(h => readingOf(h.id, cm) != null).length;
+  const lm = latestBillMonth(); const lb = lm ? S.bills[lm] : null;
+  let billed = 0, coll = 0, pend = 0, pendN = 0, paidN = 0;
+  if (lb) Object.values(lb.b || {}).forEach(b => { billed += num(b.total); coll += num(b.paid); const bal = balance(b); if (bal > 0) { pend += bal; pendN++; } else paidN++; });
+  const s = st(), pct = billed ? Math.round(coll / billed * 100) : 0;
+  const allPend = pendingList().reduce((t, x) => t + x.bal, 0);
+  const marla = sold.reduce((t, h) => t + num(h.marla), 0);
+  return `<div class="grid">
+  <div class="stat"><span>Sold plots</span><b>${sold.length}</b><em>of ${S.houses.length} in list</em></div>
+  <div class="stat"><span>Readings · ${mLabel(cm)}</span><b>${done}/${sold.length}</b><em>${sold.length - done} remaining</em></div>
+  <div class="stat"><span>Collected${lm ? " · " + mLabel(lm) : ""}</span><b style="color:var(--grn)">${money(coll)}</b><em>${pct}% of ${money(billed)}</em></div>
+  <div class="stat"><span>Total outstanding</span><b style="color:var(--red)">${money(allPend)}</b><em>${pendN} unpaid bills</em></div>
+  </div>${S.proofs.length ? `<div class="note row"><span class="sp">${S.proofs.length} payment(s) submitted by residents are waiting for your approval.</span><button class="btn sm" data-a="tab" data-v="pending">Review</button></div>` : ""}
+  <div class="actions"><button class="btn pri" data-a="tab" data-v="bills">${icon("bills")} Bills</button><button class="btn" data-a="tab" data-v="readings">${icon("readings")} Readings</button><button class="btn" data-a="tab" data-v="pending">${icon("pending")} Pending</button><button class="btn" data-a="toReader">Reader view</button></div>
+  <div class="cols">
+  ${lb ? `<div class="card"><h2>Latest bill run · ${mLabel(lm)}</h2><div class="bar" style="margin-bottom:12px"><i style="width:${pct}%"></i></div><div class="kv"><span>Total billed</span><b>${money(billed)}</b></div><div class="kv"><span>Collected</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="kv"><span>Outstanding</span><b style="color:var(--red)">${money(pend)}</b></div><div class="kv"><span>Paid / unpaid bills</span><b>${paidN} / ${pendN}</b></div><div class="kv"><span>Due date</span><b>${fmtDate(lb.dueDate)}</b></div></div>`
+    : `<div class="card"><h2>No bills yet</h2><p class="muted" style="margin:0 0 12px">Once this month's readings are in, generate the bills from the Bills tab.</p><button class="btn pri" data-a="tab" data-v="bills">Go to Bills</button></div>`}
+  <div class="card"><h2>Meter readings · ${mLabel(cm)}</h2><div class="bar" style="margin-bottom:12px"><i style="width:${sold.length ? done / sold.length * 100 : 0}%"></i></div><div class="kv"><span>Completed</span><b>${done}</b></div><div class="kv"><span>Remaining</span><b>${sold.length - done}</b></div><div class="kv"><span>Reader sees previous reading</span><b>${s.readerShowPrev !== false ? "Yes" : "No"}</b></div></div>
+  <div class="card"><h2>Rates</h2><div class="kv"><span>Per marla</span><b>${money(s.marlaRate)}</b></div><div class="kv"><span>Water per unit</span><b>${s.unitRate ? "Rs " + s.unitRate : '<span style="color:var(--red)">Not set</span>'}</b></div><div class="kv"><span>Total marla (sold)</span><b>${r2(marla)}</b></div><div class="kv"><span>Monthly marla charges</span><b>${money(marla * num(s.marlaRate))}</b></div></div>
+  <div class="card"><h2>Logins</h2><div class="kv"><span>Residents with a login</span><b>${S.users.filter(u => u.role === "resident").length} / ${sold.length}</b></div><div class="kv"><span>Meter readers</span><b>${S.users.filter(u => u.role === "reader").length}</b></div><div class="row" style="margin-top:12px"><button class="btn" data-a="tab" data-v="logins">Manage logins</button><button class="btn" data-a="toReader">Preview reader view</button></div></div>
+  </div>`;
+}
+
+/* ---- Plots ---- */
+function vHouses() {
+  const q = S.q.trim().toLowerCase();
+  let list = S.houses.slice().sort(hsort);
+  if (S.hfilter === "sold") list = list.filter(h => h.sold); else if (S.hfilter === "unsold") list = list.filter(h => !h.sold); else if (S.hfilter === "nophone") list = list.filter(h => !h.phone);
+  if (q) list = list.filter(h => (h.no + " " + (h.owner || "") + " " + (h.phone || "") + " " + (h.meter || "") + " " + (h.code || "")).toLowerCase().includes(q));
+  const ns = S.houses.filter(h => h.sold).length, np = S.houses.filter(h => !h.phone).length;
+  return `<div class="toolbar"><input id="q" type="search" placeholder="Search plot no., name, phone or code…" value="${esc(S.q)}"><button class="btn" data-a="importXl">Import Excel</button><button class="btn pri" data-a="addHouse">+ Add plot</button></div>
+  <div class="row" style="margin-bottom:12px"><div class="chips">${[["all", "All (" + S.houses.length + ")"], ["sold", "Sold (" + ns + ")"], ["unsold", "Unsold (" + (S.houses.length - ns) + ")"], ["nophone", "No phone (" + np + ")"]].map(([k, t]) => `<button class="chip ${S.hfilter === k ? "on" : ""}" data-a="hf" data-v="${k}">${t}</button>`).join("")}</div><span class="sp"></span><button class="btn sm" data-a="bulkSold">Mark several as sold</button></div>
+  <div class="list">${list.map(h => `<div class="item" data-a="editHouse" data-id="${esc(h.id)}"><div class="hno">${esc(h.no)}</div><div class="m"><b>${esc(h.owner || "—")}</b><small>${h.street ? "Street " + esc(h.street) + " · " : ""}${esc(h.marla)} marla · ${h.phone ? esc(h.phone) : '<span style="color:var(--red)">no phone</span>'}${num(h.prevBal) ? " · Prev. balance " + money(h.prevBal) : ""}</small></div>${h.sold ? '<span class="badge b-sold">Sold</span>' : '<span class="badge b-no">Unsold</span>'}</div>`).join("") || `<div class="empty">No plots found</div>`}</div>`;
+}
+
+/* ---- Readings (admin) ---- */
+function readingRows(m) {
+  const sold = soldHouses(), q = S.q.trim().toLowerCase();
+  let list = sold.map(h => ({ h, prev: prevReading(h, m), cur: readingOf(h.id, m), e: S.readings[m] && S.readings[m].r && S.readings[m].r[h.id] }));
+  const doneN = list.filter(x => x.cur != null).length;
+  if (S.rfilter === "pending") list = list.filter(x => x.cur == null); else if (S.rfilter === "done") list = list.filter(x => x.cur != null);
+  if (q) list = list.filter(x => (x.h.no + " " + (showOwner() ? x.h.owner || "" : "") + " " + (x.h.meter || "") + " " + (x.h.street ? "street " + x.h.street : "")).toLowerCase().includes(q));
+  return { sold, list, doneN };
+}
+function progressCard(m, doneN, total) {
+  return `<div class="card"><div class="row" style="align-items:flex-end"><label style="flex:1;min-width:150px"><span class="muted" style="font-size:13px;display:block;margin-bottom:5px">Month</span><input type="month" id="rm" value="${m}"></label><div style="flex:2;min-width:200px"><div class="row" style="justify-content:space-between;margin-bottom:6px"><b>${doneN} of ${total} done</b><span class="muted">${total - doneN} remaining</span></div><div class="bar"><i style="width:${total ? doneN / total * 100 : 0}%"></i></div></div></div></div>`;
+}
+const rChips = () => `<div class="chips">${[["pending", "Remaining"], ["done", "Done"], ["all", "All"]].map(([k, t]) => `<button class="chip ${S.rfilter === k ? "on" : ""}" data-a="rf" data-v="${k}">${t}</button>`).join("")}</div>`;
+function vReadings() {
+  const m = S.readMonth, { sold, list, doneN } = readingRows(m);
+  const bill = S.bills[m];
+  const changed = bill ? sold.filter(h => bill.b && bill.b[h.id] && (bill.b[h.id].curr ?? null) !== readingOf(h.id, m)).length : 0;
+  return progressCard(m, doneN, sold.length) +
+  (changed ? `<div class="note">Bills for ${mLabel(m)} were already generated, but ${changed} reading(s) were added or changed afterwards. Use "Regenerate" on the Bills tab.</div>` : "") +
+  `<div class="toolbar"><input id="q" type="search" placeholder="Search plot no. or name…" value="${esc(S.q)}">${rChips()}</div>
+  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>Previous: ${x.prev}${x.cur != null ? ` → Current: ${x.cur} · <b>${r2(x.cur - x.prev)} units</b>` : ""}${x.e && x.e.at ? " · " + fmtDate(x.e.at.slice(0, 10)) + (x.e.by === "reader" ? " (reader)" : "") : ""}${x.e && x.e.fixed ? ` · <b style="color:var(--amb)">corrected (was ${esc(x.e.old)})</b>` : ""}</small></div>${x.cur != null ? (x.cur < x.prev ? '<span class="badge b-unpaid">Lower!</span>' : '<span class="badge b-paid">Done</span>') : '<span class="badge b-no">Remaining</span>'}</div>`).join("") || `<div class="empty">${sold.length ? "No plots match this filter" : "Mark plots as sold on the Plots tab first"}</div>`}</div>`;
+}
+
+/* ---- Bills ---- */
+function vBills() {
+  const months = billMonths(), cm = curMonth();
+  const opts = Array.from(new Set([...months, cm])).sort().reverse();
+  if (!S.billMonth) S.billMonth = months.includes(cm) ? cm : (months.slice(-1)[0] || cm);
+  const m = S.billMonth, bill = S.bills[m];
+  const sel = `<div class="toolbar"><select id="bm" style="max-width:220px">${opts.map(o => `<option value="${o}" ${o === m ? "selected" : ""}>${mLabel(o)}${S.bills[o] ? "" : " (new)"}</option>`).join("")}</select><button class="btn sm" data-a="otherMonth">Other month</button></div>`;
+  if (!bill) {
+    const lm = latestBillMonth();
+    if (lm && lm > m) return sel + `<div class="note">Bills for a later month (${mLabel(lm)}) already exist. New bills can't be created for an earlier month, as that would break the carried-forward balances.</div>`;
+    const sold = soldHouses(), miss = sold.filter(h => readingOf(h.id, m) == null).length, s = st();
+    return sel + `<div class="card"><h2>Generate bills for ${mLabel(m)}</h2>
+    <div class="kv"><span>Sold plots (bills to create)</span><b>${sold.length}</b></div>
+    <div class="kv"><span>Readings completed</span><b>${sold.length - miss} / ${sold.length}</b></div>
+    <div class="kv"><span>Rate per marla</span><b>${money(s.marlaRate)}</b></div>
+    <div class="kv"><span>Water rate per unit</span><b>${s.unitRate ? "Rs " + s.unitRate : '<span style="color:var(--red)">Not set (Settings)</span>'}</b></div>
+    <div class="kv"><span>Previous balance</span><b>${lm ? "Carried from " + mLabel(lm) : "From each plot's opening balance"}</b></div>
+    ${miss ? `<div class="note" style="margin-top:12px">${miss} plot(s) have no reading yet. Their water charge will be 0 this month and the units will be billed next month. You may want to finish the readings first.</div>` : ""}
+    <label class="f" style="margin-top:12px"><span>Due date</span><input type="date" id="due" value="${addDays(todayISO(), num(s.dueDays) || 10)}"></label>
+    <button class="btn pri block" data-a="gen" ${sold.length ? "" : "disabled"}>Generate ${sold.length} bills</button></div>`;
+  }
+  const rows = Object.values(bill.b || {}).sort((a, b) => hsort({ no: a.no }, { no: b.no }));
+  let billed = 0, coll = 0, pend = 0; rows.forEach(b => { billed += num(b.total); coll += num(b.paid); pend += Math.max(0, balance(b)); });
+  const isLatest = m === latestBillMonth(), f = S.bfilter, q = S.q.trim().toLowerCase();
+  let list = rows;
+  if (f === "unpaid") list = list.filter(b => balance(b) > 0); else if (f === "paid") list = list.filter(b => balance(b) <= 0);
+  if (q) list = list.filter(b => (b.no + " " + (b.owner || "")).toLowerCase().includes(q));
+  const changed = rows.filter(b => (b.curr ?? null) !== readingOf(b.hid, m)).length;
+  const newSold = soldHouses().filter(h => !bill.b[h.id]).length;
+  return sel + `<div class="grid"><div class="stat"><span>Total billed (${rows.length})</span><b>${money(billed)}</b></div><div class="stat"><span>Collected</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="stat"><span>Outstanding</span><b style="color:var(--red)">${money(pend)}</b></div><div class="stat"><span>Due date</span><b>${fmtDate(bill.dueDate)}</b></div></div>
+  ${isLatest && (changed || newSold) ? `<div class="note">${changed ? changed + " reading(s) changed after these bills were generated. " : ""}${newSold ? newSold + " newly sold plot(s) are not in this bill run. " : ""}Tap "Regenerate" — payments and fines are kept.</div>` : ""}
+  ${!isLatest ? `<div class="info">This is an older bill run. Its balances have been carried into the next month's bills; record payments there.</div>` : ""}
+  <div class="actions"><button class="btn grn" data-a="waPick">Send on WhatsApp…</button><button class="btn" data-a="emailPick">Email bills…</button><button class="btn pri" data-a="printAll">Print all (2 per A4)</button><button class="btn" data-a="printPending">Print unpaid (2 per A4)</button><button class="btn" data-a="pdfAll">All bills (PDF)</button><button class="btn" data-a="pdfPending">Unpaid bills (PDF)</button>${isLatest ? `<button class="btn" data-a="bulkFine">Fine all unpaid</button><button class="btn" data-a="regen">Regenerate</button>` : ""}</div>
+  <div class="toolbar"><input id="q" type="search" placeholder="Search plot no. or name…" value="${esc(S.q)}"><div class="chips">${[["all", "All"], ["unpaid", "Unpaid"], ["paid", "Paid"]].map(([k, t]) => `<button class="chip ${f === k ? "on" : ""}" data-a="bf" data-v="${k}">${t}</button>`).join("")}</div></div>
+  <div class="list">${list.map(b => `<div class="item" data-a="bill" data-m="${m}" data-id="${esc(b.hid)}"><div class="hno">${esc(b.no)}</div><div class="m"><b>${esc(b.owner || "—")}</b><small>Marla ${money(b.marlaCharge)} · Water ${money(b.water)} (${b.units} u)${num(b.arrears) ? " · Arrears " + money(b.arrears) : ""}${num(b.fine) ? " · Fine " + money(b.fine) : ""}${b.noReading ? " · no reading" : ""}${b.waSentAt ? " · ✓ sent on WhatsApp" : ""}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>`).join("") || `<div class="empty">No bills</div>`}</div>`;
+}
+
+/* ---- Pending ---- */
+function pendingList() {
+  const out = [], months = billMonths().reverse();
+  S.houses.forEach(h => {
+    const m = months.find(mm => S.bills[mm].b && S.bills[mm].b[h.id]);
+    if (!m) return; const b = S.bills[m].b[h.id];
+    if (b.carried) return; const bal = balance(b);
+    if (bal > 0) out.push({ h, m, b, bal });
+  });
+  return out.sort((a, b) => b.bal - a.bal);
+}
+function vPending() {
+  const list = pendingList(), tot = list.reduce((s, x) => s + x.bal, 0);
+  return proofsBlock() + `<div class="grid"><div class="stat"><span>Plots with dues</span><b>${list.length}</b></div><div class="stat"><span>Total outstanding</span><b style="color:var(--red)">${money(tot)}</b></div></div>
+  <div class="list">${list.map(x => `<div class="item" data-a="bill" data-m="${x.m}" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>${mLabel(x.m)} · Due ${fmtDate(S.bills[x.m].dueDate)}${num(x.b.arrears) > 0 ? " · includes arrears" : ""}</small></div><div><div class="amt" style="color:var(--red)">${money(x.bal)}</div><div style="text-align:right">${badge(status(x.b))}</div></div></div>`).join("") || `<div class="empty">No pending bills 🎉</div>`}</div>`;
+}
+
+/* ---- Settings ---- */
+function vSettings() {
+  const s = st();
+  const fld = (k, label, type = "text", extra = "") => `<label class="f"><span>${label}</span><input type="${type}" name="${k}" value="${esc(s[k])}" ${extra}></label>`;
+  const tg = (k, label, sub) => `<label class="toggle"><input type="checkbox" name="${k}" ${s[k] !== false ? "checked" : ""}><span><b>${label}</b><small>${sub}</small></span></label>`;
+  return `<form data-f="settings"><div class="cols">
+  <div class="card"><h2>Society</h2><div class="f2">${fld("name", "Name")}${fld("address", "Address (printed on bills)")}${fld("phone", "Contact / WhatsApp number (printed on bills)", "tel")}</div></div>
+  <div class="card"><h2>Rates</h2><div class="f2">${fld("marlaRate", "Rate per marla (Rs)", "number", 'step="0.01" min="0"')}${fld("unitRate", "Water rate per unit (Rs)", "number", 'step="0.01" min="0"')}${fld("fineDefault", "Default late fine (Rs)", "number", 'step="1" min="0"')}${fld("dueDays", "Days until due date", "number", 'min="0"')}</div><p class="muted" style="margin:0;font-size:13px">New rates apply from the next bill run; existing bills are not changed.</p></div>
+  <div class="card"><h2>JazzCash</h2><div class="f2">${fld("jazzNumber", "JazzCash number", "tel")}${fld("jazzTitle", "Account title")}</div></div>
+  <div class="card"><h2>Bank account</h2><div class="f2">${fld("bankName", "Bank name")}${fld("bankTitle", "Account title")}${fld("bankAcc", "Account number")}${fld("iban", "IBAN")}</div></div>
+  <div class="card"><h2>Payment QR code</h2><div class="row" style="align-items:flex-start;gap:14px"><img class="qrprev" id="qrimg" src="${s.qr ? esc(s.qr) : "data:image/gif;base64,R0lGODlhAQABAAAAACw="}" alt=""><div style="flex:1;min-width:180px"><input type="file" id="qrfile" accept="image/*"><p class="muted" style="font-size:13px">Upload a photo or screenshot of your JazzCash / Raast QR code. It is printed on every bill.</p>${s.qr ? '<button type="button" class="btn sm red" data-a="qrdel">Remove QR</button>' : ""}</div></div></div>
+  <div class="card"><h2>Meter reader screen</h2>
+  ${tg("readerShowPrev", "Show previous reading to the reader", "When off, the reader only sees the plot number and enters the new reading.")}
+  ${tg("readerShowOwner", "Show owner name to the reader", "Helps the reader find the right house.")}
+  <div class="row" style="margin-top:10px"><button type="button" class="btn" data-a="tab" data-v="logins">Manage logins (residents, readers, admins)</button></div></div>
+  <div class="card"><h2>Bill buttons</h2><p class="muted" style="margin:0 0 10px;font-size:13px">Choose which buttons show on a bill for each login type. Untick a box to hide that button.</p>
+  <table class="tbl" style="accent-color:var(--pri)"><tr><th>Button</th><th style="text-align:center">Admin</th><th style="text-align:center">Resident</th></tr>${BTNS.map(([k, label, a, r]) => `<tr><td>${label}</td><td style="text-align:center">${a ? `<input type="checkbox" name="btn_admin_${k}" ${bOn("admin", k) ? "checked" : ""}>` : "—"}</td><td style="text-align:center">${r ? `<input type="checkbox" name="btn_resident_${k}" ${bOn("resident", k) ? "checked" : ""}>` : "—"}</td></tr>`).join("")}</table>
+  <p class="muted" style="margin:10px 0 0;font-size:13px">Admin settings apply to every admin login. You can always turn a button back on here.</p></div>
+  <div class="card"><h2>Complaints staff rights</h2><p class="muted" style="margin:0 0 10px;font-size:13px">For "Complaints staff" logins (Logins → + Staff login). They only see the Inbox, never bills, payments to approve or settings. Complaints are always included when the Inbox is on.</p>
+  ${SR.map(([k, label, sub]) => `<label class="toggle"><input type="checkbox" name="sr_${k}" ${sr(k) ? "checked" : ""}><span><b>${label}</b><small>${sub}</small></span></label>`).join("")}</div>
+  </div><div class="row" style="margin-bottom:14px"><button class="btn pri">Save settings</button></div></form>
+  ${vEmailSettings()}
+  <div class="card"><h2>Backup</h2><p class="muted" style="margin-top:0">Download all data (plots, readings, bills) as one JSON file.</p><button class="btn" data-a="backup">Download backup</button></div>`;
+}
+
+/* ---- READER ---- */
+function viewReader() {
+  const m = S.readMonth, { sold, list, doneN } = readingRows(m);
+  return `<header class="appbar mob">${S.owner ? `<button class="ibtn" data-a="toAdmin" aria-label="Back">${icon("back")}</button>` : ""}<div class="t"><b>Meter Reading</b><small>${esc(st().name)}</small></div>${!S.owner ? `<button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button>` : ""}</header>
+  <main>${S.writeDenied ? `<div class="err">Your readings are not being saved. Please contact the admin.</div>` : ""}
+  ${progressCard(m, doneN, sold.length)}
+  <div class="toolbar"><input id="q" type="search" inputmode="search" placeholder="Search plot number…" value="${esc(S.q)}" style="font-size:18px">${rChips()}</div>
+  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${showOwner() ? esc(x.h.owner || "Plot " + x.h.no) : "Plot " + esc(x.h.no)}</b><small>${x.h.street ? "Street " + esc(x.h.street) : ""}${x.h.meter ? (x.h.street ? " · " : "") + "Meter " + esc(x.h.meter) : ""}${showPrev() ? ((x.h.street || x.h.meter) ? " · " : "") + "Previous: " + x.prev : ""}${x.cur != null ? " · Entered: " + x.cur : ""}</small></div>${x.cur != null ? '<span class="badge b-paid">✓ Done</span>' : '<span class="badge b-no">Remaining</span>'}</div>`).join("") || `<div class="empty">${S.rfilter === "pending" && sold.length ? "All readings are done ✓" : "No plots found"}</div>`}</div></main>`;
+}
+
+
+/* ---- Logins (admin) ---- */
+function vLogins() {
+  const sold = soldHouses(), q = S.q.trim().toLowerCase();
+  const staff = S.users.filter(u => u.role !== "resident").sort((a, b) => String(a.role).localeCompare(b.role) || String(a.username).localeCompare(b.username));
+  let list = sold.map(h => ({ h, u: userOfHouse(h.id) }));
+  const withN = list.filter(x => x.u).length;
+  if (S.lfilter === "none") list = list.filter(x => !x.u); else if (S.lfilter === "has") list = list.filter(x => x.u);
+  if (q) list = list.filter(x => (x.h.no + " " + (x.h.owner || "") + " " + (x.u ? x.u.username : "")).toLowerCase().includes(q));
+  return `<div class="grid"><div class="stat"><span>Resident logins</span><b>${withN} / ${sold.length}</b><em>sold plots with a login</em></div><div class="stat"><span>Staff logins</span><b>${staff.length}</b><em>admins, readers and complaints staff</em></div></div>
+  <div class="info">Each resident logs in with their username and password and sees <b>only their own plot's bills</b>. Passwords are shown only once, when created or reset — send them straight away.</div>
+  <div class="actions"><button class="btn pri" data-a="bulkLogins" ${withN < sold.length ? "" : "disabled"}>Create logins for all (${sold.length - withN})</button><button class="btn" data-a="addStaff">+ Staff login</button></div>
+  <div class="card"><h2>Staff</h2>${staff.map(u => `<div class="kv"><span><b>${esc(u.username)}</b> · ${({ admin: "Admin", reader: "Meter reader", staff: "Complaints staff" })[u.role] || esc(u.role)}${u.name ? " · " + esc(u.name) : ""}${u.uid === S.uid ? " (you)" : ""}</span><span class="row">${u.uid === S.uid ? "" : `<button class="btn sm" data-a="resetLogin" data-id="${esc(u.uid)}">Reset password</button><button class="btn sm red" data-a="removeLogin" data-id="${esc(u.uid)}">Remove</button>`}</span></div>`).join("") || `<p class="muted">No staff logins yet.</p>`}</div>
+  <div class="toolbar"><input id="q" type="search" placeholder="Search plot, owner or username…" value="${esc(S.q)}"><div class="chips">${[["all", "All"], ["none", "No login"], ["has", "Has login"]].map(([k, t]) => `<button class="chip ${S.lfilter === k ? "on" : ""}" data-a="lf" data-v="${k}">${t}</button>`).join("")}</div></div>
+  <div class="list">${list.map(({ h, u }) => `<div class="item" data-a="loginItem" data-id="${esc(h.id)}"><div class="hno">${esc(h.no)}</div><div class="m"><b>${esc(h.owner || "—")}</b><small>${u ? "Username: " + esc(u.username) + (u.resetAt ? " · reset " + fmtDate(u.resetAt.slice(0, 10)) : "") : "No login yet"}${h.phone ? " · " + esc(h.phone) : ""}</small></div>${u ? '<span class="badge b-paid">Active</span>' : '<span class="badge b-no">None</span>'}</div>`).join("") || `<div class="empty">No plots</div>`}</div>`;
+}
+function credText(c, h) {
+  const s = st();
+  return `${s.name} — online bill portal\n${h ? "Plot " + h.no + (h.owner ? " (" + h.owner + ")" : "") + "\n" : ""}Link: ${appLink()}\nUsername: ${c.username}\nPassword: ${c.password}\n\nPlease keep your password private. You can change it after logging in.`;
+}
+function credModal(items) {
+  // items: [{username,password,h}]
+  S.lastCreds = items;
+  const rows = items.map((c, i) => `<tr><td>${c.h ? esc(c.h.no) : ""}</td><td><b>${esc(c.username)}</b></td><td><code>${esc(c.password)}</code></td><td>${c.h && c.h.phone ? `<a class="btn sm grn" target="_blank" rel="noopener" href="https://wa.me/${waPhone(c.h.phone)}?text=${encodeURIComponent(credText(c, c.h))}">WhatsApp</a>` : `<button class="btn sm" data-a="copyCred" data-i="${i}">Copy</button>`}</td></tr>`).join("");
+  openModal(`<h3>${items.length === 1 ? "Login ready" : items.length + " logins created"}<button class="x" data-a="close">×</button></h3>
+  <div class="note">Passwords are shown only now. Send them, or download the list, before closing.</div>
+  <table class="tbl" style="margin-bottom:14px"><tr><th>Plot</th><th>Username</th><th>Password</th><th></th></tr>${rows}</table>
+  <div class="actions"><button class="btn" data-a="credCsv">Download list (CSV)</button><button class="btn" data-a="copyAllCred">Copy all</button></div>`, true);
+}
+function loginItemModal(hid) {
+  const h = S.houses.find(x => x.id === hid), u = userOfHouse(hid);
+  openModal(`<h3>Login · Plot ${esc(h.no)}<button class="x" data-a="close">×</button></h3>
+  <div class="kv"><span>Owner</span><b>${esc(h.owner || "—")}</b></div><div class="kv"><span>Mobile</span><b>${esc(h.phone || "—")}</b></div>
+  ${u ? `<div class="kv"><span>Username</span><b>${esc(u.username)}</b></div><div class="kv"><span>Created</span><b>${fmtDate((u.createdAt || "").slice(0, 10))}</b></div>
+  <p class="muted" style="font-size:13px">For security, passwords are not stored. If the resident forgot it, reset it to create a new one.</p>
+  <div class="actions"><button class="btn pri" data-a="resetLogin" data-id="${esc(u.uid)}">Reset password</button><button class="btn red" data-a="removeLogin" data-id="${esc(u.uid)}">Remove login</button></div>`
+  : `<form data-f="newLogin" data-id="${esc(hid)}" style="margin-top:12px"><div class="f2"><label class="f"><span>Username</span><input type="text" name="u" value="${esc(cleanUser(h.no))}" autocapitalize="none"></label><label class="f"><span>Password</span><input type="text" name="p" value="${genPassword()}"></label></div><button class="btn pri block">Create login</button></form>`}`);
+}
+async function bulkLogins() {
+  const todo = soldHouses().filter(h => !userOfHouse(h.id));
+  if (!todo.length) return;
+  if (!(await ask("Create " + todo.length + " logins?", "A login will be created for every sold plot that doesn't have one. The username is the plot number and the password is random. You'll get the full list at the end.", "Create"))) return;
+  openModal(`<h3>Creating logins…</h3><div class="bar"><i id="pbar" style="width:0"></i></div><p class="muted" id="ptxt">0 / ${todo.length}</p>`);
+  const out = [], fails = [];
+  for (let i = 0; i < todo.length; i++) {
+    const h = todo[i];
+    try { const c = await D.createLogin("resident", cleanUser(h.no), genPassword(), h.id, h.owner); out.push(Object.assign(c, { h })); }
+    catch (e) { fails.push(h.no + ": " + (e.message || e.code)); if (/too-many/.test(e.code || "")) { fails.push("Stopped: Firebase limit reached. Try the rest again in an hour."); break; } }
+    const pb = $("#pbar"); if (pb) { pb.style.width = ((i + 1) / todo.length * 100) + "%"; $("#ptxt").textContent = (i + 1) + " / " + todo.length; }
+    await new Promise(r => setTimeout(r, 250));
+  }
+  if (out.length) credModal(out); else closeModal();
+  if (fails.length) toast(fails.length + " failed: " + fails[0]);
+}
+function csvOf(items) { const q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"'; return "Plot,Owner,Mobile,Username,Password\n" + items.map(c => [c.h ? c.h.no : "", c.h ? c.h.owner : "", c.h ? c.h.phone : "", c.username, c.password].map(q).join(",")).join("\n"); }
+
+/* ---- Payment proofs (admin) ---- */
+function proofsBlock() {
+  if (!S.proofs.length) return "";
+  return `<div class="card"><h2>Payments to verify (${S.proofs.length})</h2><div class="list" style="border:0">${S.proofs.slice().sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt))).map(p => { const h = S.houses.find(x => x.id === p.hid) || { no: p.hid }; return `<div class="item" data-a="proof" data-id="${esc(p.id)}"><div class="hno">${esc(h.no)}</div><div class="m"><b>${money(p.amount)} · ${esc(p.method || "")}</b><small>${esc(h.owner || "")}${p.tid ? " · TID " + esc(p.tid) : ""} · ${fmtDate(p.date)}</small></div><span class="badge b-part">Review</span></div>`; }).join("")}</div></div>`;
+}
+function proofModal(id) {
+  const p = S.proofs.find(x => x.id === id); if (!p) return;
+  const h = S.houses.find(x => x.id === p.hid) || { no: p.hid };
+  const lm = billMonths().reverse().find(mm => S.bills[mm].b[p.hid] && !S.bills[mm].b[p.hid].carried);
+  const bill = lm ? S.bills[lm].b[p.hid] : null;
+  openModal(`<h3>Payment from Plot ${esc(h.no)}<button class="x" data-a="close">×</button></h3>
+  <div class="kv"><span>Owner</span><b>${esc(h.owner || "—")}</b></div><div class="kv"><span>Amount</span><b>${money(p.amount)}</b></div><div class="kv"><span>Method</span><b>${esc(p.method || "")}</b></div><div class="kv"><span>Transaction ID</span><b>${esc(p.tid || "—")}</b></div><div class="kv"><span>Paid on</span><b>${fmtDate(p.date)}</b></div><div class="kv"><span>For bill</span><b>${mLabel(p.month)}</b></div>
+  ${bill ? `<div class="kv"><span>Current balance (${mLabel(lm)})</span><b style="color:var(--red)">${money(balance(bill))}</b></div>` : ""}
+  ${p.note ? `<p><b>Note:</b> ${esc(p.note)}</p>` : ""}
+  ${p.image ? `<img class="preview" style="margin:12px 0" src="${esc(p.image)}" alt="Payment screenshot">` : `<p class="muted">No screenshot attached.</p>`}
+  <label class="f"><span>Note (optional, e.g. reason for rejecting)</span><input type="text" id="pnote"></label>
+  <div class="actions"><button class="btn pri" data-a="approveProof" data-id="${esc(p.id)}">Approve &amp; add payment</button><button class="btn red" data-a="rejectProof" data-id="${esc(p.id)}">Reject</button></div>`, true);
+}
+
+/* ---- Inbox (complaints, messages, payment screenshots) ---- */
+const KINDS = { complaint: ["Complaint", "b-unpaid"], payment: ["Payment", "b-part"], message: ["Message", "b-none"] };
+const byAt = (a, b) => String(a.at).localeCompare(String(b.at));
+const unreadAdmin = () => S.msgs.filter(m => m.from === "resident" && !m.seenByAdmin).length;
+const unreadRes = () => S.msgs.filter(m => m.from === "admin" && !m.seenByResident).length;
+const lastLine = m => m ? (m.from === "admin" ? "Office: " : "You: ") + (m.text || (m.image ? "Photo" : "")) : "";
+function kindBadge(m) { const k = KINDS[m.kind] || KINDS.message; return `<span class="badge ${k[1]}">${k[0]}</span>${m.kind === "complaint" ? ` <span class="badge ${m.status === "resolved" ? "b-paid" : "b-part"}">${m.status === "resolved" ? "Resolved" : "Open"}</span>` : ""}`; }
+function fmtAt(iso) { const d = new Date(iso); if (isNaN(d)) return ""; return pad(d.getDate()) + "-" + pad(d.getMonth() + 1) + "-" + d.getFullYear() + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+function msgHtml(m, admin) {
+  const mine = admin ? m.from === "admin" : m.from === "resident";
+  const who = m.from === "admin" ? "Office" + (admin && m.by ? " · " + esc(m.by) : "") : (admin ? "Resident" : "You");
+  const pr = m.proofId && S.mode === "admin" ? S.proofs.find(p => p.id === m.proofId) : null;
+  let extra = "";
+  if (admin && m.kind === "complaint" && (S.mode === "admin" || sr("resolve"))) extra = `<div class="actions"><button class="btn sm" data-a="msgStatus" data-id="${esc(m.id)}" data-v="${m.status === "resolved" ? "open" : "resolved"}">${m.status === "resolved" ? "Reopen" : "Mark resolved"}</button></div>`;
+  if (S.mode === "admin" && m.proofId) extra = pr ? `<div class="actions"><button class="btn sm pri" data-a="proof" data-id="${esc(pr.id)}">Review payment</button></div>` : `<div class="muted" style="font-size:12px;margin-top:6px">Payment already reviewed (see Pending / bill).</div>`;
+  return `<div class="msg ${mine ? "me" : ""}"><div class="meta"><b>${who}</b>${m.kind && m.kind !== "message" ? kindBadge(m) : ""}<span>${fmtAt(m.at)}</span></div>
+  ${m.amount ? `<p><b>Paid ${money(m.amount)}</b>${m.method ? " · " + esc(m.method) : ""}${m.tid ? " · TID " + esc(m.tid) : ""}</p>` : ""}${m.text ? `<p>${esc(m.text)}</p>` : ""}${m.image ? `<img src="${esc(m.image)}" alt="Attachment" data-a="zoomImg">` : ""}${extra}</div>`;
+}
+function chatList(hid, admin) {
+  const list = S.msgs.filter(m => m.hid === hid).sort(byAt);
+  return list.length ? list.map(m => msgHtml(m, admin)).join("") : `<div class="empty" style="padding:24px">No messages yet.</div>`;
+}
+function refreshChat() {
+  if (!S.chat) return; const el = $("#chatlist"); if (!el) return;
+  const admin = isOffice(); el.innerHTML = chatList(S.chat, admin); const end = () => { el.scrollTop = el.scrollHeight; }; end(); el.querySelectorAll("img").forEach(i => { i.onload = end; }); markChatSeen();
+}
+function markChatSeen() {
+  if (!S.chat) return; const admin = isOffice();
+  const ids = S.msgs.filter(m => m.hid === S.chat && (admin ? m.from === "resident" && !m.seenByAdmin : m.from === "admin" && !m.seenByResident)).map(m => m.id);
+  if (ids.length) D.markSeen(ids, admin ? "seenByAdmin" : "seenByResident").catch(e => console.warn(e));
+}
+function composeForm(admin, kind) {
+  const kinds = admin ? "" : `<label class="f"><span>Type</span><select name="kind"><option value="complaint" ${kind === "complaint" ? "selected" : ""}>Complaint</option><option value="payment" ${kind === "payment" ? "selected" : ""}>Payment screenshot</option><option value="message" ${!kind || kind === "message" ? "selected" : ""}>Message</option></select></label>`;
+  return `<form data-f="msg">${kinds}
+  <div id="payf" class="f2" style="${kind === "payment" ? "" : "display:none"}"><label class="f"><span>Amount paid (Rs)</span><input type="number" name="amount" min="1"></label><label class="f"><span>Paid with</span><select name="method"><option>JazzCash</option><option>Bank transfer</option><option>Easypaisa</option><option>Other</option></select></label><label class="f"><span>Transaction ID (TID)</span><input type="text" name="tid"></label><label class="f"><span>Date paid</span><input type="date" name="date" value="${todayISO()}"></label></div>
+  <label class="f"><span>${admin ? "Reply" : "Message"}</span><textarea name="text" rows="3" placeholder="${admin ? "Write a reply…" : "Write your complaint or message…"}"></textarea></label>
+  <label class="f"><span>Photo / screenshot (optional)</span><input type="file" name="shot" accept="image/*"></label>
+  <button class="btn pri block">Send</button></form>`;
+}
+function chatModal(hid, kind) {
+  const admin = isOffice();
+  const h = admin ? (S.houses.find(x => x.id === hid) || { no: hid }) : S.houses[0];
+  S.chat = null;
+  openModal(`<h3>${admin ? `Plot ${esc(h.no)}${h.owner ? " · " + esc(h.owner) : ""}` : "Inbox · Chat with the office"}<button class="x" data-a="close">×</button></h3>
+  <div class="chat" id="chatlist"></div>${S.mode === "staff" && !sr("reply") ? `<p class="muted" style="margin:0">You can read these messages but not reply.</p>` : composeForm(admin, kind)}`, true);
+  S.chat = hid; refreshChat();
+}
+function vInbox() {
+  const by = {}; S.msgs.forEach(m => { (by[m.hid] = by[m.hid] || []).push(m); });
+  let rows = Object.entries(by).map(([hid, l]) => { l.sort(byAt); const h = S.houses.find(x => x.id === hid) || { id: hid, no: hid };
+    return { h, last: l[l.length - 1], unread: l.filter(m => m.from === "resident" && !m.seenByAdmin).length, open: l.filter(m => m.kind === "complaint" && m.status !== "resolved").length }; })
+    .sort((a, b) => String(b.last.at).localeCompare(String(a.last.at)));
+  const f = S.ifilter || "all";
+  if (f === "unread") rows = rows.filter(r => r.unread); else if (f === "open") rows = rows.filter(r => r.open);
+  const chip = (k, t) => `<button class="chip ${f === k ? "on" : ""}" data-a="ifilter" data-v="${k}">${t}</button>`;
+  const opts = soldHouses().map(h => `<option value="${esc(h.id)}">${esc(h.no)}${h.owner ? " · " + esc(h.owner) : ""}</option>`).join("");
+  return `<div class="toolbar">${chip("all", "All")}${chip("unread", "Unread")}${chip("open", "Open complaints")}<span class="sp"></span>${S.mode === "admin" ? `<button class="btn sm" data-a="tab" data-v="creport">${icon("report")} Report</button><select id="newchat" style="max-width:220px"><option value="">Message a plot…</option>${opts}</select>` : ""}</div>
+  <div class="list">${rows.map(r => `<div class="item" data-a="chat" data-id="${esc(r.h.id)}"><div class="hno">${esc(r.h.no)}</div><div class="m"><b>${esc(r.h.owner || "—")}</b><small>${esc((r.last.from === "admin" ? "You: " : "") + (r.last.text || (r.last.amount ? "Payment " + money(r.last.amount) : "Photo")))} · ${fmtAt(r.last.at)}</small></div><div style="text-align:right">${r.unread ? `<span class="badge b-unpaid">${r.unread} new</span>` : ""}${r.open ? `<div><span class="badge b-part">${r.open} open</span></div>` : ""}</div></div>`).join("") || `<div class="empty">No messages${f === "all" ? " yet" : ""}.</div>`}</div>`;
+}
+function replyTopic(hid) {
+  const last = S.msgs.filter(m => m.hid === hid && m.from === "resident").sort(byAt).pop();
+  const t = last ? topicOf(last) : (S.mode === "staff" ? "complaint" : "message");
+  return S.mode === "staff" && !staffTopics().includes(t) ? "complaint" : t;
+}
+async function sendMsgForm(f) {
+  const admin = isOffice(), hid = S.chat; if (!hid) return;
+  const fd = new FormData(f); const kind = admin ? "message" : String(fd.get("kind") || "message");
+  const text = String(fd.get("text") || "").trim(); const file = f.shot.files[0];
+  const amount = kind === "payment" ? num(fd.get("amount")) : 0, tid = kind === "payment" ? String(fd.get("tid") || "").trim() : "";
+  if (kind === "payment" && amount <= 0) return toast("Enter the amount you paid");
+  if (kind === "payment" && !file && !tid) return toast("Attach the payment screenshot or enter the TID");
+  if (!text && !file && kind !== "payment") return toast("Write a message or attach a photo");
+  const btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Sending…";
+  const image = file ? await shrinkImage(file) : "";
+  const at = new Date().toISOString();
+  const m = { hid, uid: S.uid, from: admin ? "admin" : "resident", kind, topic: admin ? replyTopic(hid) : kind, text, image, at, seenByAdmin: admin, seenByResident: !admin };
+  if (admin) { m.by = S.me.name || S.me.username || ""; m.byRole = S.me.role; }
+  if (kind === "complaint") m.status = "open";
+  const ok = await write(async () => {
+    if (kind === "payment") {
+      const method = String(fd.get("method") || "JazzCash"), date = String(fd.get("date") || todayISO());
+      const cur = billMonths().reverse().map(mm => S.bills[mm].b[hid]).find(b => b && !b.carried);
+      const pid = D.newProofId();
+      await D.createProofWithId(pid, { hid, uid: S.uid, month: cur ? cur.month : curMonth(), amount, method, tid, date, note: text, image, status: "pending", createdAt: at });
+      Object.assign(m, { proofId: pid, amount, method, tid });
+    }
+    await D.sendMsg(m);
+  });
+  if (ok) { f.reset(); const pf = $("#payf"); if (pf) pf.style.display = "none"; toast(kind === "payment" ? "Payment sent for confirmation" : "Sent"); }
+  btn.disabled = false; btn.textContent = "Send";
+}
+
+function viewStaff() {
+  const n = unreadAdmin();
+  return `<header class="appbar mob"><div class="t"><b>Inbox${n ? " (" + n + ")" : ""}</b><small>${esc(S.me.name || S.me.username)} · ${esc(st().name)}</small></div><button class="ibtn" data-a="myAccount" aria-label="Account">${icon("lock")}</button><button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button></header>
+  <main>${!sr("inbox") ? `<div class="card"><h2>No access</h2><p class="muted" style="margin:0">The admin has turned off Inbox access for staff logins.</p></div>` : `<div class="info">You can see ${["complaints"].concat(sr("payments") ? ["payment screenshots"] : [], sr("messages") ? ["general messages"] : []).join(", ")}.</div>` + vInbox()}</main>`;
+}
+
+/* ---- Complaints report (admin) ---- */
+const DAY = 86400000;
+const dayDiff = (a, b) => Math.max(0, (new Date(b) - new Date(a)) / DAY);
+const fmtDays = d => d == null ? "—" : d < 1 ? (d * 24 < 1 ? "< 1 hour" : Math.round(d * 24) + " h") : (Math.round(d * 10) / 10) + " d";
+function complaintRows() {
+  const target = num(st().complaintDays) || 3, now = new Date().toISOString();
+  return S.msgs.filter(m => m.from === "resident" && (m.kind === "complaint" || topicOf(m) === "complaint") && m.kind === "complaint").map(m => {
+    const h = S.houses.find(x => x.id === m.hid) || { no: m.hid, owner: "" };
+    const reply = S.msgs.filter(x => x.hid === m.hid && x.from === "admin" && String(x.at) > String(m.at)).sort(byAt)[0];
+    const resolved = m.status === "resolved";
+    const days = resolved && m.resolvedAt ? dayDiff(m.at, m.resolvedAt) : null;
+    const age = dayDiff(m.at, now);
+    return { m, h, resolved, days, age, firstReply: reply ? dayDiff(m.at, reply.at) : null, replyBy: reply ? (reply.by || "Office") : "", overdue: resolved ? (days != null && days > target) : age > target, target };
+  }).sort((a, b) => String(b.m.at).localeCompare(String(a.m.at)));
+}
+function crPeriod(rows) {
+  const p = S.crp || "month", d = new Date(), ym = x => x.toISOString().slice(0, 7);
+  if (p === "month") return rows.filter(r => String(r.m.at).slice(0, 7) === ym(d));
+  if (p === "last") { const l = new Date(d.getFullYear(), d.getMonth() - 1, 15); return rows.filter(r => String(r.m.at).slice(0, 7) === ym(l)); }
+  if (p === "30") return rows.filter(r => dayDiff(r.m.at, d.toISOString()) <= 30);
+  if (p === "custom") { const f = S.crFrom || "0000", t = (S.crTo || "9999") + "T99"; return rows.filter(r => String(r.m.at) >= f && String(r.m.at) <= t); }
+  return rows;
+}
+function vCReport() {
+  const all = crPeriod(complaintRows()), f = S.crf || "all", target = num(st().complaintDays) || 3;
+  const res = all.filter(r => r.resolved), open = all.filter(r => !r.resolved), od = all.filter(r => r.overdue);
+  const timed = res.filter(r => r.days != null), avg = timed.length ? timed.reduce((s, r) => s + r.days, 0) / timed.length : null;
+  const replied = all.filter(r => r.firstReply != null), avgR = replied.length ? replied.reduce((s, r) => s + r.firstReply, 0) / replied.length : null;
+  const onTime = timed.filter(r => r.days <= target).length;
+  let rows = all; if (f === "open") rows = open; else if (f === "resolved") rows = res; else if (f === "overdue") rows = od;
+  const by = {}; res.forEach(r => { const k = r.m.resolvedBy || "—"; (by[k] = by[k] || []).push(r); });
+  const chip = (k, t, v) => `<button class="chip ${v === k ? "on" : ""}" data-a="${t}" data-v="${k}">`;
+  const pc = S.crp || "month";
+  return `<div class="toolbar"><div class="chips">${[["month", "This month"], ["last", "Last month"], ["30", "Last 30 days"], ["all", "All time"], ["custom", "From – to"]].map(([k, t]) => chip(k, "crp", pc) + t + "</button>").join("")}</div></div>
+  ${pc === "custom" ? `<div class="row" style="gap:8px;margin-bottom:12px"><label class="f" style="margin:0"><span>From</span><input type="date" id="crFrom" value="${esc(S.crFrom || "")}"></label><label class="f" style="margin:0"><span>To</span><input type="date" id="crTo" value="${esc(S.crTo || "")}"></label></div>` : ""}
+  <div class="grid"><div class="stat"><span>Complaints</span><b>${all.length}</b></div><div class="stat"><span>Resolved</span><b style="color:var(--grn)">${res.length}</b><em>${onTime} within ${target} days</em></div><div class="stat"><span>Still open</span><b style="color:${open.length ? "var(--red)" : "inherit"}">${open.length}</b></div><div class="stat"><span>Late (over ${target} days)</span><b style="color:${od.length ? "var(--amb)" : "inherit"}">${od.length}</b></div><div class="stat"><span>Average time to resolve</span><b>${fmtDays(avg)}</b></div><div class="stat"><span>Average first reply</span><b>${fmtDays(avgR)}</b><em>${all.length - replied.length} not replied</em></div></div>
+  ${Object.keys(by).length ? `<div class="card"><h2>Resolved by</h2><table class="tbl"><tr><th>Staff / admin</th><th>Resolved</th><th>Average time</th><th>On time</th></tr>${Object.entries(by).sort((a, b) => b[1].length - a[1].length).map(([k, l]) => { const t = l.filter(r => r.days != null); return `<tr><td>${esc(k)}</td><td>${l.length}</td><td>${fmtDays(t.length ? t.reduce((s, r) => s + r.days, 0) / t.length : null)}</td><td>${t.filter(r => r.days <= target).length} / ${t.length}</td></tr>`; }).join("")}</table></div>` : ""}
+  <div class="toolbar"><div class="chips">${[["all", "All"], ["open", "Open"], ["resolved", "Resolved"], ["overdue", "Late"]].map(([k, t]) => chip(k, "crf", f) + t + "</button>").join("")}</div><span class="sp"></span><button class="btn sm" data-a="crCsv">Download Excel (CSV)</button><button class="btn sm" data-a="crPrint">Print</button></div>
+  <div class="card" style="overflow-x:auto" id="crtable"><table class="tbl"><tr><th>Date</th><th>Plot</th><th>Complaint</th><th>Status</th><th>First reply</th><th>Resolved on</th><th>Took</th><th>By</th></tr>
+  ${rows.map(r => `<tr data-a="chat" data-id="${esc(r.h.id || r.m.hid)}" style="cursor:pointer"><td>${fmtAt(r.m.at)}</td><td><b>${esc(r.h.no)}</b><div class="muted" style="font-size:12px">${esc(r.h.owner || "")}</div></td><td style="min-width:180px">${esc((r.m.text || "(photo)").slice(0, 140))}</td><td>${r.resolved ? `<span class="badge b-paid">Resolved</span>` : `<span class="badge b-unpaid">Open · ${fmtDays(r.age)}</span>`}${r.overdue ? ` <span class="badge b-part">Late</span>` : ""}</td><td>${fmtDays(r.firstReply)}</td><td>${r.resolved && r.m.resolvedAt ? fmtAt(r.m.resolvedAt) : "—"}</td><td>${fmtDays(r.days)}</td><td>${esc(r.resolved ? (r.m.resolvedBy || "—") : "")}</td></tr>`).join("") || `<tr><td colspan="8" class="muted" style="text-align:center;padding:20px">No complaints in this period.</td></tr>`}</table></div>
+  <form data-f="crTarget" class="row" style="gap:8px;align-items:flex-end;margin-top:4px"><label class="f" style="margin:0;max-width:220px"><span>Target: resolve within (days)</span><input type="number" name="d" min="1" step="1" value="${target}"></label><button class="btn sm">Save</button></form>`;
+}
+function crCsv() {
+  const rows = crPeriod(complaintRows()), q = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+  const head = ["Date", "Plot", "Owner", "Complaint", "Status", "Late", "First reply (days)", "First reply by", "Resolved on", "Days to resolve", "Resolved by"];
+  const r2d = d => d == null ? "" : (Math.round(d * 10) / 10);
+  const body = rows.map(r => [fmtAt(r.m.at), r.h.no, r.h.owner, r.m.text || "", r.resolved ? "Resolved" : "Open", r.overdue ? "Yes" : "", r2d(r.firstReply), r.replyBy, r.resolved && r.m.resolvedAt ? fmtAt(r.m.resolvedAt) : "", r2d(r.days), r.resolved ? r.m.resolvedBy || "" : ""].map(q).join(","));
+  saveFile("Complaints-report-" + todayISO() + ".csv", new Blob(["﻿" + [head.map(q).join(",")].concat(body).join("\r\n")], { type: "text/csv" }));
+}
+function crPrint() {
+  const el = $("#crtable"); if (!el) return; const w = window.open("", "_blank"); if (!w) return toast("Allow pop-ups to print");
+  w.document.write(`<html><head><title>Complaints report</title><style>body{font:13px Arial;padding:16px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:5px;text-align:left;vertical-align:top}.badge{font-weight:bold}.muted{color:#666}</style></head><body><h2>${esc(st().name)} — Complaints report</h2><p>${esc($(".grid") ? $(".grid").innerText.replace(/\n+/g, " · ") : "")}</p>${el.innerHTML}<script>print()<\/script></body></html>`); w.document.close();
+}
+
+/* ---- RESIDENT portal ---- */
+function viewResident() {
+  const h = S.houses[0] || { no: S.me.hid }, s = st();
+  const months = billMonths().reverse();
+  const cur = months.map(m => S.bills[m].b[h.id]).find(b => b && !b.carried);
+  const curM = cur ? cur.month : null;
+  const pend = S.proofs.filter(p => p.status === "pending");
+  const bal = cur ? balance(cur) : 0;
+  return `<header class="appbar mob"><div class="t"><b>Plot ${esc(h.no)}</b><small>${esc(h.owner || s.name)}</small></div><button class="ibtn" data-a="myAccount" aria-label="Account">${icon("lock")}</button><button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button></header>
+  <main>
+  ${cur ? `<div class="card" style="border-color:${bal > 0 ? "#efc6c2" : "#bfe3cb"}"><div class="row"><span class="muted">${mLabel(curM)} bill</span><span class="sp"></span>${badge(status(cur))}</div>
+    <div style="font-size:34px;font-weight:800;margin:6px 0 2px;color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(Math.max(0, bal))}</div>
+    <div class="muted" style="margin-bottom:14px">${bal > 0 ? "Amount due · Due date " + fmtDate((S.bills[curM] || {}).dueDate) : "Nothing due. Thank you!"}</div>
+    <div class="actions">${bal > 0 && bOn("resident", "payNow") ? `<button class="btn pri" data-a="payNow">Pay now</button>` : ""}<button class="btn" data-a="rbill" data-m="${curM}">View bill</button></div></div>`
+  : `<div class="card"><h2>No bills yet</h2><p class="muted" style="margin:0">Your bills will appear here once the society issues them.</p></div>`}
+  ${pend.map(p => `<div class="info">Your payment of <b>${money(p.amount)}</b> (${fmtDate(p.date)}) is waiting for confirmation by the office.</div>`).join("")}
+  ${S.proofs.filter(p => p.status === "rejected").slice(0, 1).map(p => `<div class="err">Your payment of ${money(p.amount)} (${fmtDate(p.date)}) could not be confirmed${p.reviewNote ? ": " + esc(p.reviewNote) : ""}. Please contact the office.</div>`).join("")}
+  <div class="grid"><div class="stat"><span>Area</span><b>${esc(h.marla)} marla</b></div><div class="stat"><span>Street</span><b>${esc(h.street || "—")}</b></div></div>
+  <div class="card"><h2>Bill history</h2>${months.length ? `<div class="list" style="border:0">${months.map(m => { const b = S.bills[m].b[h.id]; return b ? `<div class="item" data-a="rbill" data-m="${m}"><div class="m"><b>${mLabel(m)}</b><small>${b.units} units · Paid ${money(b.paid)}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>` : ""; }).join("")}</div>` : `<p class="muted" style="margin:0">No bills yet.</p>`}</div>
+  ${S.proofs.length ? `<div class="card"><h2>My payments</h2>${S.proofs.map(p => `<div class="kv"><span>${fmtDate(p.date)} · ${esc(p.method || "")}${p.tid ? " · " + esc(p.tid) : ""}</span><b>${money(p.amount)} <span class="badge ${p.status === "approved" ? "b-paid" : p.status === "rejected" ? "b-unpaid" : "b-part"}">${p.status === "approved" ? "Confirmed" : p.status === "rejected" ? "Rejected" : "Pending"}</span></b></div>`).join("")}</div>` : ""}
+  <div class="card"><h2>Contact</h2><p class="muted" style="margin:0">${esc(s.name)}${s.phone ? " · " + esc(s.phone) : ""}</p></div>
+  </main>
+  <button class="fab" data-a="myInbox" aria-label="Inbox: chat and complaints">${icon("chat")}<span>Inbox</span>${unreadRes() ? `<span class="dot">${unreadRes()}</span>` : ""}</button>`;
+}
+function billPreview(m, bill) {
+  billCanvas(m, bill).then(c => { const el = $("#bprev"); if (el) el.innerHTML = `<img class="bimg" id="bimg" src="${c.toDataURL("image/jpeg", 0.85)}" alt="Bill" data-a="zoomImg">`; }).catch(e => { console.error(e); const el = $("#bprev"); if (el) el.textContent = "Could not draw the bill"; });
+}
+const bacts = list => { const b = list.filter(Boolean); return b.length ? `<div class="bacts">${b.join("")}</div>` : ""; };
+function residentBillModal(m) {
+  const h = S.houses[0]; const bill = S.bills[m] && S.bills[m].b[h.id]; if (!bill) return;
+  const pays = (bill.payments || []).map(p => `<tr><td>${fmtDate(p.date)}</td><td>${esc(p.method)}</td><td>${money(p.amt)}</td></tr>`).join("");
+  openModal(`<h3>${mLabel(m)} bill ${badge(status(bill))}<button class="x" data-a="close">×</button></h3>
+  <div class="bview" id="bprev" style="--bh:calc(92dvh - 170px)"><span class="muted">Preparing bill…</span></div>
+  ${bacts([!bill.carried && balance(bill) > 0 && bOn("resident", "payNow") && `<button class="btn sm pri" data-a="payNow">Pay now</button>`, bOn("resident", "print") && `<button class="btn sm" data-a="print1" data-m="${m}" data-id="${esc(h.id)}">Print</button>`, bOn("resident", "pdf") && `<button class="btn sm" data-a="pdf1" data-m="${m}" data-id="${esc(h.id)}">PDF</button>`, bOn("resident", "img") && `<button class="btn sm" data-a="img1" data-m="${m}" data-id="${esc(h.id)}">Image</button>`])}
+  ${bill.carried ? `<div class="info">This balance was carried into your ${mLabel(bill.carriedTo)} bill.</div>` : ""}
+  ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th></tr>${pays}</table>` : ""}`, true);
+  billPreview(m, bill);
+}
+function payNowModal() {
+  const h = S.houses[0], s = st();
+  const cur = billMonths().reverse().map(m => S.bills[m].b[h.id]).find(b => b && !b.carried);
+  if (!cur) return;
+  const lines = [];
+  if (s.jazzNumber) lines.push(["JazzCash number", s.jazzNumber], ["Account title", s.jazzTitle]);
+  if (s.bankName || s.bankAcc) lines.push(["Bank", s.bankName], ["Account title", s.bankTitle], ["Account number", s.bankAcc], ["IBAN", s.iban]);
+  openModal(`<h3>Pay your bill<button class="x" data-a="close">×</button></h3>
+  <div class="info">Amount due: <b>${money(balance(cur))}</b> · ${mLabel(cur.month)}</div>
+  <h3 style="font-size:15px">1. Send the payment</h3>
+  ${lines.filter(l => l[1]).map(([l, v]) => `<div class="kv"><span>${l}</span><b>${esc(v)}</b></div>`).join("") || `<p class="muted">Please contact the office for payment details.</p>`}
+  ${s.qr ? `<div style="text-align:center;margin:12px 0"><img src="${esc(s.qr)}" alt="QR code" style="width:220px;max-width:100%;border:1px solid var(--line);border-radius:12px"><div class="muted" style="font-size:13px">Scan to pay</div></div>` : ""}
+  <h3 style="font-size:15px;margin-top:16px">2. Tell us you've paid</h3>
+  <form data-f="proof" data-m="${cur.month}"><div class="f2">
+  <label class="f"><span>Amount paid (Rs)</span><input type="number" name="amount" value="${Math.max(0, Math.round(balance(cur)))}" min="1" required></label>
+  <label class="f"><span>Paid with</span><select name="method"><option>JazzCash</option><option>Bank transfer</option><option>Easypaisa</option><option>Other</option></select></label>
+  <label class="f"><span>Transaction ID (TID)</span><input type="text" name="tid" required></label>
+  <label class="f"><span>Date paid</span><input type="date" name="date" value="${todayISO()}"></label></div>
+  <label class="f"><span>Payment screenshot</span><input type="file" name="shot" accept="image/*"></label>
+  <label class="f"><span>Note (optional)</span><input type="text" name="note"></label>
+  <button class="btn pri block">Submit payment</button></form>`, true);
+}
+async function shrinkImage(file, mx = 1100, q = 0.72) {
+  const url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(file); });
+  const img = await loadImg(url); if (!img) return "";
+  const sc = Math.min(1, mx / Math.max(img.width, img.height)); const c = document.createElement("canvas"); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+  const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+  let d = c.toDataURL("image/jpeg", q); if (d.length > 700000) d = c.toDataURL("image/jpeg", 0.5);
+  return d;
+}
+function accountModal() {
+  openModal(`<h3>Change password<button class="x" data-a="close">×</button></h3><p class="muted">Logged in as <b>${esc(S.me.username)}</b></p>
+  <form data-f="chpw"><label class="f"><span>Current password</span><input type="password" name="old" autocomplete="current-password" required></label><label class="f"><span>New password (at least 6 characters)</span><input type="password" name="n1" autocomplete="new-password" required></label><label class="f"><span>Repeat new password</span><input type="password" name="n2" autocomplete="new-password" required></label><button class="btn pri block">Change password</button></form>`);
+}
+
+/* ============ modal ============ */
+function openModal(html, wide) { const sh = $("#sheet"); sh.className = "sheet" + (wide ? " wide" : ""); sh.innerHTML = html; $("#modal").classList.remove("hidden"); }
+function closeModal() { S.chat = null; $("#modal").classList.add("hidden"); $("#sheet").innerHTML = ""; }
+$("#modal").addEventListener("click", e => { if (e.target.id === "modal") closeModal(); });
+function ask(title, msg, okText = "Yes", danger) {
+  return new Promise(res => {
+    openModal(`<h3>${esc(title)}<button class="x" data-r="0">×</button></h3><p>${msg}</p><div class="row"><button class="btn ${danger ? "red" : "pri"}" data-r="1">${esc(okText)}</button><button class="btn" data-r="0">Cancel</button></div>`);
+    $("#sheet").onclick = e => { const b = e.target.closest("[data-r]"); if (!b) return; $("#sheet").onclick = null; closeModal(); res(b.dataset.r === "1"); };
+  });
+}
+
+/* ---- plot edit ---- */
+function houseModal(h) {
+  const isNew = !h; h = Object.assign({ id: "", no: "", street: "", code: "", owner: "", phone: "", phone2: "", email: "", marla: 5, meter: "", sold: true, opening: 0, prevBal: 0 }, h || {});
+  const hist = isNew ? "" : billMonths().reverse().filter(m => S.bills[m].b && S.bills[m].b[h.id]).map(m => { const b = S.bills[m].b[h.id]; return `<tr data-a="bill" data-m="${m}" data-id="${esc(h.id)}" style="cursor:pointer"><td>${mLabel(m)}</td><td>${b.units}</td><td>${money(b.total)}</td><td>${money(b.paid)}</td><td>${badge(status(b))}</td></tr>`; }).join("");
+  openModal(`<h3>${isNew ? "Add plot" : "Plot " + esc(h.no)}<button class="x" data-a="close">×</button></h3>
+  <form data-f="house" data-id="${esc(h.id)}"><div class="f2">
+  <label class="f"><span>Plot / house number</span><input type="text" name="no" value="${esc(h.no)}" required></label>
+  <label class="f"><span>Street #</span><input type="text" name="street" value="${esc(h.street)}"></label>
+  <label class="f"><span>Owner name</span><input type="text" name="owner" value="${esc(h.owner)}"></label>
+  <label class="f"><span>Area (marla)</span><input type="number" name="marla" value="${esc(h.marla)}" step="0.01" min="0"></label>
+  <label class="f"><span>Mobile (WhatsApp)</span><input type="tel" name="phone" value="${esc(h.phone)}" placeholder="03xx-xxxxxxx"></label>
+  <label class="f"><span>Mobile 2</span><input type="tel" name="phone2" value="${esc(h.phone2)}"></label>
+  <label class="f"><span>Email (bills are emailed here)</span><input type="email" name="email" value="${esc(h.email || "")}" placeholder="name@example.com" autocapitalize="none"></label>
+  <label class="f"><span>Subscriber code</span><input type="text" name="code" value="${esc(h.code)}"></label>
+  <label class="f"><span>Water meter number</span><input type="text" name="meter" value="${esc(h.meter)}"></label>
+  <label class="f"><span>Opening meter reading</span><input type="number" name="opening" value="${esc(h.opening)}" step="0.01"></label>
+  <label class="f"><span>Opening balance (added to the first bill)</span><input type="number" name="prevBal" value="${esc(h.prevBal)}" step="1"></label>
+  </div><label class="toggle" style="margin-bottom:14px"><input type="checkbox" name="sold" ${h.sold ? "checked" : ""}><span><b>Sold</b><small>Bills are generated only for sold plots.</small></span></label>
+  <div class="row"><button class="btn pri">Save</button>${isNew ? "" : `<span class="sp"></span><button type="button" class="btn red" data-a="delHouse" data-id="${esc(h.id)}">Delete</button>`}</div></form>
+  ${hist ? `<h3 style="margin-top:22px">Bill history</h3><table class="tbl"><tr><th>Month</th><th>Units</th><th>Bill</th><th>Paid</th><th></th></tr>${hist}</table>` : ""}`);
+}
+async function saveHouse(form) {
+  const fd = new FormData(form); const id = form.dataset.id;
+  const no = String(fd.get("no") || "").trim(); if (!no) return toast("Enter a plot number");
+  const list = S.houses.slice();
+  if (list.some(x => String(x.no).toLowerCase() === no.toLowerCase() && x.id !== id)) return toast("This plot number already exists");
+  const rec = { no, street: String(fd.get("street") || "").trim(), code: String(fd.get("code") || "").trim(), phone2: String(fd.get("phone2") || "").trim(), email: String(fd.get("email") || "").trim(), prevBal: num(fd.get("prevBal")), owner: String(fd.get("owner") || "").trim(), phone: String(fd.get("phone") || "").trim(), marla: num(fd.get("marla")), meter: String(fd.get("meter") || "").trim(), opening: num(fd.get("opening")), sold: !!fd.get("sold") };
+  if (id) { const i = list.findIndex(x => x.id === id); list[i] = Object.assign({}, list[i], rec); }
+  else { let nid = hidFor(no); while (list.some(x => x.id === nid)) nid += "_"; list.push(Object.assign({ id: nid }, rec)); }
+  if (await write(() => D.saveHouses(list))) { closeModal(); toast("Saved"); }
+}
+
+/* ---- reading entry ---- */
+function readingModal(hid) {
+  const h = S.houses.find(x => x.id === hid); if (!h) return;
+  const m = S.readMonth, prev = prevReading(h, m), cur = readingOf(hid, m), sp = showPrev();
+  const e = S.readings[m] && S.readings[m].r && S.readings[m].r[hid];
+  const sup = isSuper(), locked = cur != null && !sup, fix = cur != null && sup, billed = !!(S.bills[m] && S.bills[m].b && S.bills[m].b[hid]);
+  const was = e && e.fixed ? ` <span class="muted">(corrected by admin, was ${esc(e.old)})</span>` : "";
+  openModal(`<h3><span class="muted" style="font-weight:500;font-size:14px">${mLabel(m)}</span><button class="x" data-a="close">×</button></h3>
+  <div class="rd-plot">Plot ${esc(h.no)}</div>
+  <div class="rd-sub">${showOwner() && h.owner ? esc(h.owner) : ""}${h.street ? (showOwner() && h.owner ? " · " : "") + "Street " + esc(h.street) : ""}${h.meter ? " · Meter " + esc(h.meter) : ""}</div>
+  ${sp ? `<div class="prevbox"><div><span>Previous reading</span><b>${prev}</b></div><div><span>Units</span><b id="runits">${cur != null ? r2(cur - prev) : "—"}</b></div></div>` : ""}
+  ${locked ? `<div class="info">Reading entered: <b>${cur}</b>${e && e.at ? " on " + fmtDate(e.at.slice(0, 10)) : ""}${was}.<br>If it is wrong, ask the admin to correct it.</div>
+  <div class="row"><button class="btn pri" data-a="readNext" data-id="${esc(hid)}" style="flex:2">Next plot</button><button class="btn" data-a="close" style="flex:1">Close</button></div>`
+  : `${fix ? `<div class="note">Current reading: <b>${cur}</b>${e && e.at ? " · " + fmtDate(e.at.slice(0, 10)) + (e.by === "reader" ? " by the reader" : "") : ""}${was}.<br>Enter the correct reading below.${billed ? ` Bills for ${mLabel(m)} are already made, so you will need to regenerate them.` : ""}</div>` : ""}
+  <form data-f="reading" data-id="${esc(hid)}">
+  <label class="f"><span>${fix ? "Correct meter reading" : "New meter reading"}</span><input id="rv" class="readin" type="number" inputmode="decimal" step="0.01" name="v" value="${cur != null ? cur : ""}" placeholder="0"></label>
+  ${fix ? `<label class="f"><span>Reason (optional)</span><input type="text" name="note" placeholder="e.g. reader typed 1520 instead of 1250"></label>` : ""}
+  <div id="rinfo"></div>
+  <div class="row">${fix ? `<button class="btn pri" name="go" value="close" style="flex:2">Save correction</button>` : `<button class="btn pri" name="go" value="next" style="flex:2">Save &amp; next plot</button><button class="btn" name="go" value="close" style="flex:1">Save</button>`}${sup && cur != null ? `<button type="button" class="btn red" data-a="delReading" data-id="${esc(hid)}">Delete</button>` : ""}</div></form>`}`);
+  if (locked) return;
+  const inp = $("#rv"), info = $("#rinfo"), uel = $("#runits");
+  const upd = () => {
+    info.className = ""; info.textContent = ""; if (uel) uel.textContent = "—";
+    if (inp.value === "") return;
+    const u = r2(num(inp.value) - prev); if (uel) uel.textContent = u;
+    if (u < 0) { info.className = "err"; info.textContent = sp ? "The new reading is lower than the previous reading (" + prev + "). Please check the meter again." : "This reading looks lower than the last recorded reading. Please check the meter again."; }
+    else if (u > 500) { info.className = "note"; info.textContent = "This is unusually high. Please double-check the reading."; }
+  };
+  inp.addEventListener("input", upd); upd(); setTimeout(() => inp.focus(), 60);
+}
+async function saveReading(form, go) {
+  const hid = form.dataset.id, m = S.readMonth; const raw = form.v.value;
+  if (raw === "" || !isFinite(+raw)) return toast("Enter the reading");
+  const v = num(raw); const h = S.houses.find(x => x.id === hid); const prev = prevReading(h, m);
+  if (v < prev && !form.dataset.ok) { form.dataset.ok = "1"; toast("The reading is lower than expected. Tap Save again if it is correct."); return; }
+  const cur = readingOf(hid, m), old = S.readings[m] && S.readings[m].r && S.readings[m].r[hid];
+  if (cur != null && !isSuper()) { toast("Only the admin can change a reading"); return; }
+  if (cur != null && v === cur) { closeModal(); return; }
+  const entry = { v, at: new Date().toISOString(), by: S.mode === "reader" && !isSuper() ? "reader" : "admin" };
+  if (cur != null) Object.assign(entry, { fixed: true, old: old && old.fixed ? old.old : cur, oldBy: (old && old.by) || "", note: String((form.note && form.note.value) || "").trim() });
+  const ok = await write(() => D.saveReading(m, hid, entry));
+  if (!ok) return;
+  if (cur != null) {
+    const billed = S.bills[m] && S.bills[m].b && S.bills[m].b[hid], latest = m === latestBillMonth();
+    if (billed) { openModal(`<h3>Reading corrected<button class="x" data-a="close">×</button></h3><p>Plot <b>${esc(h.no)}</b>: ${cur} → <b>${v}</b>.</p>${latest ? `<p>Bills for <b>${mLabel(m)}</b> were already made. Regenerate them so the bill uses the corrected reading. Payments and fines are kept.</p><div class="row"><button class="btn pri" data-a="regenFor" data-m="${m}">Regenerate ${mLabel(m)} bills</button><button class="btn" data-a="close">Later</button></div>` : `<p>The ${mLabel(m)} bills are already closed, so they stay as they are. The corrected reading will be used as the "previous reading" for the next month.</p><button class="btn pri block" data-a="close">OK</button>`}`); return; }
+    toast("Plot " + h.no + ": reading corrected to " + v); closeModal(); return;
+  }
+  toast("Plot " + h.no + ": " + v + " saved");
+  if (go === "next") {
+    const sold = soldHouses(); const i = sold.findIndex(x => x.id === hid);
+    const nxt = sold.slice(i + 1).concat(sold.slice(0, i)).find(x => x.id !== hid && readingOf(x.id, m) == null);
+    if (nxt) { readingModal(nxt.id); return; }
+    toast("All readings are done ✓");
+  }
+  closeModal();
+}
+
+/* ---- bills ---- */
+async function generateBills(m, dueDate) {
+  const s = st(); const sold = soldHouses();
+  const months = billMonths(); if (months.some(x => x > m)) return toast("Bills for a later month already exist");
+  const prevM = months.filter(x => x < m).pop(); const prev = prevM ? S.bills[prevM] : null;
+  const ex = S.bills[m];
+  const b = {};
+  sold.forEach(h => {
+    const e = ex && ex.b && ex.b[h.id]; const pb = prev && prev.b && prev.b[h.id];
+    const hadBill = months.some(mm => mm < m && S.bills[mm].b && S.bills[mm].b[h.id]);
+    const arrears = pb ? balance(pb) : (hadBill ? 0 : num(h.prevBal));
+    const prevR = prevReading(h, m), cur = readingOf(h.id, m), noReading = cur == null;
+    const units = noReading ? 0 : Math.max(0, r2(cur - prevR));
+    const marlaRate = e ? num(e.marlaRate) : num(s.marlaRate), unitRate = e ? num(e.unitRate) : num(s.unitRate);
+    const marlaCharge = r2(num(h.marla) * marlaRate), water = r2(units * unitRate), fine = e ? num(e.fine) : 0;
+    b[h.id] = { hid: h.id, no: h.no, street: h.street || "", code: h.code || "", owner: h.owner || "", phone: h.phone || "", marla: num(h.marla), meter: h.meter || "", marlaRate, unitRate, marlaCharge, prev: prevR, curr: noReading ? null : cur, units, water, arrears, fine, total: r2(marlaCharge + water + arrears + fine), paid: e ? num(e.paid) : 0, payments: e ? (e.payments || []) : [], noReading };
+  });
+  const ok = await write(async () => {
+    await D.saveBillRun(m, { month: m, generatedAt: (ex && ex.generatedAt) || new Date().toISOString(), dueDate }, b, prevM, prev ? Object.keys(b).filter(id => prev.b[id]) : []);
+  });
+  if (ok) { S.billMonth = m; toast(Object.keys(b).length + " bills generated"); }
+}
+function acts(list, style) { const b = list.filter(Boolean); return b.length ? `<div class="actions" style="${style}">${b.join("")}</div>` : ""; }
+function billModal(m, hid) {
+  const bill = S.bills[m] && S.bills[m].b && S.bills[m].b[hid]; if (!bill) return;
+  const s = status(bill), bal = balance(bill), isLatest = m === latestBillMonth();
+  const pays = (bill.payments || []).map((p, i) => `<tr><td>${fmtDate(p.date)}</td><td>${esc(p.method)}</td><td>${money(p.amt)}</td><td>${esc(p.note || "")}</td><td>${isLatest && !bill.carried && bOn("admin", "delPay") ? `<button class="btn sm red" data-a="delPay" data-m="${m}" data-id="${esc(hid)}" data-i="${i}">×</button>` : ""}</td></tr>`).join("");
+  const open = isLatest && !bill.carried;
+  const btns = [open && bOn("admin", "pay") && `<button class="btn sm pri" data-a="pay" data-m="${m}" data-id="${esc(hid)}">Record payment</button>`, open && bOn("admin", "fine") && `<button class="btn sm" data-a="fine" data-m="${m}" data-id="${esc(hid)}">Add fine</button>`, open && num(bill.fine) && bOn("admin", "unfine") && `<button class="btn sm red" data-a="unfine" data-m="${m}" data-id="${esc(hid)}">Remove fine</button>`,
+    bOn("admin", "wa") && `<button class="btn sm grn" data-a="waOne" data-m="${m}" data-id="${esc(hid)}">WhatsApp</button>`, bOn("admin", "email") && `<button class="btn sm" data-a="email1" data-m="${m}" data-id="${esc(hid)}" title="${esc(emailOf(hid) || "No email address")}">Email${bill.emailSentAt ? " ✓" : ""}</button>`, bOn("admin", "print") && `<button class="btn sm" data-a="print1" data-m="${m}" data-id="${esc(hid)}">Print</button>`, bOn("admin", "pdf") && `<button class="btn sm" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">PDF</button>`, bOn("admin", "img") && `<button class="btn sm" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Image</button>`];
+  const rows = Math.ceil(btns.filter(Boolean).length / 4);
+  openModal(`<h3>Plot ${esc(bill.no)} · ${mLabel(m)} ${badge(s)}<button class="x" data-a="close">×</button></h3>
+  <div class="bview" id="bprev" style="--bh:calc(92dvh - ${130 + rows * 42}px)"><span class="muted">Preparing bill…</span></div>
+  ${bacts(btns)}
+  ${bill.carried ? `<div class="info">This balance has been carried into the ${mLabel(bill.carriedTo)} bill. Record payments there. <button class="btn sm" data-a="bill" data-m="${bill.carriedTo}" data-id="${esc(hid)}">Open ${mLabel(bill.carriedTo)} bill</button></div>` : ""}
+  ${bill.phone ? "" : `<p class="muted" style="font-size:13px;margin:0 0 12px"><b>No mobile number is saved for this plot.</b></p>`}
+  ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th><th>Note</th><th></th></tr>${pays}</table>` : ""}`, true);
+  billPreview(m, bill);
+}
+function waLink(m, b) {
+  const s = st(), doc = S.bills[m], bal = balance(b);
+  let t = `Dear ${b.owner || "Resident"},\n${s.name} — ${mLabel(m)} bill for Plot ${b.no}:\n`;
+  t += `Maintenance charges: Rs ${Math.round(b.marlaCharge)}\nWater (${b.units} units): Rs ${Math.round(b.water)}\n`;
+  if (num(b.arrears)) t += `Previous balance: Rs ${Math.round(b.arrears)}\n`;
+  if (num(b.fine)) t += `Late fine: Rs ${Math.round(b.fine)}\n`;
+  t += `Total payable: Rs ${Math.round(b.total)}\n`; if (num(b.paid)) t += `Paid: Rs ${Math.round(b.paid)}\nBalance due: Rs ${Math.round(bal)}\n`;
+  t += `Due date: ${fmtDate(doc.dueDate)}\n`;
+  if (s.jazzNumber) t += `\nJazzCash: ${s.jazzNumber}${s.jazzTitle ? " (" + s.jazzTitle + ")" : ""}`;
+  if (s.bankAcc || s.iban) t += `\nBank: ${s.bankName}${s.bankTitle ? " - " + s.bankTitle : ""}\nAccount: ${s.bankAcc}${s.iban ? "\nIBAN: " + s.iban : ""}`;
+  t += `\n\nAfter paying, please send the receipt screenshot. Thank you.`;
+  const p = waPhone(b.phone);
+  return (p ? "https://wa.me/" + p : "https://wa.me/") + "?text=" + encodeURIComponent(t);
+}
+function payModal(m, hid) {
+  const b = S.bills[m].b[hid];
+  openModal(`<h3>Record payment · Plot ${esc(b.no)}<button class="x" data-a="close">×</button></h3><p class="muted">Balance due: <b>${money(balance(b))}</b></p>
+  <form data-f="pay" data-m="${m}" data-id="${esc(hid)}"><div class="f2"><label class="f"><span>Amount (Rs)</span><input type="number" name="amt" value="${Math.max(0, Math.round(balance(b)))}" min="1" step="1" required></label>
+  <label class="f"><span>Date</span><input type="date" name="date" value="${todayISO()}"></label>
+  <label class="f"><span>Method</span><select name="method"><option>Cash</option><option>JazzCash</option><option>Bank</option><option>Easypaisa</option></select></label>
+  <label class="f"><span>Note / transaction ID</span><input type="text" name="note"></label></div>
+  <button class="btn pri block">Save payment</button></form>`);
+}
+async function savePay(form) {
+  const m = form.dataset.m, hid = form.dataset.id, b = S.bills[m].b[hid]; const fd = new FormData(form);
+  const amt = num(fd.get("amt")); if (amt <= 0) return toast("Enter an amount");
+  const payments = (b.payments || []).concat([{ amt, date: fd.get("date") || todayISO(), method: fd.get("method"), note: String(fd.get("note") || "").trim(), at: new Date().toISOString() }]);
+  const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0));
+  if (await write(() => D.updateBill(m, hid, { payments, paid }))) { toast("Payment recorded"); setTimeout(() => billModal(m, hid), 150); }
+}
+function fineModal(m, hid) {
+  const b = S.bills[m].b[hid];
+  openModal(`<h3>Add fine · Plot ${esc(b.no)}<button class="x" data-a="close">×</button></h3><form data-f="fine" data-m="${m}" data-id="${esc(hid)}"><label class="f"><span>Fine amount (Rs) — current fine: ${money(b.fine)}</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" step="1" required></label><button class="btn pri block">Add fine</button></form>`);
+}
+async function setFine(m, hid, fine) {
+  const b = S.bills[m].b[hid]; fine = Math.max(0, r2(fine));
+  const total = r2(num(b.total) - num(b.fine) + fine);
+  return write(() => D.updateBill(m, hid, { fine, total }));
+}
+
+/* ============ bill canvas (English) ============ */
+const LAT = 'Inter,Arial,"Helvetica Neue",sans-serif';
+let fontP = null;
+function fontsReady() { if (!fontP) fontP = Promise.race([Promise.all([document.fonts.load('400 30px Inter'), document.fonts.load('700 30px Inter')]).catch(() => { }), new Promise(r => setTimeout(r, 4000))]); return fontP; }
+const imgCache = {};
+function loadImg(src) { if (!src) return Promise.resolve(null); if (!imgCache[src]) imgCache[src] = new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; }); return imgCache[src]; }
+async function billCanvas(m, b) {
+  await fontsReady();
+  const s = st(), doc = S.bills[m];
+  const W = 1240, H = 1754, c = document.createElement("canvas"); c.width = W; c.height = H;
+  const x = c.getContext("2d"); x.textBaseline = "middle";
+  const TV = themeVars(themeColor()), P = TV.pri, R = W - 70, L = 70;
+  x.fillStyle = "#fff"; x.fillRect(0, 0, W, H);
+  const tx = (t, px, y, size, o = {}) => { x.save(); x.textAlign = o.align || "left"; x.font = (o.bold ? "700 " : "400 ") + size + "px " + LAT; x.fillStyle = o.color || "#16201c"; x.fillText(String(t), px, y); const w = x.measureText(String(t)).width; x.restore(); return w; };
+  const rs = n => (n < 0 ? "- " : "") + "Rs " + Math.abs(Math.round(n) || 0).toLocaleString("en-PK");
+  // header
+  x.fillStyle = P; x.fillRect(0, 0, W, 210);
+  tx(s.name, L, 78, 56, { bold: true, color: "#fff" });
+  tx("Water & Maintenance Bill", L, 140, 30, { color: TV.soft });
+  if (s.address) tx(s.address, L, 182, 22, { color: TV.soft2 });
+  tx(mLabel(m).toUpperCase(), R, 78, 40, { bold: true, color: "#fff", align: "right" });
+  tx("Billing month", R, 128, 22, { color: TV.soft2, align: "right" });
+  // info box
+  let y = 250; x.strokeStyle = "#d5dedb"; x.lineWidth = 2; x.strokeRect(L, y, W - 2 * L, 290);
+  const kv = (label, val, left, yy) => { tx(label, left, yy, 24, { color: "#66736e" }); tx(String(val), left, yy + 34, 30, { bold: true }); };
+  const c1 = L + 30, c2 = L + 30 + (W - 2 * L) / 3, c3 = L + 30 + 2 * (W - 2 * L) / 3;
+  kv("Plot No.", b.no, c1, y + 40); kv("Street No.", b.street || "-", c2, y + 40); kv("Area", b.marla + " marla", c3, y + 40);
+  kv("Owner", b.owner || "-", c1, y + 130); kv("Subscriber Code", b.code || "-", c2, y + 130); kv("Meter No.", b.meter || "-", c3, y + 130);
+  kv("Issue Date", fmtDate((doc.generatedAt || "").slice(0, 10)), c1, y + 220); kv("Due Date", fmtDate(doc.dueDate), c2, y + 220); kv("Bill Status", status(b).t, c3, y + 220);
+  // table
+  y = 580;
+  x.fillStyle = P; x.fillRect(L, y, W - 2 * L, 66);
+  tx("Description", L + 25, y + 34, 28, { bold: true, color: "#fff" }); tx("Amount", R - 25, y + 34, 28, { bold: true, color: "#fff", align: "right" });
+  y += 66;
+  const line = () => { x.strokeStyle = "#e2e8e6"; x.lineWidth = 1.5; x.beginPath(); x.moveTo(L, y); x.lineTo(W - L, y); x.stroke(); };
+  const row = (label, amt, o = {}) => {
+    const h = o.h || 68; if (o.bg) { x.fillStyle = o.bg; x.fillRect(L, y, W - 2 * L, h); }
+    const w = tx(label, L + 25, y + h / 2, o.size || 28, { bold: o.bold, color: o.color });
+    if (o.detail) tx(o.detail, L + 25 + w + 14, y + h / 2, 23, { color: "#66736e" });
+    if (amt !== null && amt !== undefined) tx(rs(amt), R - 25, y + h / 2, o.size || 28, { bold: true, color: o.color, align: "right" });
+    y += h; line();
+  };
+  row("Maintenance charges", b.marlaCharge, { detail: "(" + b.marla + " marla × Rs " + b.marlaRate + ")" });
+  row("Water charges", b.water, { detail: b.noReading ? "" : "(" + b.units + " units × Rs " + b.unitRate + ")" });
+  x.fillStyle = "#f6f9f8"; x.fillRect(L, y, W - 2 * L, 60);
+  if (b.noReading) tx("No meter reading this month — the units will be billed next month.", L + 25, y + 30, 22, { color: "#8a5a00" });
+  else { let px = L + 25; [["Previous reading", b.prev], ["Current reading", b.curr], ["Units used", b.units]].forEach(([l, v]) => { const w = tx(l + ":", px, y + 30, 22, { color: "#66736e" }); const w2 = tx(v, px + w + 10, y + 30, 23, { bold: true }); px += w + w2 + 60; }); }
+  y += 60; line();
+  const arr = num(b.arrears);
+  row(arr < 0 ? "Advance payment (deducted)" : "Previous balance (arrears)", arr);
+  row("Late fine", num(b.fine));
+  row("Total amount payable", b.total, { bg: TV.pri2, bold: true, size: 33, h: 80, color: P });
+  if (num(b.paid) > 0) { row("Amount paid", b.paid, { color: "#1b7a3d" }); row("Balance due", balance(b), { bold: true, color: balance(b) > 0 ? "#b3261e" : "#1b7a3d" }); }
+  // due
+  y += 24;
+  x.fillStyle = "#fff3dc"; x.fillRect(L, y, W - 2 * L, 76);
+  const w = tx("Due date:", L + 25, y + 38, 30, { bold: true, color: "#7a4500" }); tx(fmtDate(doc.dueDate), L + 25 + w + 14, y + 38, 30, { bold: true, color: "#7a4500" });
+  tx("A late fine may apply after the due date.", R - 25, y + 38, 22, { color: "#7a4500", align: "right" });
+  y += 108;
+  // payment section
+  tx("How to pay", L, y + 16, 32, { bold: true, color: P }); y += 64;
+  const qr = await loadImg(s.qr); const qs = 270;
+  const lines = [];
+  if (s.jazzNumber) { lines.push(["JazzCash number", s.jazzNumber]); if (s.jazzTitle) lines.push(["Account title", s.jazzTitle]); }
+  if (s.bankName || s.bankAcc) { lines.push(["Bank", s.bankName || "-"]); if (s.bankTitle) lines.push(["Account title", s.bankTitle]); if (s.bankAcc) lines.push(["Account number", s.bankAcc]); if (s.iban) lines.push(["IBAN", s.iban]); }
+  if (!lines.length) lines.push(["Contact", s.phone || "-"]);
+  let ly = y + 8; lines.forEach(([l, v]) => { tx(l + ":", L, ly, 24, { color: "#66736e" }); tx(String(v), L + 230, ly, 27, { bold: true }); ly += 48; });
+  if (qr) { const sc = Math.min(qs / qr.width, qs / qr.height); const dw = qr.width * sc, dh = qr.height * sc, qx = R - qs; x.drawImage(qr, qx + (qs - dw) / 2, y - 14 + (qs - dh) / 2, dw, dh); x.strokeStyle = "#d5dedb"; x.strokeRect(qx - 6, y - 20, qs + 12, qs + 12); tx("Scan to pay", qx + qs / 2, y + qs + 24, 22, { color: "#66736e", align: "center" }); }
+  // paid stamp
+  if (balance(b) <= 0) { x.save(); x.translate(700, 908); x.rotate(-0.18); x.strokeStyle = "rgba(27,122,61,.7)"; x.lineWidth = 5; x.strokeRect(-105, -40, 210, 80); tx("PAID", 0, 2, 44, { bold: true, color: "rgba(27,122,61,.8)", align: "center" }); x.restore(); }
+  // footer
+  x.fillStyle = "#f1f5f4"; x.fillRect(0, H - 100, W, 100);
+  tx("After paying, please send the receipt or a screenshot on WhatsApp" + (s.phone ? ": " + s.phone : "."), W / 2, H - 50, 24, { color: "#3b4a45", align: "center" });
+  return c;
+}
+function canvasJpeg(c) { return new Promise(r => c.toBlob(bl => bl.arrayBuffer().then(ab => r({ bytes: new Uint8Array(ab), w: c.width, h: c.height })), "image/jpeg", 0.85)); }
+function makePdf(imgs) {
+  const enc = new TextEncoder(); const parts = []; let len = 0; const offs = [];
+  const push = d => { const u = typeof d === "string" ? enc.encode(d) : d; parts.push(u); len += u.length; };
+  push("%PDF-1.4\n%âãÏÓ\n");
+  const obj = (id, body) => { offs[id] = len; push(id + " 0 obj\n" + body + "\nendobj\n"); };
+  const n = imgs.length;
+  obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
+  obj(2, "<< /Type /Pages /Kids [" + imgs.map((_, i) => (3 + 3 * i) + " 0 R").join(" ") + "] /Count " + n + " >>");
+  imgs.forEach((im, i) => {
+    const pw = 595.28, ph = pw * im.h / im.w, p = 3 + 3 * i;
+    obj(p, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw.toFixed(2)} ${ph.toFixed(2)}] /Resources << /XObject << /Im${i} ${p + 2} 0 R >> >> /Contents ${p + 1} 0 R >>`);
+    const cs = `q ${pw.toFixed(2)} 0 0 ${ph.toFixed(2)} 0 0 cm /Im${i} Do Q`;
+    obj(p + 1, `<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`);
+    offs[p + 2] = len; push(`${p + 2} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`); push(im.bytes); push("\nendstream\nendobj\n");
+  });
+  const total = 3 + 3 * n, xref = len;
+  let t = "xref\n0 " + total + "\n0000000000 65535 f \n"; for (let i = 1; i < total; i++) t += String(offs[i]).padStart(10, "0") + " 00000 n \n";
+  push(t); push("trailer\n<< /Size " + total + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF\n");
+  return new Blob(parts, { type: "application/pdf" });
+}
+
+async function saveFile(name, blob) {
+  const b = blob instanceof Blob ? blob : new Blob([blob]);
+  const url = URL.createObjectURL(b); const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000); toast("Downloaded " + name);
+}
+async function pdfFor(m, list, name) {
+  if (!list.length) return toast("No bills to export");
+  openModal(`<h3>Creating PDF…</h3><div class="bar"><i id="pbar" style="width:0"></i></div><p class="muted" id="ptxt">0 / ${list.length}</p>`);
+  const imgs = [];
+  for (let i = 0; i < list.length; i++) { const c = await billCanvas(m, list[i]); imgs.push(await canvasJpeg(c)); const pb = $("#pbar"); if (pb) { pb.style.width = ((i + 1) / list.length * 100) + "%"; $("#ptxt").textContent = (i + 1) + " / " + list.length; } }
+  const blob = makePdf(imgs);
+  openModal(`<h3>PDF ready<button class="x" data-a="close">×</button></h3><p>${list.length} bills · ${(blob.size / 1048576).toFixed(1)} MB</p><button class="btn pri block" id="pdfsave">Download</button>`);
+  $("#pdfsave").onclick = () => saveFile(name, blob);
+}
+
+/* ============ Email (through the owner's own Gmail, via a Google Apps Script web app) ============ */
+const MAILDEF = { url: "", key: "", name: "", subject: "{society} — {month} bill, Plot {plot}", body: "Dear {owner},\n\nPlease find attached your {month} water & maintenance bill for Plot {plot}.\n\nTotal payable: {total}\nBalance due: {balance}\nDue date: {due}\n\nRegards,\n{society}" };
+const mcfg = () => Object.assign({}, MAILDEF, S.mail || {});
+const emailOf = hid => { const h = S.houses.find(x => x.id === hid); return h && h.email ? String(h.email).trim() : ""; };
+const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || "");
+function fillTpl(t, m, b) { const s = st(); const v = { society: s.name, owner: b.owner || "Resident", plot: b.no, month: mLabel(m), total: money(b.total), balance: money(Math.max(0, balance(b))), due: fmtDate((S.bills[m] || {}).dueDate) }; return String(t).replace(/\{(\w+)\}/g, (x, k) => v[k] != null ? v[k] : x); }
+function scriptCode(key) {
+  return `// Royal Garden — send bills from your Gmail
+const KEY = '${key}';
+function doPost(e) {
+  try {
+    const d = JSON.parse(e.postData.contents);
+    if (d.key !== KEY) return out({ ok: false, error: 'Wrong key' });
+    if (d.test) return out({ ok: true, remaining: MailApp.getRemainingDailyQuota() });
+    const att = d.file ? [Utilities.newBlob(Utilities.base64Decode(d.file), d.mime || 'application/pdf', d.filename || 'bill.pdf')] : [];
+    MailApp.sendEmail({ to: d.to, subject: d.subject, body: d.body, name: d.name || 'Royal Garden', attachments: att });
+    return out({ ok: true, remaining: MailApp.getRemainingDailyQuota() });
+  } catch (err) { return out({ ok: false, error: String(err) }); }
+}
+function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }`;
+}
+function genKey() { const a = new Uint8Array(18); crypto.getRandomValues(a); return Array.from(a, x => x.toString(16).padStart(2, "0")).join(""); }
+async function mailPost(payload) {
+  const c = mcfg(); if (!c.url || !c.key) throw new Error("Email is not set up yet (Settings → Email)");
+  const r = await fetch(c.url, { method: "POST", body: JSON.stringify(Object.assign({ key: c.key }, payload)) });
+  let j; try { j = await r.json(); } catch (e) { throw new Error("The email script did not answer. Check the script link in Settings → Email."); }
+  if (!j.ok) throw new Error(j.error || "Email failed"); return j;
+}
+const b64 = blob => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(",")[1]); fr.readAsDataURL(blob); });
+async function emailBill(m, b) {
+  const to = emailOf(b.hid); if (!validEmail(to)) throw new Error("No valid email address for plot " + b.no);
+  const c = mcfg(), pdf = makePdf([await canvasJpeg(await billCanvas(m, b))]);
+  const j = await mailPost({ to, subject: fillTpl(c.subject, m, b), body: fillTpl(c.body, m, b), name: c.name || st().name, file: await b64(pdf), mime: "application/pdf", filename: "Bill-" + b.no + "-" + m + ".pdf" });
+  await D.updateBill(m, b.hid, { emailSentAt: new Date().toISOString() });
+  return j;
+}
+function vEmailSettings() {
+  const c = mcfg(), ready = c.url && c.key;
+  return `<div class="card"><h2>Email ${ready ? `<span class="badge b-paid">Connected</span>` : `<span class="badge b-no">Not set up</span>`}</h2>
+  <p class="muted" style="margin:0 0 10px;font-size:13px">Bills are emailed as a PDF from your own Gmail. A free Gmail account can send to about 100 people a day. Only admins can see this section.</p>
+  <form data-f="mailcfg"><div class="f2">
+  <label class="f"><span>Sender name</span><input type="text" name="name" value="${esc(c.name || st().name)}"></label>
+  <label class="f"><span>Subject</span><input type="text" name="subject" value="${esc(c.subject)}"></label></div>
+  <label class="f"><span>Message (you can use {owner} {plot} {month} {total} {balance} {due} {society})</span><textarea name="body" rows="7">${esc(c.body)}</textarea></label>
+  <label class="f"><span>Script link (Web app URL)</span><input type="url" name="url" value="${esc(c.url)}" placeholder="https://script.google.com/macros/s/…/exec"></label>
+  <input type="hidden" name="key" value="${esc(c.key || "")}">
+  <div class="row" style="gap:8px;margin-bottom:12px"><button class="btn pri">Save email settings</button>${ready ? `<button type="button" class="btn" data-a="mailTest">Check connection</button>` : ""}<button type="button" class="btn" data-a="mailSetup">${ready ? "Setup steps" : "How to set up (one time)"}</button></div></form></div>`;
+}
+function mailSetupModal() {
+  let c = mcfg(); if (!c.key) { c.key = genKey(); S.mail = Object.assign({}, S.mail || {}, { key: c.key }); write(() => D.saveMail(Object.assign({}, mcfg()))); }
+  openModal(`<h3>Set up email (one time)<button class="x" data-a="close">×</button></h3>
+  <ol class="steps"><li>Open <a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener"><b>script.google.com</b> → New project</a> while signed in to the Gmail you want to send from.</li>
+  <li>Delete what is in the editor and paste the code below (<b>Copy code</b>). Click <b>Save</b>.</li>
+  <li>Click <b>Deploy → New deployment</b> → gear icon → <b>Web app</b>. Set <b>Execute as: Me</b> and <b>Who has access: Anyone</b>. Click <b>Deploy</b>.</li>
+  <li>Click <b>Authorize access</b>, choose your Gmail, then <b>Advanced → Go to project (unsafe) → Allow</b>. (It says "unsafe" only because you wrote the script yourself.)</li>
+  <li>Copy the <b>Web app URL</b> (ends with <code>/exec</code>), paste it in <b>Settings → Email → Script link</b>, and click <b>Save email settings</b>, then <b>Check connection</b>.</li></ol>
+  <div class="codebox" id="mcode">${esc(scriptCode(c.key))}</div>
+  <div class="row" style="gap:8px"><button class="btn pri" data-a="mailCopy">Copy code</button><span class="muted" style="font-size:13px">The code has a secret key so only this app can use your script. Don't share it.</span></div>`, true);
+}
+function emailPickModal() {
+  const m = S.billMonth, rows = Object.values(S.bills[m].b);
+  const withE = rows.filter(b => validEmail(emailOf(b.hid))), nSent = withE.filter(b => b.emailSentAt).length, nUnpaid = withE.filter(b => balance(b) > 0).length;
+  if (!mcfg().url) { openModal(`<h3>Email is not set up<button class="x" data-a="close">×</button></h3><p>Set it up once in <b>Settings → Email</b>.</p><button class="btn pri block" data-a="tab" data-v="settings">Open Settings</button>`); return; }
+  openModal(`<h3>Email bills · ${mLabel(m)}<button class="x" data-a="close">×</button></h3>
+  <p class="muted" style="margin-top:0">${rows.length} bills · ${withE.length} plots have an email address · ${nSent} already emailed</p>
+  <form data-f="emailPick">
+  <label class="toggle"><input type="radio" name="mode" value="notsent" checked><span><b>Not emailed yet</b><small>${withE.length - nSent} bills</small></span></label>
+  <label class="toggle"><input type="radio" name="mode" value="unpaid"><span><b>Unpaid only</b><small>${nUnpaid} bills</small></span></label>
+  <label class="toggle" style="margin-bottom:12px"><input type="radio" name="mode" value="all"><span><b>All with an email</b><small>${withE.length} bills</small></span></label>
+  <button class="btn pri block" ${withE.length ? "" : "disabled"}>Send emails</button></form>`);
+}
+async function emailRun(m, list) {
+  if (!list.length) return toast("No bills to email");
+  S.mailRun = { stop: false }; const run = S.mailRun; let ok = 0; const fails = [];
+  const draw = i => openModal(`<h3>Sending emails…<button class="x" data-a="mailStop">×</button></h3><div class="bar"><i style="width:${i / list.length * 100}%"></i></div><p class="muted">${i} / ${list.length} · sent ${ok}${fails.length ? " · failed " + fails.length : ""}</p><button class="btn block" data-a="mailStop">Stop</button>`);
+  for (let i = 0; i < list.length && !run.stop; i++) {
+    draw(i);
+    try { await emailBill(m, list[i]); ok++; } catch (e) { fails.push(list[i].no + ": " + e.message); if (/quota|too many|limit/i.test(e.message)) break; }
+    await new Promise(r => setTimeout(r, 600));
+  }
+  S.mailRun = null;
+  openModal(`<h3>Emails sent<button class="x" data-a="close">×</button></h3><p><b>${ok}</b> of ${list.length} bills emailed.</p>${fails.length ? `<div class="err" style="white-space:pre-wrap">${esc(fails.join("\n"))}</div>` : ""}<button class="btn pri block" data-a="close">Close</button>`);
+}
+
+/* ============ WhatsApp picture sending ============ */
+const isTouch = () => matchMedia("(pointer:coarse)").matches;
+const canShareFiles = () => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File([new Blob(["x"], { type: "image/jpeg" })], "t.jpg", { type: "image/jpeg" })] })); } catch (e) { return false; } };
+/* How chats open on a computer: "app" = WhatsApp Desktop app (whatsapp://), "web" = one reused WhatsApp Web tab. Saved per device. */
+const waMode = () => { try { return localStorage.getItem("rg-wa") || "app"; } catch (e) { return "app"; } };
+function chatUrl(phone, mode) { const p = waPhone(phone); if (!p) return ""; if (isTouch()) return "https://wa.me/" + p; return (mode || waMode()) === "app" ? "whatsapp://send?phone=" + p : "https://web.whatsapp.com/send?phone=" + p; }
+function openChat(phone) { const url = chatUrl(phone); if (!url) return false; if (url.startsWith("whatsapp:")) { const l = document.createElement("a"); l.href = url; l.rel = "noopener"; document.body.appendChild(l); l.click(); l.remove(); } else window.open(url, "rgwhatsapp"); return true; }
+function caption(m, b) { const s = st(); return `${s.name} — ${mLabel(m)} bill, Plot ${b.no}: ${money(b.total)}${num(b.paid) ? " (balance " + money(Math.max(0, balance(b))) + ")" : ""}. Due ${fmtDate((S.bills[m] || {}).dueDate)}.`; }
+function waPickModal() {
+  const m = S.billMonth, rows = Object.values(S.bills[m].b).sort((x, y) => hsort({ no: x.no }, { no: y.no }));
+  const opts = rows.map((b, i) => `<option value="${i}">${esc(b.no)} — ${esc(b.owner || "")}</option>`).join("");
+  const nSent = rows.filter(b => b.waSentAt).length, nUnpaid = rows.filter(b => balance(b) > 0).length, nPhone = rows.filter(b => waPhone(b.phone)).length;
+  openModal(`<h3>Send bills on WhatsApp · ${mLabel(m)}<button class="x" data-a="close">×</button></h3>
+  <p class="muted" style="margin-top:0">${rows.length} bills · ${nPhone} have a mobile number · ${nSent} already sent</p>
+  <form data-f="waPick">
+  <label class="toggle"><input type="radio" name="mode" value="all" checked><span><b>All bills</b><small>In plot order (serial)</small></span></label>
+  <label class="toggle"><input type="radio" name="mode" value="notsent"><span><b>Not sent yet</b><small>${rows.length - nSent} bills</small></span></label>
+  <label class="toggle"><input type="radio" name="mode" value="unpaid"><span><b>Unpaid only</b><small>${nUnpaid} bills</small></span></label>
+  <label class="toggle"><input type="radio" name="mode" value="range"><span><b>From plot … to plot</b><small>Everything between the two plots, in order</small></span></label>
+  <div class="f2" style="margin:4px 0 6px 34px"><label class="f"><span>From</span><select name="from">${opts}</select></label><label class="f"><span>To</span><select name="to">${rows.map((b, i) => `<option value="${i}" ${i === rows.length - 1 ? "selected" : ""}>${esc(b.no)} — ${esc(b.owner || "")}</option>`).join("")}</select></label></div>
+  <label class="toggle"><input type="radio" name="mode" value="custom"><span><b>Choose plots</b><small>Any plots, e.g. 1.02, 4.10, 11.15</small></span></label>
+  <div style="margin:4px 0 12px 34px"><input type="text" name="custom" placeholder="1.02, 4.10, 11.15"></div>
+  <label class="toggle" style="margin-bottom:12px"><input type="checkbox" name="skipNoPhone" checked><span><b>Skip plots without a mobile number</b></span></label>
+  <button class="btn grn block">Start sending</button></form>`);
+}
+function startWa(m, list) {
+  if (!list.length) return toast("No bills match");
+  S.waQ = { m, list: list.map(b => b.hid), i: 0, sent: 0 }; waStep();
+}
+function waPic(q, hid) {
+  q.cache = q.cache || {};
+  if (!q.cache[hid]) q.cache[hid] = billCanvas(q.m, S.bills[q.m].b[hid]).then(async c => ({ png: await new Promise(r => c.toBlob(r, "image/png")), jpg: await new Promise(r => c.toBlob(r, "image/jpeg", 0.9)) }));
+  return q.cache[hid];
+}
+async function waStep() {
+  const q = S.waQ; if (!q) return;
+  if (q.i >= q.list.length) { openModal(`<h3>Done<button class="x" data-a="close">×</button></h3><p>${q.sent} of ${q.list.length} bills marked as sent.</p><button class="btn pri block" data-a="close">Close</button>`); S.waQ = null; return; }
+  const hid = q.list[q.i], b = S.bills[q.m].b[hid], hasPhone = !!waPhone(b.phone), touch = isTouch(), share = canShareFiles(), mode = waMode(), last = q.i === q.list.length - 1;
+  const modeChips = touch ? "" : `<div class="row" style="gap:6px;margin-bottom:10px;align-items:center"><span class="muted" style="font-size:13px">Open chats in:</span><button class="chip ${mode === "app" ? "on" : ""}" data-a="waMode" data-v="app">WhatsApp Desktop app</button><button class="chip ${mode === "web" ? "on" : ""}" data-a="waMode" data-v="web">WhatsApp Web</button></div>`;
+  openModal(`<h3>WhatsApp · ${q.i + 1} of ${q.list.length}<button class="x" data-a="waStop">×</button></h3>
+  <div class="bar" style="margin-bottom:12px"><i style="width:${q.i / q.list.length * 100}%"></i></div>
+  ${modeChips}
+  <div class="row" style="align-items:center;margin-bottom:10px"><div class="hno">${esc(b.no)}</div><div style="flex:1"><b>${esc(b.owner || "—")}</b><div class="muted">${esc(b.phone || "No mobile number")} · ${money(b.total)}${b.waSentAt ? " · sent before" : ""}</div></div></div>
+  ${touch && share ? `<div class="info"><b>1.</b> Tap <b>Share picture</b> → choose <b>WhatsApp</b> → pick <b>${esc(b.owner || "the owner")}</b> → send.<br><b>2.</b> Come back and tap <b>Sent · next</b>.</div>`
+    : `<div class="info">${q.auto ? `The picture is copied and this owner's chat is open.<br>` : `<b>1.</b> Click <b>Copy picture &amp; open chat</b>.<br>`}<b>${q.auto ? "1" : "2"}.</b> In WhatsApp press <b>Ctrl + V</b>, then <b>Enter</b>.<br><b>${q.auto ? "2" : "3"}.</b> Come back and click <b>${last ? "Sent · finish" : "Sent · next bill"}</b>. The next owner's chat opens with their picture already copied.${mode === "app" ? `<br><span style="font-size:13px">First time only: if the browser asks "Open WhatsApp?", tick <b>Always allow</b>. If nothing opens, install the WhatsApp Desktop app or choose <b>WhatsApp Web</b> above.</span>` : `<br><span style="font-size:13px">Close any other WhatsApp Web tab; this app reuses one tab.</span>`}</div>`}
+  <div class="actions">${touch && share ? `<button class="btn grn" data-a="waShare" id="wabtn" disabled>Share picture</button>${hasPhone ? `<a class="btn" target="_blank" rel="noopener" href="${chatUrl(b.phone)}">Open chat</a>` : ""}`
+    : `<button class="btn ${q.auto ? "" : "grn"}" data-a="waCopy" id="wabtn" ${hasPhone ? "" : "disabled title=\"No mobile number\""}>${q.auto ? "Copy &amp; open again" : "Copy picture &amp; open chat"}</button>`}<button class="btn pri" data-a="waNext">${last ? "Sent · finish" : "Sent · next bill"}</button><button class="btn" data-a="waSkip">Skip</button>${q.i ? `<button class="btn" data-a="waBack">Back</button>` : ""}</div>
+  <div id="waprev" class="muted" style="text-align:center;padding:20px">Preparing picture…</div>`, true);
+  const pic = await waPic(q, hid);
+  if (q.i + 1 < q.list.length) waPic(q, q.list[q.i + 1]);
+  if (S.waQ !== q || q.list[q.i] !== hid) return;
+  q.jpg = pic.jpg; q.png = pic.png;
+  const el = $("#waprev"); if (el) el.outerHTML = `<img class="preview" src="${URL.createObjectURL(pic.jpg)}" alt="Bill" style="max-height:52vh;object-fit:contain">`;
+  const btn = $("#wabtn"); if (btn && (hasPhone || touch)) btn.disabled = false;
+}
+async function waShareNow() {
+  const q = S.waQ, b = S.bills[q.m].b[q.list[q.i]];
+  const file = new File([q.jpg], "Bill-" + b.no + "-" + q.m + ".jpg", { type: "image/jpeg" });
+  try { await navigator.share({ files: [file], text: caption(q.m, b) }); } catch (e) { if (e && e.name !== "AbortError") toast("Sharing failed: " + e.message); }
+}
+function waCopyNow() {
+  const q = S.waQ; if (!q) return; const hid = q.list[q.i], b = S.bills[q.m].b[hid];
+  if (!waPhone(b.phone)) { toast("No mobile number for this plot"); return; }
+  // Copy inside the click itself (the picture may still be drawing), then open the chat
+  try { navigator.clipboard.write([new ClipboardItem({ "image/png": waPic(q, hid).then(x => x.png) })]).then(() => toast("Picture copied. Press Ctrl+V, then Enter in WhatsApp"), () => toast("Could not copy the picture. Use Download image instead.")); }
+  catch (e) { toast("Could not copy the picture. Use Download image instead."); }
+  openChat(b.phone); q.auto = true;
+}
+function waMark(sent) {
+  const q = S.waQ; if (!q) return;
+  if (sent) { q.sent++; const hid = q.list[q.i]; write(() => D.updateBill(q.m, hid, { waSentAt: new Date().toISOString() })); }
+  q.i++; q.auto = false;
+  if (!isTouch() && q.i < q.list.length && waPhone(S.bills[q.m].b[q.list[q.i]].phone)) waCopyNow();
+  waStep();
+}
+
+/* ============ printing ============ */
+async function printBills(m, list, perPage) {
+  if (!list.length) return toast("No bills to print");
+  const multi = list.length > 1;
+  if (multi) openModal(`<h3>Preparing for print…</h3><div class="bar"><i id="pbar" style="width:0"></i></div><p class="muted" id="ptxt">0 / ${list.length}</p>`);
+  const urls = [];
+  for (let i = 0; i < list.length; i++) {
+    const c = await billCanvas(m, list[i]); urls.push(c.toDataURL("image/jpeg", 0.9));
+    const pb = $("#pbar"); if (pb) { pb.style.width = ((i + 1) / list.length * 100) + "%"; $("#ptxt").textContent = (i + 1) + " / " + list.length; }
+  }
+  const pa = $("#printArea"); let html = "";
+  for (let i = 0; i < urls.length; i += perPage) html += `<div class="pp ${perPage === 2 ? "two" : "one"}">${urls.slice(i, i + perPage).map(u => `<img src="${u}" alt="">`).join("")}</div>`;
+  pa.innerHTML = html;
+  let ps = $("#pageSize"); if (!ps) { ps = document.createElement("style"); ps.id = "pageSize"; document.head.appendChild(ps); }
+  ps.textContent = perPage === 2 ? "@page{size:A4 landscape;margin:0}" : "@page{size:A4 portrait;margin:0}";
+  await Promise.all([...pa.querySelectorAll("img")].map(im => im.decode ? im.decode().catch(() => { }) : null));
+  if (multi) closeModal();
+  setTimeout(() => window.print(), 50);
+}
+window.addEventListener("afterprint", () => { const pa = $("#printArea"); if (pa) pa.innerHTML = ""; });
+
+/* ============ Excel import ============ */
+function hidFor(no) { return String(no).replace(/\./g, "-").replace(/[^A-Za-z0-9_-]/g, "") || "h"; }
+function cleanName(n) { n = String(n ?? "").replace(/\s+/g, " ").trim(); const w = n.split(" "); if (w.length === 2 && w[0].toLowerCase() === w[1].toLowerCase()) n = w[0]; return n; }
+function plotStr(v) { if (typeof v === "number") return v.toFixed(2); return String(v ?? "").trim(); }
+let xlsxP = null;
+function loadXlsx() { if (window.XLSX) return Promise.resolve(window.XLSX); if (!xlsxP) xlsxP = new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; sc.onload = () => res(window.XLSX); sc.onerror = () => { xlsxP = null; rej(new Error("load")); }; document.head.appendChild(sc); }); return xlsxP; }
+function parseProfile(rows) {
+  const hi = rows.findIndex(r => r.some(c => /plot/i.test(String(c || ""))));
+  if (hi < 0) return null;
+  const hd = rows[hi].map(c => String(c || "").toLowerCase().replace(/[^a-z0-9]/g, ""));
+  const col = (...keys) => hd.findIndex(h => keys.some(k => h === k || h.startsWith(k)));
+  const ci = { no: col("plotname", "plotno", "plot"), street: col("street"), area: col("area", "marla"), code: col("subscode", "code"), owner: col("owner", "name"), phone: col("mobile1", "mobile", "phone"), phone2: col("mobile2"), email: col("email", "emailaddress", "mail"), bal: col("previousbalance", "prevbalance", "openingbalance", "balance"), meter: col("watermeter", "meter"), opening: col("openingreading", "reading") };
+  if (ci.no < 0) return null;
+  const out = [];
+  for (const r of rows.slice(hi + 1)) {
+    const no = plotStr(r[ci.no]); if (!no || /^total$/i.test(no)) continue;
+    const g = k => ci[k] >= 0 ? r[ci[k]] : "";
+    let ph = String(g("phone") ?? "").trim(), ph2 = String(g("phone2") ?? "").trim();
+    const parts = ph.split(/\s+(?=\d)/); if (parts.length > 1 && !ph2) { ph = parts[0]; ph2 = parts.slice(1).join(" "); }
+    out.push({ no, street: String(g("street") ?? "").trim(), marla: num(g("area")), code: String(g("code") ?? "").trim(), owner: cleanName(g("owner")), phone: ph, phone2: ph2, email: String(g("email") ?? "").trim(), prevBal: num(g("bal")), meter: String(g("meter") ?? "").trim(), opening: num(g("opening")) });
+  }
+  return out;
+}
+async function importExcel(file) {
+  openModal(`<h3>Reading Excel file…</h3>`);
+  let X; try { X = await loadXlsx(); } catch (e) { openModal(`<h3>Could not load the Excel reader<button class="x" data-a="close">×</button></h3><p>Check your internet connection and try again.</p>`); return; }
+  const wb = X.read(await file.arrayBuffer(), { type: "array" });
+  let rows = null, sheet = "";
+  for (const n of wb.SheetNames) { const r = X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: "" }); const p = parseProfile(r); if (p && p.length) { rows = p; sheet = n; break; } }
+  if (!rows) { openModal(`<h3>No plot data found<button class="x" data-a="close">×</button></h3><p>The sheet needs columns such as "PLOT NAME", "AREA", "Owner", "MOBILE 1" and (optional) "EMAIL".</p>`); return; }
+  const byNo = new Map(S.houses.map(h => [String(h.no), h]));
+  const nNew = rows.filter(r => !byNo.has(r.no)).length;
+  S.pendingImport = rows;
+  openModal(`<h3>Import from Excel<button class="x" data-a="close">×</button></h3>
+  <p>Found <b>${rows.length}</b> plots on sheet <b>${esc(sheet)}</b>: ${rows.length - nNew} already in the list (will be updated), ${nNew} new.</p>
+  <label class="toggle"><input type="radio" name="imode" value="merge" checked><span><b>Merge</b><small>Update and add the plots from Excel; keep everything else.</small></span></label>
+  <label class="toggle" style="margin-bottom:14px"><input type="radio" name="imode" value="replace"><span><b>Replace</b><small>Remove the current list and keep only the plots from Excel.</small></span></label>
+  <p class="muted" style="font-size:13px">All imported plots are marked as sold. Bills and readings are not affected.</p>
+  <button class="btn pri block" data-a="importGo">Import</button>`);
+}
+async function applyImport(mode) {
+  const rows = S.pendingImport || []; if (!rows.length) return;
+  const list = mode === "replace" ? [] : S.houses.map(h => Object.assign({}, h));
+  rows.forEach(r => {
+    const i = list.findIndex(h => String(h.no) === r.no);
+    const rec = { no: r.no, street: r.street, marla: r.marla, code: r.code, owner: r.owner, phone: r.phone, phone2: r.phone2, prevBal: r.prevBal, sold: true };
+    if (r.meter) rec.meter = r.meter; if (r.opening) rec.opening = r.opening; if (r.email) rec.email = r.email;
+    if (i >= 0) list[i] = Object.assign({}, list[i], rec);
+    else { const old = S.houses.find(h => String(h.no) === r.no); let id = old ? old.id : hidFor(r.no); while (list.some(h => h.id === id)) id += "_"; list.push(Object.assign({ id, meter: "", opening: 0 }, rec)); }
+  });
+  if (await write(async () => { await D.saveHouses(list); if (!S.settingsExists) await D.saveSettings(st()); })) { closeModal(); S.pendingImport = null; toast(rows.length + " plots imported"); }
+}
+
+/* ============ events ============ */
+document.addEventListener("click", async e => {
+  const t = e.target.closest("[data-a]"); if (!t) return;
+  const a = t.dataset.a, id = t.dataset.id, m = t.dataset.m;
+  if (t.tagName === "A") return;
+  switch (a) {
+    case "tab": S.view = t.dataset.v; S.q = ""; closeModal(); render(true); window.scrollTo(0, 0); break;
+    case "close": closeModal(); break;
+    case "hf": S.hfilter = t.dataset.v; render(true); break;
+    case "rf": S.rfilter = t.dataset.v; render(true); break;
+    case "bf": S.bfilter = t.dataset.v; render(true); break;
+    case "ifilter": S.ifilter = t.dataset.v; render(true); break;
+    case "crp": S.crp = t.dataset.v; render(true); break;
+    case "crf": S.crf = t.dataset.v; render(true); break;
+    case "crCsv": crCsv(); break;
+    case "crPrint": crPrint(); break;
+    case "readNext": { const m2 = S.readMonth, sold = soldHouses(), i = sold.findIndex(x => x.id === id); const nxt = sold.slice(i + 1).concat(sold.slice(0, i)).find(x => x.id !== id && readingOf(x.id, m2) == null); if (nxt) readingModal(nxt.id); else { toast("All readings are done ✓"); closeModal(); } break; }
+    case "regenFor": { closeModal(); S.billMonth = t.dataset.m; S.view = "bills"; render(true); const rb = document.querySelector('[data-a="regen"]'); if (rb) rb.click(); break; }
+    case "theme": { const v = t.dataset.v; if (await write(() => D.saveSettings(Object.assign({}, st(), { theme: v })))) toast("Colours changed"); break; }
+    case "themeCustom": { const v = ($("#tcustom") || {}).value; if (/^#[0-9a-f]{6}$/i.test(v || "") && await write(() => D.saveSettings(Object.assign({}, st(), { theme: v.toLowerCase() })))) toast("Colours changed"); break; }
+    case "chat": chatModal(id); break;
+    case "myInbox": chatModal(S.me.hid, t.dataset.k); break;
+    case "msgStatus": { const res = t.dataset.v === "resolved", now = new Date().toISOString(), who = S.me.name || S.me.username || "";
+      const f = res ? { status: "resolved", resolvedAt: now, resolvedBy: who } : { status: "open", resolvedAt: "", resolvedBy: "", reopenedAt: now };
+      if (await write(() => D.updateMsg(id, f))) toast(res ? "Complaint marked resolved" : "Complaint reopened"); break; }
+    case "zoomImg": window.open().document.write(`<img src="${t.src}" style="max-width:100%">`); break;
+    case "toReader": S.mode = "reader"; S.q = ""; S.rfilter = "pending"; render(true); window.scrollTo(0, 0); break;
+    case "toAdmin": S.mode = "admin"; S.q = ""; render(true); break;
+    case "logout": closeModal(); if (auth) await signOut(auth); break;
+    case "lf": S.lfilter = t.dataset.v; render(true); break;
+    case "loginItem": loginItemModal(id); break;
+    case "bulkLogins": bulkLogins(); break;
+    case "addStaff": openModal(`<h3>Add staff login<button class="x" data-a="close">×</button></h3><form data-f="staffLogin"><div class="f2"><label class="f"><span>Role</span><select name="role"><option value="reader">Meter reader</option><option value="staff">Complaints staff (Inbox only)</option><option value="admin">Admin (full access)</option></select></label><label class="f"><span>Name</span><input type="text" name="name"></label><label class="f"><span>Username</span><input type="text" name="u" autocapitalize="none" placeholder="e.g. reader1" required></label><label class="f"><span>Password</span><input type="text" name="p" value="${genPassword()}" required></label></div><button class="btn pri block">Create login</button></form>`); break;
+    case "resetLogin": { const u = S.users.find(x => x.uid === id); if (!u) break; if (!(await ask("Reset password?", "A new password will be created for <b>" + esc(u.username) + "</b>. The old password will stop working.", "Reset"))) break; try { const c = await D.resetLogin(u, genPassword()); credModal([Object.assign(c, { h: u.hid ? S.houses.find(h => h.id === u.hid) : null })]); } catch (e) { toast(e.message || "Could not reset"); } break; }
+    case "removeLogin": { const u = S.users.find(x => x.uid === id); if (!u) break; if (await ask("Remove login?", "<b>" + esc(u.username) + "</b> will no longer be able to log in.", "Remove", true)) { if (await write(() => D.removeLogin(u))) { closeModal(); toast("Login removed"); } } break; }
+    case "copyCred": { const c = S.lastCreds[+t.dataset.i]; try { await navigator.clipboard.writeText(credText(c, c.h)); toast("Copied"); } catch (e) { toast("Copy failed"); } break; }
+    case "copyAllCred": { try { await navigator.clipboard.writeText(S.lastCreds.map(c => credText(c, c.h)).join("\n\n----\n\n")); toast("Copied"); } catch (e) { toast("Copy failed"); } break; }
+    case "credCsv": saveFile("logins-" + todayISO() + ".csv", new Blob([csvOf(S.lastCreds)], { type: "text/csv" })); break;
+    case "proof": proofModal(id); break;
+    case "approveProof": case "rejectProof": { const p = S.proofs.find(x => x.id === id); if (!p) break; t.disabled = true; if (await write(() => D.reviewProof(p, a === "approveProof", ($("#pnote") || {}).value || ""))) { closeModal(); toast(a === "approveProof" ? "Payment approved and added to the bill" : "Payment rejected"); } else t.disabled = false; break; }
+    case "rbill": residentBillModal(m); break;
+    case "payNow": payNowModal(); break;
+    case "myAccount": accountModal(); break;
+    case "importBackup": { const fi = document.createElement("input"); fi.type = "file"; fi.accept = ".json,application/json"; fi.onchange = async () => { const f = fi.files[0]; if (!f) return; let data; try { data = JSON.parse(await f.text()); } catch (e) { toast("That is not a valid backup file"); return; } if (!(await ask("Import backup?", "Plots, readings and bills from the backup will be written into the system.", "Import"))) return; let n = 0; if (await write(async () => { n = await D.importBackup(data); if (!data.settings && !S.settingsExists) await D.saveSettings(st()); })) toast("Backup imported (" + n + " records)"); }; fi.click(); break; }
+    case "addHouse": houseModal(null); break;
+    case "importXl": { const fi = document.createElement("input"); fi.type = "file"; fi.accept = ".xlsx,.xlsm,.xls,.csv"; fi.onchange = () => { if (fi.files[0]) importExcel(fi.files[0]); }; fi.click(); break; }
+    case "importGo": { const md = (document.querySelector("input[name=imode]:checked") || {}).value || "merge"; if (md === "replace" && !(await ask("Replace the plot list?", "Plots that are not in the Excel file will be removed from the list.", "Replace", true))) break; applyImport(md); break; }
+    case "editHouse": houseModal(S.houses.find(h => h.id === id)); break;
+    case "delHouse": { const h = S.houses.find(x => x.id === id); if (await ask("Delete this plot?", "Plot " + esc(h.no) + " will be removed from the list. Existing bills are kept.", "Delete", true)) { if (await write(() => D.saveHouses(S.houses.filter(x => x.id !== id)))) toast("Plot deleted"); } break; }
+    case "bulkSold": openModal(`<h3>Mark several plots<button class="x" data-a="close">×</button></h3><form data-f="bulkSold"><label class="f"><span>Plot numbers, separated by commas (e.g. 4.10, 4.11, 5.02)</span><textarea name="nos" rows="3"></textarea></label><label class="toggle"><input type="radio" name="v" value="1" checked><span><b>Sold</b></span></label><label class="toggle" style="margin-bottom:12px"><input type="radio" name="v" value="0"><span><b>Unsold</b></span></label><button class="btn pri block">Apply</button></form>`); break;
+    case "reading": readingModal(id); break;
+    case "delReading": { if (await ask("Delete this reading?", "This plot's reading for this month will be removed.", "Delete", true)) { if (await write(() => D.deleteReading(S.readMonth, id))) toast("Reading deleted"); } break; }
+    case "otherMonth": openModal(`<h3>Choose a month<button class="x" data-a="close">×</button></h3><input type="month" id="om" value="${S.billMonth || curMonth()}"><div style="height:12px"></div><button class="btn pri block" data-a="omGo">Open</button>`); break;
+    case "omGo": { const v = $("#om").value; if (v) { S.billMonth = v; closeModal(); render(true); } break; }
+    case "gen": { const due = $("#due").value || addDays(todayISO(), 10); if (!num(st().unitRate) && !(await ask("Water rate not set", "The water rate per unit is 0, so every water charge will be 0. Generate anyway?", "Generate"))) break; t.disabled = true; t.textContent = "Generating…"; await generateBills(S.billMonth, due); render(true); break; }
+    case "regen": { if (await ask("Regenerate bills?", "Bills for this month will be rebuilt from the latest readings and sold plots. Payments, fines and the rates used are kept.", "Regenerate")) { await generateBills(S.billMonth, S.bills[S.billMonth].dueDate); render(true); } break; }
+    case "bill": billModal(m, id); break;
+    case "pay": payModal(m, id); break;
+    case "fine": fineModal(m, id); break;
+    case "unfine": if (await setFine(m, id, 0)) { toast("Fine removed"); setTimeout(() => billModal(m, id), 150); } break;
+    case "delPay": { if (!(await ask("Delete this payment?", "This payment record will be removed.", "Delete", true))) { billModal(m, id); break; } const b = S.bills[m].b[id]; const payments = (b.payments || []).filter((_, i) => i !== +t.dataset.i); const paid = r2(payments.reduce((s, p) => s + num(p.amt), 0)); if (await write(() => D.updateBill(m, id, { payments, paid }))) toast("Payment deleted"); setTimeout(() => billModal(m, id), 150); break; }
+    case "bulkFine": { const mm = S.billMonth, bill = S.bills[mm]; const list = Object.values(bill.b).filter(b => balance(b) > 0 && !num(b.fine)); if (!list.length) { toast("No unpaid bills without a fine"); break; } openModal(`<h3>Fine all unpaid bills<button class="x" data-a="close">×</button></h3><p>A fine will be added to ${list.length} unpaid bill(s) that don't have one yet.</p><form data-f="bulkFine"><label class="f"><span>Fine (Rs)</span><input type="number" name="amt" value="${num(st().fineDefault) || ""}" min="1" required></label><button class="btn pri block">Apply</button></form>`); break; }
+    case "pdf1": case "img1": { const b = S.bills[m].b[id]; t.disabled = true; const c = await billCanvas(m, b); t.disabled = false; const fn = "Bill-" + b.no + "-" + m; if (a === "img1") c.toBlob(bl => saveFile(fn + ".jpg", bl), "image/jpeg", 0.9); else saveFile(fn + ".pdf", makePdf([await canvasJpeg(c)])); break; }
+    case "waPick": waPickModal(); break;
+    case "waOne": startWa(m, [S.bills[m].b[id]]); break;
+    case "email1": { const b = S.bills[m].b[id]; if (!mcfg().url) { toast("Set up email first: Settings → Email"); break; } if (!validEmail(emailOf(id))) { toast("No email address for plot " + b.no + ". Add it in Plots."); break; } t.disabled = true; t.textContent = "Sending…"; try { await emailBill(m, b); toast("Bill emailed to " + emailOf(id)); } catch (e) { toast(e.message); } t.disabled = false; t.textContent = "Email ✓"; break; }
+    case "emailPick": emailPickModal(); break;
+    case "mailStop": if (S.mailRun) S.mailRun.stop = true; break;
+    case "mailSetup": mailSetupModal(); break;
+    case "mailCopy": try { await navigator.clipboard.writeText($("#mcode").textContent); toast("Code copied"); } catch (e) { toast("Select the code and copy it"); } break;
+    case "mailTest": { t.disabled = true; try { const j = await mailPost({ test: true }); toast("Connected. You can send " + j.remaining + " more emails today."); } catch (e) { toast(e.message); } t.disabled = false; break; }
+    case "waShare": waShareNow(); break;
+    case "waCopy": waCopyNow(); waStep(); break;
+    case "waMode": try { localStorage.setItem("rg-wa", t.dataset.v); } catch (e) { } waStep(); break;
+    case "waNext": waMark(true); break;
+    case "waSkip": waMark(false); break;
+    case "waBack": if (S.waQ && S.waQ.i > 0) { S.waQ.i--; waStep(); } break;
+    case "waStop": S.waQ = null; closeModal(); break;
+    case "print1": { const b = S.bills[m].b[id]; t.disabled = true; await printBills(m, [b], 1); t.disabled = false; break; }
+    case "printAll": case "printPending": { const mm = S.billMonth; let list = Object.values(S.bills[mm].b).sort((x, y) => hsort({ no: x.no }, { no: y.no })); if (a === "printPending") list = list.filter(b => balance(b) > 0); printBills(mm, list, 2); break; }
+    case "pdfAll": case "pdfPending": { const mm = S.billMonth; let list = Object.values(S.bills[mm].b).sort((x, y) => hsort({ no: x.no }, { no: y.no })); if (a === "pdfPending") list = list.filter(b => balance(b) > 0); pdfFor(mm, list, (a === "pdfAll" ? "Bills-" : "Unpaid-Bills-") + mm + ".pdf"); break; }
+    case "qrdel": if (await write(() => D.saveSettings(Object.assign({}, st(), { qr: "" })))) toast("QR removed"); break;
+    case "backup": { const data = { exportedAt: new Date().toISOString(), settings: Object.assign({}, S.settings, { qr: S.settings && S.settings.qr ? "(image)" : "" }), houses: S.houses, readings: S.readings, bills: S.bills }; saveFile("royal-garden-backup-" + todayISO() + ".json", JSON.stringify(data, null, 1)); break; }
+  }
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "q") { S.q = e.target.value; render(true); }
+  else if (e.target.closest("#app form[data-f]")) S.dirty = true;
+});
+document.addEventListener("change", async e => {
+  const t = e.target;
+  if (t.closest("#app form[data-f]")) S.dirty = true;
+  if (t.id === "rm") { if (t.value) { S.readMonth = t.value; render(true); } }
+  else if (t.id === "bm") { S.billMonth = t.value; S.q = ""; render(true); }
+  else if (t.id === "crFrom" || t.id === "crTo") { S[t.id] = t.value; render(true); }
+  else if (t.id === "newchat") { if (t.value) chatModal(t.value); t.value = ""; }
+  else if (t.name === "kind" && t.closest("form[data-f=msg]")) { const pf = $("#payf"); if (pf) pf.style.display = t.value === "payment" ? "" : "none"; }
+  else if (t.id === "qrfile" && t.files[0]) {
+    const f = t.files[0]; const url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
+    const img = await loadImg(url); if (!img) return toast("Could not open that image");
+    const mx = 600, sc = Math.min(1, mx / Math.max(img.width, img.height)); const c = document.createElement("canvas"); c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+    const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+    let d = c.toDataURL("image/png"); if (d.length > 180000) d = c.toDataURL("image/jpeg", 0.85);
+    if (await write(() => D.saveSettings(Object.assign({}, st(), { qr: d })))) { const im = $("#qrimg"); if (im) im.src = d; toast("QR code saved"); }
+  }
+});
+document.addEventListener("submit", async e => {
+  e.preventDefault(); const f = e.target, k = f.dataset.f, fd = new FormData(f); S.dirty = false;
+  if (k === "login") {
+    const btn = f.querySelector("button"); btn.disabled = true; $("#lerr").innerHTML = "";
+    try { await login(fd.get("u"), String(fd.get("p") || "")); } catch (err) { $("#lerr").innerHTML = `<div class="err">${esc(err.message)}</div>`; btn.disabled = false; }
+  } else if (k === "bootstrap") {
+    const btn = f.querySelector("button"); btn.disabled = true;
+    try { await bootstrapAdmin(fd.get("u"), String(fd.get("p") || ""), String(fd.get("name") || "").trim()); } catch (err) { toast(err.message || "Could not create the account"); btn.disabled = false; }
+  } else if (k === "newLogin") {
+    const h = S.houses.find(x => x.id === f.dataset.id); const btn = f.querySelector("button"); btn.disabled = true;
+    try { const c = await D.createLogin("resident", fd.get("u"), String(fd.get("p") || ""), h.id, h.owner); credModal([Object.assign(c, { h })]); } catch (err) { toast(err.message || "Could not create the login"); btn.disabled = false; }
+  } else if (k === "staffLogin") {
+    const btn = f.querySelector("button"); btn.disabled = true;
+    try { const c = await D.createLogin(fd.get("role"), fd.get("u"), String(fd.get("p") || ""), null, String(fd.get("name") || "").trim()); credModal([c]); } catch (err) { toast(err.message || "Could not create the login"); btn.disabled = false; }
+  } else if (k === "msg") { sendMsgForm(f);
+  } else if (k === "crTarget") { const d = Math.max(1, Math.round(num(fd.get("d")))); if (await write(() => D.saveSettings(Object.assign({}, st(), { complaintDays: d })))) toast("Target saved: " + d + " days");
+  } else if (k === "mailcfg") {
+    const c = Object.assign({}, mcfg(), { name: String(fd.get("name") || "").trim(), subject: String(fd.get("subject") || "").trim() || MAILDEF.subject, body: String(fd.get("body") || "").trim() || MAILDEF.body, url: String(fd.get("url") || "").trim() });
+    if (c.url && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(c.url)) return toast("The script link should look like https://script.google.com/macros/s/…/exec");
+    if (!c.key) c.key = genKey();
+    if (await write(() => D.saveMail(c))) { S.mail = c; toast("Email settings saved"); render(true); }
+  } else if (k === "emailPick") {
+    const m = S.billMonth, mode = fd.get("mode"); let rows = Object.values(S.bills[m].b).filter(b => validEmail(emailOf(b.hid))).sort((x, y) => hsort({ no: x.no }, { no: y.no }));
+    if (mode === "notsent") rows = rows.filter(b => !b.emailSentAt); else if (mode === "unpaid") rows = rows.filter(b => balance(b) > 0);
+    emailRun(m, rows);
+  } else if (k === "proof") {
+    const btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Submitting…";
+    const file = f.shot.files[0]; let image = ""; if (file) image = await shrinkImage(file);
+    const p = { hid: S.me.hid, uid: S.uid, month: f.dataset.m, amount: num(fd.get("amount")), method: String(fd.get("method")), tid: String(fd.get("tid") || "").trim(), date: String(fd.get("date") || todayISO()), note: String(fd.get("note") || "").trim(), image, status: "pending", createdAt: new Date().toISOString() };
+    if (p.amount <= 0) { toast("Enter the amount"); btn.disabled = false; btn.textContent = "Submit payment"; return; }
+    if (await write(() => D.createProof(p))) { closeModal(); toast("Thank you! Your payment has been sent for confirmation."); } else { btn.disabled = false; btn.textContent = "Submit payment"; }
+  } else if (k === "waPick") {
+    const m = S.billMonth; let rows = Object.values(S.bills[m].b).sort((x, y) => hsort({ no: x.no }, { no: y.no }));
+    const mode = fd.get("mode");
+    if (mode === "notsent") rows = rows.filter(b => !b.waSentAt);
+    else if (mode === "unpaid") rows = rows.filter(b => balance(b) > 0);
+    else if (mode === "range") { let a1 = +fd.get("from"), a2 = +fd.get("to"); if (a1 > a2) [a1, a2] = [a2, a1]; rows = rows.slice(a1, a2 + 1); }
+    else if (mode === "custom") { const set = new Set(String(fd.get("custom") || "").split(/[,\s]+/).filter(Boolean).map(x => x.toLowerCase())); rows = rows.filter(b => set.has(String(b.no).toLowerCase())); }
+    if (fd.get("skipNoPhone")) rows = rows.filter(b => waPhone(b.phone));
+    startWa(m, rows);
+  } else if (k === "chpw") {
+    if (fd.get("n1") !== fd.get("n2")) return toast("The new passwords don't match");
+    if (String(fd.get("n1")).length < 6) return toast("The new password must be at least 6 characters");
+    try { await D.changeOwnPassword(String(fd.get("old")), String(fd.get("n1"))); closeModal(); toast("Password changed"); } catch (err) { toast(/wrong|invalid|credential/i.test(err.code || "") ? "Current password is incorrect" : "Could not change the password"); }
+  } else if (k === "setup") {
+    const total = Math.min(2000, Math.max(1, Math.round(num(fd.get("total"))))), marla = num(fd.get("marla"));
+    const sold = parseRanges(fd.get("sold"));
+    const list = []; for (let i = 1; i <= total; i++) list.push({ id: String(i), no: String(i), owner: "", phone: "", marla, meter: "", opening: 0, sold: sold.has(String(i)) });
+    const s = Object.assign({}, st(), { name: String(fd.get("name") || DEF.name), marlaRate: num(fd.get("marlaRate")), unitRate: num(fd.get("unitRate")) });
+    const ok = await write(async () => { await D.saveSettings(s); if (!S.housesExists) await D.saveHouses(list); });
+    if (ok) { toast("Setup complete"); S.view = "houses"; render(true); }
+  } else if (k === "settings") {
+    const s = Object.assign({}, st());
+    ["name", "address", "phone", "jazzNumber", "jazzTitle", "bankName", "bankTitle", "bankAcc", "iban"].forEach(n => s[n] = String(fd.get(n) || "").trim());
+    ["marlaRate", "unitRate", "fineDefault", "dueDays"].forEach(n => s[n] = num(fd.get(n)));
+    s.readerShowPrev = !!fd.get("readerShowPrev"); s.readerShowOwner = !!fd.get("readerShowOwner");
+    s.staffRights = {}; SR.forEach(([k]) => { s.staffRights[k] = !!fd.get("sr_" + k); });
+    s.btns = { admin: {}, resident: {} }; BTNS.forEach(([k, , a, r]) => { if (a) s.btns.admin[k] = !!fd.get("btn_admin_" + k); if (r) s.btns.resident[k] = !!fd.get("btn_resident_" + k); });
+    if (await write(() => D.saveSettings(s))) toast("Settings saved");
+  } else if (k === "house") saveHouse(f);
+  else if (k === "reading") saveReading(f, (e.submitter && e.submitter.value) || "next");
+  else if (k === "pay") savePay(f);
+  else if (k === "fine") { const m = f.dataset.m, id = f.dataset.id; const amt = num(fd.get("amt")); if (amt <= 0) return; if (await setFine(m, id, num(S.bills[m].b[id].fine) + amt)) { toast("Fine added"); setTimeout(() => billModal(m, id), 150); } }
+  else if (k === "bulkFine") {
+    const m = S.billMonth, amt = num(fd.get("amt")); if (amt <= 0) return; const u = {};
+    Object.values(S.bills[m].b).forEach(b => { if (balance(b) > 0 && !num(b.fine)) u[b.hid] = { fine: amt, total: r2(num(b.total) + amt) }; });
+    if (await write(() => D.updateBills(m, u))) { closeModal(); toast("Fine added to " + Object.keys(u).length + " bills"); }
+  } else if (k === "bulkSold") {
+    const set = parseRanges(fd.get("nos")), v = fd.get("v") === "1"; if (!set.size) return toast("Enter plot numbers");
+    let n = 0; const list = S.houses.map(h => { if (set.has(String(h.no))) { n++; return Object.assign({}, h, { sold: v }); } return h; });
+    if (await write(() => D.saveHouses(list))) { closeModal(); toast(n + " plots updated"); }
+  }
+});
+boot();
+</script>
+</body>
+</html>
