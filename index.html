@@ -219,6 +219,12 @@ const icon = k => `<svg class="i" viewBox="0 0 24 24">${IC[k]}</svg>`;
 const DEF = { name: "Royal Garden", address: "", phone: "", marlaRate: 250, unitRate: 0, fineDefault: 0, dueDays: 10, jazzNumber: "", jazzTitle: "", bankName: "", bankTitle: "", bankAcc: "", iban: "", qr: "", readerShowPrev: true, readerShowOwner: true, btns: {} };
 /* Which buttons show on a bill, per login type (Settings → Bill buttons). Missing = shown. */
 const BTNS = [["pay", "Record payment", 1, 0], ["fine", "Add fine", 1, 0], ["unfine", "Remove fine", 1, 0], ["delPay", "Delete a payment (×)", 1, 0], ["payNow", "Pay now", 0, 1], ["print", "Print", 1, 1], ["pdf", "Download PDF", 1, 1], ["img", "Download image", 1, 1], ["wa", "Send picture on WhatsApp", 1, 0]];
+/* Complaints staff rights (Settings → Complaints staff). Also enforced in firestore.rules. */
+const SR = [["inbox", "Open the Inbox", "Without this the staff login sees nothing.", true], ["reply", "Reply to residents", "Send replies in the chat.", true], ["resolve", "Mark complaints resolved", "Close or reopen a complaint.", true], ["payments", "See payment screenshots", "Payment messages and screenshots sent by residents.", false], ["messages", "See general messages", "Messages that are not complaints or payments.", false]];
+const sr = k => { const r = st().staffRights || {}; const d = SR.find(x => x[0] === k); return r[k] === undefined ? (d ? d[3] : false) : !!r[k]; };
+const isOffice = () => S.mode === "admin" || S.mode === "staff";
+const staffTopics = () => !sr("inbox") ? [] : ["complaint"].concat(sr("payments") ? ["payment"] : [], sr("messages") ? ["message"] : []);
+const topicOf = m => m.topic || m.kind || "message";
 const bOn = (role, k) => { const b = st().btns || {}; return !(b[role] && b[role][k] === false); };
 
 /* ============ state ============ */
@@ -300,6 +306,19 @@ function subscribeResident() {
   listen(query(collection(fs, "proofs"), where("hid", "==", hid)), q => { S.proofs = q.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); });
   listen(query(collection(fs, "messages"), where("hid", "==", hid)), q => { S.msgs = q.docs.map(d => Object.assign({ id: d.id }, d.data())); refreshChat(); });
 }
+let staffMsgUnsubs = [], staffKey = null;
+function syncStaffMsgs() {
+  const t = staffTopics(), key = t.join(",");
+  if (key === staffKey) return; staffKey = key;
+  staffMsgUnsubs.forEach(f => { try { f(); } catch (e) { } }); staffMsgUnsubs = []; const parts = {}; S.msgs = [];
+  t.forEach(tp => { const f = onSnapshot(query(collection(fs, "messages"), where("topic", "==", tp)), q => { parts[tp] = q.docs.map(d => Object.assign({ id: d.id }, d.data())); S.msgs = [].concat(...Object.values(parts)); refreshChat(); render(); }, err => console.warn("msgs", tp, err)); staffMsgUnsubs.push(f); unsubs.push(f); });
+  render();
+}
+function subscribeStaff() {
+  S.ready = { s: false, h: false }; startSlowTimer(); staffKey = null;
+  listen(doc(fs, "settings", "main"), s => { S.settingsExists = s.exists(); S.settings = s.exists() ? s.data() : null; syncStaffMsgs(); }, "s");
+  listen(collection(fs, "houses"), q => { S.housesExists = !q.empty; S.houses = q.docs.map(d => Object.assign({ id: d.id }, d.data())); }, "h");
+}
 async function handleUser(u) {
   unsubAll(); S.bills = {}; S.billDocs = {}; S.billRuns = {}; S.readings = {}; S.proofs = []; S.users = []; S.msgs = []; S.chat = null; S.houses = []; S.settings = null;
   if (!u) {
@@ -314,6 +333,7 @@ async function handleUser(u) {
   if (me.role === "admin") { S.mode = "admin"; subscribeAdmin(); }
   else if (me.role === "reader") { S.mode = "reader"; subscribeReader(); }
   else if (me.role === "resident" && me.hid) { S.mode = "resident"; subscribeResident(); }
+  else if (me.role === "staff") { S.mode = "staff"; subscribeStaff(); }
   else S.mode = "norole";
   render(true);
 }
@@ -452,6 +472,7 @@ function render(force) {
   else if (!S.ready.s || !S.ready.h) app.innerHTML = `<div class="boot">Loading data…${S.slow ? "<br><br>The data is taking too long. Please check your internet connection." : ""}</div>`;
   else if (S.mode === "reader") app.innerHTML = viewReader();
   else if (S.mode === "resident") app.innerHTML = viewResident();
+  else if (S.mode === "staff") app.innerHTML = viewStaff();
   else app.innerHTML = viewAdmin();
   if (aid) { const el = document.getElementById(aid); if (el) { el.focus(); try { if (sel != null) el.setSelectionRange(sel, sel); } catch (e) { } } }
 }
@@ -629,6 +650,8 @@ function vSettings() {
   <div class="card"><h2>Bill buttons</h2><p class="muted" style="margin:0 0 10px;font-size:13px">Choose which buttons show on a bill for each login type. Untick a box to hide that button.</p>
   <table class="tbl" style="accent-color:var(--pri)"><tr><th>Button</th><th style="text-align:center">Admin</th><th style="text-align:center">Resident</th></tr>${BTNS.map(([k, label, a, r]) => `<tr><td>${label}</td><td style="text-align:center">${a ? `<input type="checkbox" name="btn_admin_${k}" ${bOn("admin", k) ? "checked" : ""}>` : "—"}</td><td style="text-align:center">${r ? `<input type="checkbox" name="btn_resident_${k}" ${bOn("resident", k) ? "checked" : ""}>` : "—"}</td></tr>`).join("")}</table>
   <p class="muted" style="margin:10px 0 0;font-size:13px">Admin settings apply to every admin login. You can always turn a button back on here.</p></div>
+  <div class="card"><h2>Complaints staff rights</h2><p class="muted" style="margin:0 0 10px;font-size:13px">For "Complaints staff" logins (Logins → + Staff login). They only see the Inbox, never bills, payments to approve or settings. Complaints are always included when the Inbox is on.</p>
+  ${SR.map(([k, label, sub]) => `<label class="toggle"><input type="checkbox" name="sr_${k}" ${sr(k) ? "checked" : ""}><span><b>${label}</b><small>${sub}</small></span></label>`).join("")}</div>
   </div><div class="row" style="margin-bottom:14px"><button class="btn pri">Save settings</button></div></form>
   <div class="card"><h2>Backup</h2><p class="muted" style="margin-top:0">Download all data (plots, readings, bills) as one JSON file.</p><button class="btn" data-a="backup">Download backup</button></div>`;
 }
@@ -652,10 +675,10 @@ function vLogins() {
   const withN = list.filter(x => x.u).length;
   if (S.lfilter === "none") list = list.filter(x => !x.u); else if (S.lfilter === "has") list = list.filter(x => x.u);
   if (q) list = list.filter(x => (x.h.no + " " + (x.h.owner || "") + " " + (x.u ? x.u.username : "")).toLowerCase().includes(q));
-  return `<div class="grid"><div class="stat"><span>Resident logins</span><b>${withN} / ${sold.length}</b><em>sold plots with a login</em></div><div class="stat"><span>Staff logins</span><b>${staff.length}</b><em>admins and readers</em></div></div>
+  return `<div class="grid"><div class="stat"><span>Resident logins</span><b>${withN} / ${sold.length}</b><em>sold plots with a login</em></div><div class="stat"><span>Staff logins</span><b>${staff.length}</b><em>admins, readers and complaints staff</em></div></div>
   <div class="info">Each resident logs in with their username and password and sees <b>only their own plot's bills</b>. Passwords are shown only once, when created or reset — send them straight away.</div>
-  <div class="actions"><button class="btn pri" data-a="bulkLogins" ${withN < sold.length ? "" : "disabled"}>Create logins for all (${sold.length - withN})</button><button class="btn" data-a="addStaff">+ Reader / admin login</button></div>
-  <div class="card"><h2>Staff</h2>${staff.map(u => `<div class="kv"><span><b>${esc(u.username)}</b> · ${u.role === "admin" ? "Admin" : "Meter reader"}${u.name ? " · " + esc(u.name) : ""}${u.uid === S.uid ? " (you)" : ""}</span><span class="row">${u.uid === S.uid ? "" : `<button class="btn sm" data-a="resetLogin" data-id="${esc(u.uid)}">Reset password</button><button class="btn sm red" data-a="removeLogin" data-id="${esc(u.uid)}">Remove</button>`}</span></div>`).join("") || `<p class="muted">No staff logins yet.</p>`}</div>
+  <div class="actions"><button class="btn pri" data-a="bulkLogins" ${withN < sold.length ? "" : "disabled"}>Create logins for all (${sold.length - withN})</button><button class="btn" data-a="addStaff">+ Staff login</button></div>
+  <div class="card"><h2>Staff</h2>${staff.map(u => `<div class="kv"><span><b>${esc(u.username)}</b> · ${({ admin: "Admin", reader: "Meter reader", staff: "Complaints staff" })[u.role] || esc(u.role)}${u.name ? " · " + esc(u.name) : ""}${u.uid === S.uid ? " (you)" : ""}</span><span class="row">${u.uid === S.uid ? "" : `<button class="btn sm" data-a="resetLogin" data-id="${esc(u.uid)}">Reset password</button><button class="btn sm red" data-a="removeLogin" data-id="${esc(u.uid)}">Remove</button>`}</span></div>`).join("") || `<p class="muted">No staff logins yet.</p>`}</div>
   <div class="toolbar"><input id="q" type="search" placeholder="Search plot, owner or username…" value="${esc(S.q)}"><div class="chips">${[["all", "All"], ["none", "No login"], ["has", "Has login"]].map(([k, t]) => `<button class="chip ${S.lfilter === k ? "on" : ""}" data-a="lf" data-v="${k}">${t}</button>`).join("")}</div></div>
   <div class="list">${list.map(({ h, u }) => `<div class="item" data-a="loginItem" data-id="${esc(h.id)}"><div class="hno">${esc(h.no)}</div><div class="m"><b>${esc(h.owner || "—")}</b><small>${u ? "Username: " + esc(u.username) + (u.resetAt ? " · reset " + fmtDate(u.resetAt.slice(0, 10)) : "") : "No login yet"}${h.phone ? " · " + esc(h.phone) : ""}</small></div>${u ? '<span class="badge b-paid">Active</span>' : '<span class="badge b-no">None</span>'}</div>`).join("") || `<div class="empty">No plots</div>`}</div>`;
 }
@@ -728,11 +751,11 @@ function kindBadge(m) { const k = KINDS[m.kind] || KINDS.message; return `<span 
 function fmtAt(iso) { const d = new Date(iso); if (isNaN(d)) return ""; return fmtDate(iso.slice(0, 10)) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
 function msgHtml(m, admin) {
   const mine = admin ? m.from === "admin" : m.from === "resident";
-  const who = m.from === "admin" ? "Office" : (admin ? "Resident" : "You");
-  const pr = m.proofId && admin ? S.proofs.find(p => p.id === m.proofId) : null;
+  const who = m.from === "admin" ? "Office" + (admin && m.by ? " · " + esc(m.by) : "") : (admin ? "Resident" : "You");
+  const pr = m.proofId && S.mode === "admin" ? S.proofs.find(p => p.id === m.proofId) : null;
   let extra = "";
-  if (admin && m.kind === "complaint") extra = `<div class="actions"><button class="btn sm" data-a="msgStatus" data-id="${esc(m.id)}" data-v="${m.status === "resolved" ? "open" : "resolved"}">${m.status === "resolved" ? "Reopen" : "Mark resolved"}</button></div>`;
-  if (admin && m.proofId) extra = pr ? `<div class="actions"><button class="btn sm pri" data-a="proof" data-id="${esc(pr.id)}">Review payment</button></div>` : `<div class="muted" style="font-size:12px;margin-top:6px">Payment already reviewed (see Pending / bill).</div>`;
+  if (admin && m.kind === "complaint" && (S.mode === "admin" || sr("resolve"))) extra = `<div class="actions"><button class="btn sm" data-a="msgStatus" data-id="${esc(m.id)}" data-v="${m.status === "resolved" ? "open" : "resolved"}">${m.status === "resolved" ? "Reopen" : "Mark resolved"}</button></div>`;
+  if (S.mode === "admin" && m.proofId) extra = pr ? `<div class="actions"><button class="btn sm pri" data-a="proof" data-id="${esc(pr.id)}">Review payment</button></div>` : `<div class="muted" style="font-size:12px;margin-top:6px">Payment already reviewed (see Pending / bill).</div>`;
   return `<div class="msg ${mine ? "me" : ""}"><div class="meta"><b>${who}</b>${m.kind && m.kind !== "message" ? kindBadge(m) : ""}<span>${fmtAt(m.at)}</span></div>
   ${m.amount ? `<p><b>Paid ${money(m.amount)}</b>${m.method ? " · " + esc(m.method) : ""}${m.tid ? " · TID " + esc(m.tid) : ""}</p>` : ""}${m.text ? `<p>${esc(m.text)}</p>` : ""}${m.image ? `<img src="${esc(m.image)}" alt="Attachment" data-a="zoomImg">` : ""}${extra}</div>`;
 }
@@ -742,10 +765,10 @@ function chatList(hid, admin) {
 }
 function refreshChat() {
   if (!S.chat) return; const el = $("#chatlist"); if (!el) return;
-  const admin = S.mode === "admin"; el.innerHTML = chatList(S.chat, admin); const end = () => { el.scrollTop = el.scrollHeight; }; end(); el.querySelectorAll("img").forEach(i => { i.onload = end; }); markChatSeen();
+  const admin = isOffice(); el.innerHTML = chatList(S.chat, admin); const end = () => { el.scrollTop = el.scrollHeight; }; end(); el.querySelectorAll("img").forEach(i => { i.onload = end; }); markChatSeen();
 }
 function markChatSeen() {
-  if (!S.chat) return; const admin = S.mode === "admin";
+  if (!S.chat) return; const admin = isOffice();
   const ids = S.msgs.filter(m => m.hid === S.chat && (admin ? m.from === "resident" && !m.seenByAdmin : m.from === "admin" && !m.seenByResident)).map(m => m.id);
   if (ids.length) D.markSeen(ids, admin ? "seenByAdmin" : "seenByResident").catch(e => console.warn(e));
 }
@@ -758,11 +781,11 @@ function composeForm(admin, kind) {
   <button class="btn pri block">Send</button></form>`;
 }
 function chatModal(hid, kind) {
-  const admin = S.mode === "admin";
+  const admin = isOffice();
   const h = admin ? (S.houses.find(x => x.id === hid) || { no: hid }) : S.houses[0];
   S.chat = null;
   openModal(`<h3>${admin ? `Plot ${esc(h.no)}${h.owner ? " · " + esc(h.owner) : ""}` : "Inbox · Chat with the office"}<button class="x" data-a="close">×</button></h3>
-  <div class="chat" id="chatlist"></div>${composeForm(admin, kind)}`, true);
+  <div class="chat" id="chatlist"></div>${S.mode === "staff" && !sr("reply") ? `<p class="muted" style="margin:0">You can read these messages but not reply.</p>` : composeForm(admin, kind)}`, true);
   S.chat = hid; refreshChat();
 }
 function vInbox() {
@@ -774,11 +797,16 @@ function vInbox() {
   if (f === "unread") rows = rows.filter(r => r.unread); else if (f === "open") rows = rows.filter(r => r.open);
   const chip = (k, t) => `<button class="chip ${f === k ? "on" : ""}" data-a="ifilter" data-v="${k}">${t}</button>`;
   const opts = soldHouses().map(h => `<option value="${esc(h.id)}">${esc(h.no)}${h.owner ? " · " + esc(h.owner) : ""}</option>`).join("");
-  return `<div class="toolbar">${chip("all", "All")}${chip("unread", "Unread")}${chip("open", "Open complaints")}<span class="sp"></span><select id="newchat" style="max-width:220px"><option value="">Message a plot…</option>${opts}</select></div>
+  return `<div class="toolbar">${chip("all", "All")}${chip("unread", "Unread")}${chip("open", "Open complaints")}<span class="sp"></span>${S.mode === "admin" ? `<select id="newchat" style="max-width:220px"><option value="">Message a plot…</option>${opts}</select>` : ""}</div>
   <div class="list">${rows.map(r => `<div class="item" data-a="chat" data-id="${esc(r.h.id)}"><div class="hno">${esc(r.h.no)}</div><div class="m"><b>${esc(r.h.owner || "—")}</b><small>${esc((r.last.from === "admin" ? "You: " : "") + (r.last.text || (r.last.amount ? "Payment " + money(r.last.amount) : "Photo")))} · ${fmtAt(r.last.at)}</small></div><div style="text-align:right">${r.unread ? `<span class="badge b-unpaid">${r.unread} new</span>` : ""}${r.open ? `<div><span class="badge b-part">${r.open} open</span></div>` : ""}</div></div>`).join("") || `<div class="empty">No messages${f === "all" ? " yet" : ""}.</div>`}</div>`;
 }
+function replyTopic(hid) {
+  const last = S.msgs.filter(m => m.hid === hid && m.from === "resident").sort(byAt).pop();
+  const t = last ? topicOf(last) : (S.mode === "staff" ? "complaint" : "message");
+  return S.mode === "staff" && !staffTopics().includes(t) ? "complaint" : t;
+}
 async function sendMsgForm(f) {
-  const admin = S.mode === "admin", hid = S.chat; if (!hid) return;
+  const admin = isOffice(), hid = S.chat; if (!hid) return;
   const fd = new FormData(f); const kind = admin ? "message" : String(fd.get("kind") || "message");
   const text = String(fd.get("text") || "").trim(); const file = f.shot.files[0];
   const amount = kind === "payment" ? num(fd.get("amount")) : 0, tid = kind === "payment" ? String(fd.get("tid") || "").trim() : "";
@@ -788,7 +816,8 @@ async function sendMsgForm(f) {
   const btn = f.querySelector("button"); btn.disabled = true; btn.textContent = "Sending…";
   const image = file ? await shrinkImage(file) : "";
   const at = new Date().toISOString();
-  const m = { hid, uid: S.uid, from: admin ? "admin" : "resident", kind, text, image, at, seenByAdmin: admin, seenByResident: !admin };
+  const m = { hid, uid: S.uid, from: admin ? "admin" : "resident", kind, topic: admin ? replyTopic(hid) : kind, text, image, at, seenByAdmin: admin, seenByResident: !admin };
+  if (admin) { m.by = S.me.name || S.me.username || ""; m.byRole = S.me.role; }
   if (kind === "complaint") m.status = "open";
   const ok = await write(async () => {
     if (kind === "payment") {
@@ -802,6 +831,12 @@ async function sendMsgForm(f) {
   });
   if (ok) { f.reset(); const pf = $("#payf"); if (pf) pf.style.display = "none"; toast(kind === "payment" ? "Payment sent for confirmation" : "Sent"); }
   btn.disabled = false; btn.textContent = "Send";
+}
+
+function viewStaff() {
+  const n = unreadAdmin();
+  return `<header class="appbar mob"><div class="t"><b>Inbox${n ? " (" + n + ")" : ""}</b><small>${esc(S.me.name || S.me.username)} · ${esc(st().name)}</small></div><button class="ibtn" data-a="myAccount" aria-label="Account">${icon("lock")}</button><button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button></header>
+  <main>${!sr("inbox") ? `<div class="card"><h2>No access</h2><p class="muted" style="margin:0">The admin has turned off Inbox access for staff logins.</p></div>` : `<div class="info">You can see ${["complaints"].concat(sr("payments") ? ["payment screenshots"] : [], sr("messages") ? ["general messages"] : []).join(", ")}.</div>` + vInbox()}</main>`;
 }
 
 /* ---- RESIDENT portal ---- */
@@ -1309,7 +1344,7 @@ document.addEventListener("click", async e => {
     case "lf": S.lfilter = t.dataset.v; render(true); break;
     case "loginItem": loginItemModal(id); break;
     case "bulkLogins": bulkLogins(); break;
-    case "addStaff": openModal(`<h3>Add staff login<button class="x" data-a="close">×</button></h3><form data-f="staffLogin"><div class="f2"><label class="f"><span>Role</span><select name="role"><option value="reader">Meter reader</option><option value="admin">Admin</option></select></label><label class="f"><span>Name</span><input type="text" name="name"></label><label class="f"><span>Username</span><input type="text" name="u" autocapitalize="none" placeholder="e.g. reader1" required></label><label class="f"><span>Password</span><input type="text" name="p" value="${genPassword()}" required></label></div><button class="btn pri block">Create login</button></form>`); break;
+    case "addStaff": openModal(`<h3>Add staff login<button class="x" data-a="close">×</button></h3><form data-f="staffLogin"><div class="f2"><label class="f"><span>Role</span><select name="role"><option value="reader">Meter reader</option><option value="staff">Complaints staff (Inbox only)</option><option value="admin">Admin (full access)</option></select></label><label class="f"><span>Name</span><input type="text" name="name"></label><label class="f"><span>Username</span><input type="text" name="u" autocapitalize="none" placeholder="e.g. reader1" required></label><label class="f"><span>Password</span><input type="text" name="p" value="${genPassword()}" required></label></div><button class="btn pri block">Create login</button></form>`); break;
     case "resetLogin": { const u = S.users.find(x => x.uid === id); if (!u) break; if (!(await ask("Reset password?", "A new password will be created for <b>" + esc(u.username) + "</b>. The old password will stop working.", "Reset"))) break; try { const c = await D.resetLogin(u, genPassword()); credModal([Object.assign(c, { h: u.hid ? S.houses.find(h => h.id === u.hid) : null })]); } catch (e) { toast(e.message || "Could not reset"); } break; }
     case "removeLogin": { const u = S.users.find(x => x.uid === id); if (!u) break; if (await ask("Remove login?", "<b>" + esc(u.username) + "</b> will no longer be able to log in.", "Remove", true)) { if (await write(() => D.removeLogin(u))) { closeModal(); toast("Login removed"); } } break; }
     case "copyCred": { const c = S.lastCreds[+t.dataset.i]; try { await navigator.clipboard.writeText(credText(c, c.h)); toast("Copied"); } catch (e) { toast("Copy failed"); } break; }
@@ -1421,6 +1456,7 @@ document.addEventListener("submit", async e => {
     ["name", "address", "phone", "jazzNumber", "jazzTitle", "bankName", "bankTitle", "bankAcc", "iban"].forEach(n => s[n] = String(fd.get(n) || "").trim());
     ["marlaRate", "unitRate", "fineDefault", "dueDays"].forEach(n => s[n] = num(fd.get(n)));
     s.readerShowPrev = !!fd.get("readerShowPrev"); s.readerShowOwner = !!fd.get("readerShowOwner");
+    s.staffRights = {}; SR.forEach(([k]) => { s.staffRights[k] = !!fd.get("sr_" + k); });
     s.btns = { admin: {}, resident: {} }; BTNS.forEach(([k, , a, r]) => { if (a) s.btns.admin[k] = !!fd.get("btn_admin_" + k); if (r) s.btns.resident[k] = !!fd.get("btn_resident_" + k); });
     if (await write(() => D.saveSettings(s))) toast("Settings saved");
   } else if (k === "house") saveHouse(f);

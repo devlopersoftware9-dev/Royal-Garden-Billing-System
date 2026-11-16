@@ -12,6 +12,14 @@ service cloud.firestore {
     function isReader() { return hasRole() && me().role == 'reader'; }
     function isResident() { return hasRole() && me().role == 'resident'; }
     function myHid() { return me().hid; }
+    function isStaff() { return hasRole() && me().role == 'staff'; }
+    // Complaints staff rights, set by the admin in Settings (settings/main.staffRights)
+    function sr(k, d) { return get(/databases/$(database)/documents/settings/main).data.get('staffRights', {}).get(k, d); }
+    function staffTopicOk(t) {
+      return sr('inbox', true) && (t == 'complaint'
+        || (t == 'payment' && sr('payments', false))
+        || (t == 'message' && sr('messages', false)));
+    }
     function setupPath() { return /databases/$(database)/documents/meta/setup; }
     // true only inside the one-time "create first admin" batch
     function bootstrapping() { return signedIn() && !exists(setupPath()) && existsAfter(setupPath()); }
@@ -45,7 +53,7 @@ service cloud.firestore {
 
     // Plots: residents can only read their own plot
     match /houses/{hid} {
-      allow read: if isAdmin() || isReader() || (isResident() && myHid() == hid);
+      allow read: if isAdmin() || isReader() || (isStaff() && sr('inbox', true)) || (isResident() && myHid() == hid);
       allow write: if isAdmin();
     }
 
@@ -79,18 +87,33 @@ service cloud.firestore {
     }
 
     // Inbox: complaints, messages and payment screenshots between a plot and the office.
-    // Residents only see and write their own plot's messages, and can only mark office replies as read.
+    // topic = complaint / payment / message. Residents only see and write their own plot's messages.
+    // Complaints staff only see the topics the admin allows (complaints always, payments / general messages if ticked).
     match /messages/{id} {
-      allow read: if isAdmin() || (isResident() && resource.data.hid == myHid());
+      allow read: if isAdmin()
+        || (isResident() && resource.data.hid == myHid())
+        || (isStaff() && staffTopicOk(resource.data.topic));
       allow create: if (isAdmin() && request.resource.data.from == 'admin')
+        || (isStaff() && sr('reply', true)
+          && request.resource.data.from == 'admin'
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.kind == 'message'
+          && request.resource.data.seenByResident == false
+          && !('proofId' in request.resource.data)
+          && staffTopicOk(request.resource.data.topic))
         || (isResident()
           && request.resource.data.hid == myHid()
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.from == 'resident'
           && request.resource.data.seenByAdmin == false
           && request.resource.data.kind in ['complaint', 'payment', 'message']
+          && request.resource.data.topic == request.resource.data.kind
           && (!('status' in request.resource.data) || request.resource.data.status == 'open'));
       allow update: if isAdmin()
+        || (isStaff() && staffTopicOk(resource.data.topic)
+          && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenByAdmin'])
+            || (sr('resolve', true) && resource.data.topic == 'complaint'
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'seenByAdmin']))))
         || (isResident() && resource.data.hid == myHid() && resource.data.from == 'admin'
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seenByResident']));
       allow delete: if isAdmin();
