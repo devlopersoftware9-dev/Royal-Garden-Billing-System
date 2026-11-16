@@ -115,6 +115,9 @@ label.f>span{display:block;font-size:13px;color:var(--mute);margin-bottom:5px;fo
 .sheet{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px 18px calc(18px + var(--sab))}
 @media(min-width:700px){.sheet{border-radius:18px}}
 .sheet.wide{max-width:780px}
+.bview{display:flex;align-items:center;justify-content:center;min-height:200px;margin:0 0 10px}
+.bimg{display:block;max-width:100%;width:auto;height:auto;max-height:var(--bh,calc(92dvh - 220px));border:1px solid var(--line);border-radius:8px;cursor:zoom-in;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.bacts{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}.bacts .btn{flex:1 1 auto}
 .sheet h3{margin:0 0 12px;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .x{margin-left:auto;border:0;background:#f0f3f2;border-radius:99px;width:34px;height:34px;cursor:pointer;font-size:19px}
 #toast{position:fixed;left:50%;bottom:calc(90px + var(--sab));transform:translateX(-50%);background:#16201c;color:#fff;padding:11px 16px;border-radius:11px;opacity:0;transition:.25s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
@@ -127,6 +130,8 @@ label.f>span{display:block;font-size:13px;color:var(--mute);margin-bottom:5px;fo
 .msg p{margin:0;white-space:pre-wrap;word-break:break-word}
 .msg img{display:block;max-width:100%;max-height:260px;border-radius:9px;margin-top:7px;cursor:zoom-in;border:1px solid var(--line)}
 .msg .actions{margin:8px 0 0}
+.fab{position:fixed;right:16px;bottom:calc(18px + var(--sab));z-index:20;display:inline-flex;align-items:center;gap:8px;border:0;border-radius:99px;padding:13px 18px 13px 15px;background:var(--pri);color:#fff;font:inherit;font-weight:700;font-size:15px;box-shadow:0 6px 18px rgba(15,92,77,.35);cursor:pointer}
+.fab .i{width:22px;height:22px}.fab .dot{position:absolute;top:-5px;right:-3px;background:var(--red);color:#fff;border-radius:99px;font-size:12px;font-weight:700;min-width:20px;height:20px;line-height:20px;padding:0 5px;text-align:center;border:2px solid #fff}
 .ibtn{position:relative}.ibtn .dot{position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:99px;font-size:11px;font-weight:700;min-width:18px;height:18px;line-height:18px;padding:0 4px;text-align:center}
 .boot{padding:70px 24px;text-align:center;color:var(--mute)}
 .qrprev{width:130px;height:130px;object-fit:contain;border:1px solid var(--line);border-radius:10px;background:#fff}
@@ -203,6 +208,7 @@ const IC = {
   pending: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   users: '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M22 21a7 7 0 0 0-4-6.3"/>',
   settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  chat: '<path d="M20 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 12.5h5"/>',
   inbox: '<path d="M4 13h4l2 3h4l2-3h4"/><path d="M5.5 5h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
@@ -470,8 +476,8 @@ function viewAdmin() {
   const pc = S.proofs.length;
   const ic = unreadAdmin();
   const navBtn = ([k, t, i]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(i)}<span>${t}${k === "pending" && pc ? ` <span class="badge b-unpaid">${pc}</span>` : ""}${k === "inbox" && ic ? ` <span class="badge b-unpaid">${ic}</span>` : ""}</span></button>`;
-  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["inbox", "Inbox", "inbox"])}${navBtn(["logins", "Logins", "users"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
-  <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "inbox" ? "on" : ""}" data-a="tab" data-v="inbox" aria-label="Inbox">${icon("inbox")}${ic ? `<span class="dot">${ic}</span>` : ""}</button><button class="ibtn ${S.view === "logins" ? "on" : ""}" data-a="tab" data-v="logins" aria-label="Logins">${icon("users")}</button><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button></header>
+  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["inbox", "Inbox", "chat"])}${navBtn(["logins", "Logins", "users"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
+  <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "inbox" ? "on" : ""}" data-a="tab" data-v="inbox" aria-label="Inbox">${icon("chat")}${ic ? `<span class="dot">${ic}</span>` : ""}</button><button class="ibtn ${S.view === "logins" ? "on" : ""}" data-a="tab" data-v="logins" aria-label="Logins">${icon("users")}</button><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button></header>
   <main><div class="pagehead"><h1>${esc(TITLES[S.view] || "")}</h1></div>${S.slow ? `<div class="note">Some data has not loaded yet; what you see may be out of date.</div>` : ""}${body}</main>
   <nav class="bnav">${NAV.map(([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t === "Dashboard" ? "Home" : t}${k === "pending" && pc ? " (" + pc + ")" : ""}</span></button>`).join("")}</nav>`;
 }
@@ -755,7 +761,7 @@ function chatModal(hid, kind) {
   const admin = S.mode === "admin";
   const h = admin ? (S.houses.find(x => x.id === hid) || { no: hid }) : S.houses[0];
   S.chat = null;
-  openModal(`<h3>${admin ? `Plot ${esc(h.no)}${h.owner ? " · " + esc(h.owner) : ""}` : "Inbox · Society office"}<button class="x" data-a="close">×</button></h3>
+  openModal(`<h3>${admin ? `Plot ${esc(h.no)}${h.owner ? " · " + esc(h.owner) : ""}` : "Inbox · Chat with the office"}<button class="x" data-a="close">×</button></h3>
   <div class="chat" id="chatlist"></div>${composeForm(admin, kind)}`, true);
   S.chat = hid; refreshChat();
 }
@@ -806,7 +812,7 @@ function viewResident() {
   const curM = cur ? cur.month : null;
   const pend = S.proofs.filter(p => p.status === "pending");
   const bal = cur ? balance(cur) : 0;
-  return `<header class="appbar mob"><div class="t"><b>Plot ${esc(h.no)}</b><small>${esc(h.owner || s.name)}</small></div><button class="ibtn" data-a="myInbox" aria-label="Inbox">${icon("inbox")}${unreadRes() ? `<span class="dot">${unreadRes()}</span>` : ""}</button><button class="ibtn" data-a="myAccount" aria-label="Account">${icon("lock")}</button><button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button></header>
+  return `<header class="appbar mob"><div class="t"><b>Plot ${esc(h.no)}</b><small>${esc(h.owner || s.name)}</small></div><button class="ibtn" data-a="myAccount" aria-label="Account">${icon("lock")}</button><button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button></header>
   <main>
   ${cur ? `<div class="card" style="border-color:${bal > 0 ? "#efc6c2" : "#bfe3cb"}"><div class="row"><span class="muted">${mLabel(curM)} bill</span><span class="sp"></span>${badge(status(cur))}</div>
     <div style="font-size:34px;font-weight:800;margin:6px 0 2px;color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(Math.max(0, bal))}</div>
@@ -815,25 +821,26 @@ function viewResident() {
   : `<div class="card"><h2>No bills yet</h2><p class="muted" style="margin:0">Your bills will appear here once the society issues them.</p></div>`}
   ${pend.map(p => `<div class="info">Your payment of <b>${money(p.amount)}</b> (${fmtDate(p.date)}) is waiting for confirmation by the office.</div>`).join("")}
   ${S.proofs.filter(p => p.status === "rejected").slice(0, 1).map(p => `<div class="err">Your payment of ${money(p.amount)} (${fmtDate(p.date)}) could not be confirmed${p.reviewNote ? ": " + esc(p.reviewNote) : ""}. Please contact the office.</div>`).join("")}
-  <div class="card"><div class="row"><h2 style="margin:0">Inbox</h2><span class="sp"></span>${unreadRes() ? `<span class="badge b-unpaid">${unreadRes()} new</span>` : ""}</div>
-    <p class="muted" style="margin:6px 0 12px;font-size:14px">${S.msgs.length ? esc(lastLine(S.msgs.slice().sort(byAt).pop())) : "Send a complaint or a message to the society office. You can attach a photo or a payment screenshot."}</p>
-    <div class="actions" style="margin:0"><button class="btn pri" data-a="myInbox">Open inbox</button><button class="btn" data-a="myInbox" data-k="complaint">New complaint</button></div></div>
   <div class="grid"><div class="stat"><span>Area</span><b>${esc(h.marla)} marla</b></div><div class="stat"><span>Street</span><b>${esc(h.street || "—")}</b></div></div>
   <div class="card"><h2>Bill history</h2>${months.length ? `<div class="list" style="border:0">${months.map(m => { const b = S.bills[m].b[h.id]; return b ? `<div class="item" data-a="rbill" data-m="${m}"><div class="m"><b>${mLabel(m)}</b><small>${b.units} units · Paid ${money(b.paid)}</small></div><div><div class="amt">${money(b.total)}</div><div style="text-align:right">${badge(status(b))}</div></div></div>` : ""; }).join("")}</div>` : `<p class="muted" style="margin:0">No bills yet.</p>`}</div>
   ${S.proofs.length ? `<div class="card"><h2>My payments</h2>${S.proofs.map(p => `<div class="kv"><span>${fmtDate(p.date)} · ${esc(p.method || "")}${p.tid ? " · " + esc(p.tid) : ""}</span><b>${money(p.amount)} <span class="badge ${p.status === "approved" ? "b-paid" : p.status === "rejected" ? "b-unpaid" : "b-part"}">${p.status === "approved" ? "Confirmed" : p.status === "rejected" ? "Rejected" : "Pending"}</span></b></div>`).join("")}</div>` : ""}
   <div class="card"><h2>Contact</h2><p class="muted" style="margin:0">${esc(s.name)}${s.phone ? " · " + esc(s.phone) : ""}</p></div>
-  </main>`;
+  </main>
+  <button class="fab" data-a="myInbox" aria-label="Inbox: chat and complaints">${icon("chat")}<span>Inbox</span>${unreadRes() ? `<span class="dot">${unreadRes()}</span>` : ""}</button>`;
 }
+function billPreview(m, bill) {
+  billCanvas(m, bill).then(c => { const el = $("#bprev"); if (el) el.innerHTML = `<img class="bimg" id="bimg" src="${c.toDataURL("image/jpeg", 0.85)}" alt="Bill" data-a="zoomImg">`; }).catch(e => { console.error(e); const el = $("#bprev"); if (el) el.textContent = "Could not draw the bill"; });
+}
+const bacts = list => { const b = list.filter(Boolean); return b.length ? `<div class="bacts">${b.join("")}</div>` : ""; };
 function residentBillModal(m) {
   const h = S.houses[0]; const bill = S.bills[m] && S.bills[m].b[h.id]; if (!bill) return;
   const pays = (bill.payments || []).map(p => `<tr><td>${fmtDate(p.date)}</td><td>${esc(p.method)}</td><td>${money(p.amt)}</td></tr>`).join("");
   openModal(`<h3>${mLabel(m)} bill ${badge(status(bill))}<button class="x" data-a="close">×</button></h3>
-  <div class="kv"><span>Total bill</span><b>${money(bill.total)}</b></div><div class="kv"><span>Paid</span><b style="color:var(--grn)">${money(bill.paid)}</b></div><div class="kv"><span>Balance</span><b>${money(Math.max(0, balance(bill)))}</b></div>
-  ${bill.carried ? `<div class="info" style="margin-top:12px">This balance was carried into your ${mLabel(bill.carriedTo)} bill.</div>` : ""}
-  ${acts([bOn("resident", "print") && `<button class="btn" data-a="print1" data-m="${m}" data-id="${esc(h.id)}">Print</button>`, bOn("resident", "pdf") && `<button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(h.id)}">Download PDF</button>`, bOn("resident", "img") && `<button class="btn" data-a="img1" data-m="${m}" data-id="${esc(h.id)}">Download image</button>`, !bill.carried && balance(bill) > 0 && bOn("resident", "payNow") && `<button class="btn pri" data-a="payNow">Pay now</button>`], "margin-top:12px")}
-  ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th></tr>${pays}</table>` : ""}
-  <div id="bprev" class="muted" style="text-align:center;padding:30px">Preparing bill…</div>`, true);
-  billCanvas(m, bill).then(c => { const el = $("#bprev"); if (el) el.outerHTML = `<img class="preview" id="bimg" src="${c.toDataURL("image/jpeg", 0.85)}" alt="Bill">`; }).catch(e => console.error(e));
+  <div class="bview" id="bprev" style="--bh:calc(92dvh - 170px)"><span class="muted">Preparing bill…</span></div>
+  ${bacts([!bill.carried && balance(bill) > 0 && bOn("resident", "payNow") && `<button class="btn sm pri" data-a="payNow">Pay now</button>`, bOn("resident", "print") && `<button class="btn sm" data-a="print1" data-m="${m}" data-id="${esc(h.id)}">Print</button>`, bOn("resident", "pdf") && `<button class="btn sm" data-a="pdf1" data-m="${m}" data-id="${esc(h.id)}">PDF</button>`, bOn("resident", "img") && `<button class="btn sm" data-a="img1" data-m="${m}" data-id="${esc(h.id)}">Image</button>`])}
+  ${bill.carried ? `<div class="info">This balance was carried into your ${mLabel(bill.carriedTo)} bill.</div>` : ""}
+  ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th></tr>${pays}</table>` : ""}`, true);
+  billPreview(m, bill);
 }
 function payNowModal() {
   const h = S.houses[0], s = st();
@@ -981,15 +988,17 @@ function billModal(m, hid) {
   const bill = S.bills[m] && S.bills[m].b && S.bills[m].b[hid]; if (!bill) return;
   const s = status(bill), bal = balance(bill), isLatest = m === latestBillMonth();
   const pays = (bill.payments || []).map((p, i) => `<tr><td>${fmtDate(p.date)}</td><td>${esc(p.method)}</td><td>${money(p.amt)}</td><td>${esc(p.note || "")}</td><td>${isLatest && !bill.carried && bOn("admin", "delPay") ? `<button class="btn sm red" data-a="delPay" data-m="${m}" data-id="${esc(hid)}" data-i="${i}">×</button>` : ""}</td></tr>`).join("");
+  const open = isLatest && !bill.carried;
+  const btns = [open && bOn("admin", "pay") && `<button class="btn sm pri" data-a="pay" data-m="${m}" data-id="${esc(hid)}">Record payment</button>`, open && bOn("admin", "fine") && `<button class="btn sm" data-a="fine" data-m="${m}" data-id="${esc(hid)}">Add fine</button>`, open && num(bill.fine) && bOn("admin", "unfine") && `<button class="btn sm red" data-a="unfine" data-m="${m}" data-id="${esc(hid)}">Remove fine</button>`,
+    bOn("admin", "wa") && `<button class="btn sm grn" data-a="waOne" data-m="${m}" data-id="${esc(hid)}">WhatsApp</button>`, bOn("admin", "print") && `<button class="btn sm" data-a="print1" data-m="${m}" data-id="${esc(hid)}">Print</button>`, bOn("admin", "pdf") && `<button class="btn sm" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">PDF</button>`, bOn("admin", "img") && `<button class="btn sm" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Image</button>`];
+  const rows = Math.ceil(btns.filter(Boolean).length / 4);
   openModal(`<h3>Plot ${esc(bill.no)} · ${mLabel(m)} ${badge(s)}<button class="x" data-a="close">×</button></h3>
-  <div class="kv"><span>Total bill</span><b>${money(bill.total)}</b></div><div class="kv"><span>Paid</span><b style="color:var(--grn)">${money(bill.paid)}</b></div><div class="kv"><span>Balance</span><b style="color:${bal > 0 ? "var(--red)" : "var(--grn)"}">${money(bal)}</b></div>
-  ${bill.carried ? `<div class="info" style="margin-top:12px">This balance has been carried into the ${mLabel(bill.carriedTo)} bill. Record payments there. <button class="btn sm" data-a="bill" data-m="${bill.carriedTo}" data-id="${esc(hid)}">Open ${mLabel(bill.carriedTo)} bill</button></div>` : ""}
-  ${acts((isLatest && !bill.carried ? [bOn("admin", "pay") && `<button class="btn pri" data-a="pay" data-m="${m}" data-id="${esc(hid)}">Record payment</button>`, bOn("admin", "fine") && `<button class="btn" data-a="fine" data-m="${m}" data-id="${esc(hid)}">Add fine</button>`, num(bill.fine) && bOn("admin", "unfine") && `<button class="btn red" data-a="unfine" data-m="${m}" data-id="${esc(hid)}">Remove fine</button>`] : []), "margin-top:14px")}
-  ${acts([bOn("admin", "print") && `<button class="btn" data-a="print1" data-m="${m}" data-id="${esc(hid)}">Print</button>`, bOn("admin", "pdf") && `<button class="btn" data-a="pdf1" data-m="${m}" data-id="${esc(hid)}">Download PDF</button>`, bOn("admin", "img") && `<button class="btn" data-a="img1" data-m="${m}" data-id="${esc(hid)}">Download image</button>`, bOn("admin", "wa") && `<button class="btn grn" data-a="waOne" data-m="${m}" data-id="${esc(hid)}">Send picture on WhatsApp</button>`], "margin-top:6px")}
+  <div class="bview" id="bprev" style="--bh:calc(92dvh - ${130 + rows * 42}px)"><span class="muted">Preparing bill…</span></div>
+  ${bacts(btns)}
+  ${bill.carried ? `<div class="info">This balance has been carried into the ${mLabel(bill.carriedTo)} bill. Record payments there. <button class="btn sm" data-a="bill" data-m="${bill.carriedTo}" data-id="${esc(hid)}">Open ${mLabel(bill.carriedTo)} bill</button></div>` : ""}
   ${bill.phone ? "" : `<p class="muted" style="font-size:13px;margin:0 0 12px"><b>No mobile number is saved for this plot.</b></p>`}
-  ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th><th>Note</th><th></th></tr>${pays}</table>` : ""}
-  <div id="bprev" class="muted" style="text-align:center;padding:30px">Preparing bill…</div>`, true);
-  billCanvas(m, bill).then(c => { const el = $("#bprev"); if (el) { el.outerHTML = `<img class="preview" id="bimg" src="${c.toDataURL("image/jpeg", 0.85)}" alt="Bill">`; } }).catch(e => { console.error(e); const el = $("#bprev"); if (el) el.textContent = "Could not draw the bill"; });
+  ${pays ? `<h3>Payments</h3><table class="tbl" style="margin-bottom:14px"><tr><th>Date</th><th>Method</th><th>Amount</th><th>Note</th><th></th></tr>${pays}</table>` : ""}`, true);
+  billPreview(m, bill);
 }
 function waLink(m, b) {
   const s = st(), doc = S.bills[m], bal = balance(b);
