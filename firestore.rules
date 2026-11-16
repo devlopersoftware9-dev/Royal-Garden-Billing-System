@@ -63,9 +63,16 @@ service cloud.firestore {
     }
 
     // Meter readings: admin + meter readers only
+    // Meter readings. Readers can only ADD a plot's reading; once entered, only the admin can correct or delete it.
     match /readings/{month} {
       allow read: if isAdmin() || isReader();
-      allow create, update: if isAdmin() || isReader();
+      allow create: if isAdmin() || isReader();
+      allow update: if isAdmin()
+        || (isReader()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['r', 'month'])
+          && request.resource.data.month == resource.data.month
+          && request.resource.data.r.diff(resource.data.r).changedKeys().size() == 0
+          && request.resource.data.r.diff(resource.data.r).removedKeys().size() == 0);
       allow delete: if isAdmin();
     }
 

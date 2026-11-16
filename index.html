@@ -254,6 +254,7 @@ function vColors() {
 /* Complaints staff rights (Settings → Complaints staff). Also enforced in firestore.rules. */
 const SR = [["inbox", "Open the Inbox", "Without this the staff login sees nothing.", true], ["reply", "Reply to residents", "Send replies in the chat.", true], ["resolve", "Mark complaints resolved", "Close or reopen a complaint.", true], ["payments", "See payment screenshots", "Payment messages and screenshots sent by residents.", false], ["messages", "See general messages", "Messages that are not complaints or payments.", false]];
 const sr = k => { const r = st().staffRights || {}; const d = SR.find(x => x[0] === k); return r[k] === undefined ? (d ? d[3] : false) : !!r[k]; };
+const isSuper = () => !!(S.me && S.me.role === "admin");
 const isOffice = () => S.mode === "admin" || S.mode === "staff";
 const staffTopics = () => !sr("inbox") ? [] : ["complaint"].concat(sr("payments") ? ["payment"] : [], sr("messages") ? ["message"] : []);
 const topicOf = m => m.topic || m.kind || "message";
@@ -352,15 +353,19 @@ function subscribeStaff() {
   listen(doc(fs, "settings", "main"), s => { S.settingsExists = s.exists(); S.settings = s.exists() ? s.data() : null; syncStaffMsgs(); }, "s");
   listen(collection(fs, "houses"), q => { S.housesExists = !q.empty; S.houses = q.docs.map(d => Object.assign({ id: d.id }, d.data())); }, "h");
 }
+let userSeq = 0;
 async function handleUser(u) {
-  unsubAll(); S.bills = {}; S.billDocs = {}; S.billRuns = {}; S.readings = {}; S.proofs = []; S.users = []; S.msgs = []; S.chat = null; S.houses = []; S.settings = null;
+  const seq = ++userSeq; // a later sign-in/out wins; an older, slower one is ignored
+  unsubAll(); staffMsgUnsubs = []; staffKey = null; S.ifilter = "all"; S.waQ = null; closeModal(); S.bills = {}; S.billDocs = {}; S.billRuns = {}; S.readings = {}; S.proofs = []; S.users = []; S.msgs = []; S.chat = null; S.houses = []; S.settings = null;
   if (!u) {
     S.me = null; S.uid = null; S.owner = false;
     try { const d = await getDoc(doc(fs, "meta", "setup")); S.needsBootstrap = !d.exists(); } catch (e) { S.needsBootstrap = false; }
+    if (seq !== userSeq) return;
     S.mode = "login"; render(true); return;
   }
   S.uid = u.uid;
   let me = null; try { const d = await getDoc(doc(fs, "users", u.uid)); me = d.exists() ? d.data() : null; } catch (e) { console.warn(e); }
+  if (seq !== userSeq) return;
   if (!me) { S.mode = "norole"; render(true); return; }
   S.me = me; S.owner = me.role === "admin"; S.view = "home"; S.q = "";
   if (me.role === "admin") { S.mode = "admin"; subscribeAdmin(); }
@@ -610,7 +615,7 @@ function vReadings() {
   return progressCard(m, doneN, sold.length) +
   (changed ? `<div class="note">Bills for ${mLabel(m)} were already generated, but ${changed} reading(s) were added or changed afterwards. Use "Regenerate" on the Bills tab.</div>` : "") +
   `<div class="toolbar"><input id="q" type="search" placeholder="Search plot no. or name…" value="${esc(S.q)}">${rChips()}</div>
-  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>Previous: ${x.prev}${x.cur != null ? ` → Current: ${x.cur} · <b>${r2(x.cur - x.prev)} units</b>` : ""}${x.e && x.e.at ? " · " + fmtDate(x.e.at.slice(0, 10)) + (x.e.by === "reader" ? " (reader)" : "") : ""}</small></div>${x.cur != null ? (x.cur < x.prev ? '<span class="badge b-unpaid">Lower!</span>' : '<span class="badge b-paid">Done</span>') : '<span class="badge b-no">Remaining</span>'}</div>`).join("") || `<div class="empty">${sold.length ? "No plots match this filter" : "Mark plots as sold on the Plots tab first"}</div>`}</div>`;
+  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>Previous: ${x.prev}${x.cur != null ? ` → Current: ${x.cur} · <b>${r2(x.cur - x.prev)} units</b>` : ""}${x.e && x.e.at ? " · " + fmtDate(x.e.at.slice(0, 10)) + (x.e.by === "reader" ? " (reader)" : "") : ""}${x.e && x.e.fixed ? ` · <b style="color:var(--amb)">corrected (was ${esc(x.e.old)})</b>` : ""}</small></div>${x.cur != null ? (x.cur < x.prev ? '<span class="badge b-unpaid">Lower!</span>' : '<span class="badge b-paid">Done</span>') : '<span class="badge b-no">Remaining</span>'}</div>`).join("") || `<div class="empty">${sold.length ? "No plots match this filter" : "Mark plots as sold on the Plots tab first"}</div>`}</div>`;
 }
 
 /* ---- Bills ---- */
@@ -996,15 +1001,21 @@ function readingModal(hid) {
   const h = S.houses.find(x => x.id === hid); if (!h) return;
   const m = S.readMonth, prev = prevReading(h, m), cur = readingOf(hid, m), sp = showPrev();
   const e = S.readings[m] && S.readings[m].r && S.readings[m].r[hid];
+  const sup = isSuper(), locked = cur != null && !sup, fix = cur != null && sup, billed = !!(S.bills[m] && S.bills[m].b && S.bills[m].b[hid]);
+  const was = e && e.fixed ? ` <span class="muted">(corrected by admin, was ${esc(e.old)})</span>` : "";
   openModal(`<h3><span class="muted" style="font-weight:500;font-size:14px">${mLabel(m)}</span><button class="x" data-a="close">×</button></h3>
   <div class="rd-plot">Plot ${esc(h.no)}</div>
   <div class="rd-sub">${showOwner() && h.owner ? esc(h.owner) : ""}${h.street ? (showOwner() && h.owner ? " · " : "") + "Street " + esc(h.street) : ""}${h.meter ? " · Meter " + esc(h.meter) : ""}</div>
-  ${sp ? `<div class="prevbox"><div><span>Previous reading</span><b>${prev}</b></div><div><span>Units</span><b id="runits">—</b></div></div>` : ""}
-  ${cur != null ? `<div class="info">Already entered: <b>${cur}</b>${e && e.at ? " on " + fmtDate(e.at.slice(0, 10)) : ""}. Saving again will replace it.</div>` : ""}
+  ${sp ? `<div class="prevbox"><div><span>Previous reading</span><b>${prev}</b></div><div><span>Units</span><b id="runits">${cur != null ? r2(cur - prev) : "—"}</b></div></div>` : ""}
+  ${locked ? `<div class="info">Reading entered: <b>${cur}</b>${e && e.at ? " on " + fmtDate(e.at.slice(0, 10)) : ""}${was}.<br>If it is wrong, ask the admin to correct it.</div>
+  <div class="row"><button class="btn pri" data-a="readNext" data-id="${esc(hid)}" style="flex:2">Next plot</button><button class="btn" data-a="close" style="flex:1">Close</button></div>`
+  : `${fix ? `<div class="note">Current reading: <b>${cur}</b>${e && e.at ? " · " + fmtDate(e.at.slice(0, 10)) + (e.by === "reader" ? " by the reader" : "") : ""}${was}.<br>Enter the correct reading below.${billed ? ` Bills for ${mLabel(m)} are already made, so you will need to regenerate them.` : ""}</div>` : ""}
   <form data-f="reading" data-id="${esc(hid)}">
-  <label class="f"><span>New meter reading</span><input id="rv" class="readin" type="number" inputmode="decimal" step="0.01" name="v" value="${cur != null ? cur : ""}" placeholder="0"></label>
+  <label class="f"><span>${fix ? "Correct meter reading" : "New meter reading"}</span><input id="rv" class="readin" type="number" inputmode="decimal" step="0.01" name="v" value="${cur != null ? cur : ""}" placeholder="0"></label>
+  ${fix ? `<label class="f"><span>Reason (optional)</span><input type="text" name="note" placeholder="e.g. reader typed 1520 instead of 1250"></label>` : ""}
   <div id="rinfo"></div>
-  <div class="row"><button class="btn pri" name="go" value="next" style="flex:2">Save &amp; next plot</button><button class="btn" name="go" value="close" style="flex:1">Save</button>${S.mode === "admin" && cur != null ? `<button type="button" class="btn red" data-a="delReading" data-id="${esc(hid)}">Delete</button>` : ""}</div></form>`);
+  <div class="row">${fix ? `<button class="btn pri" name="go" value="close" style="flex:2">Save correction</button>` : `<button class="btn pri" name="go" value="next" style="flex:2">Save &amp; next plot</button><button class="btn" name="go" value="close" style="flex:1">Save</button>`}${sup && cur != null ? `<button type="button" class="btn red" data-a="delReading" data-id="${esc(hid)}">Delete</button>` : ""}</div></form>`}`);
+  if (locked) return;
   const inp = $("#rv"), info = $("#rinfo"), uel = $("#runits");
   const upd = () => {
     info.className = ""; info.textContent = ""; if (uel) uel.textContent = "—";
@@ -1020,9 +1031,18 @@ async function saveReading(form, go) {
   if (raw === "" || !isFinite(+raw)) return toast("Enter the reading");
   const v = num(raw); const h = S.houses.find(x => x.id === hid); const prev = prevReading(h, m);
   if (v < prev && !form.dataset.ok) { form.dataset.ok = "1"; toast("The reading is lower than expected. Tap Save again if it is correct."); return; }
-  const entry = { v, at: new Date().toISOString(), by: S.mode === "reader" ? "reader" : "admin" };
+  const cur = readingOf(hid, m), old = S.readings[m] && S.readings[m].r && S.readings[m].r[hid];
+  if (cur != null && !isSuper()) { toast("Only the admin can change a reading"); return; }
+  if (cur != null && v === cur) { closeModal(); return; }
+  const entry = { v, at: new Date().toISOString(), by: S.mode === "reader" && !isSuper() ? "reader" : "admin" };
+  if (cur != null) Object.assign(entry, { fixed: true, old: old && old.fixed ? old.old : cur, oldBy: (old && old.by) || "", note: String((form.note && form.note.value) || "").trim() });
   const ok = await write(() => D.saveReading(m, hid, entry));
   if (!ok) return;
+  if (cur != null) {
+    const billed = S.bills[m] && S.bills[m].b && S.bills[m].b[hid], latest = m === latestBillMonth();
+    if (billed) { openModal(`<h3>Reading corrected<button class="x" data-a="close">×</button></h3><p>Plot <b>${esc(h.no)}</b>: ${cur} → <b>${v}</b>.</p>${latest ? `<p>Bills for <b>${mLabel(m)}</b> were already made. Regenerate them so the bill uses the corrected reading. Payments and fines are kept.</p><div class="row"><button class="btn pri" data-a="regenFor" data-m="${m}">Regenerate ${mLabel(m)} bills</button><button class="btn" data-a="close">Later</button></div>` : `<p>The ${mLabel(m)} bills are already closed, so they stay as they are. The corrected reading will be used as the "previous reading" for the next month.</p><button class="btn pri block" data-a="close">OK</button>`}`); return; }
+    toast("Plot " + h.no + ": reading corrected to " + v); closeModal(); return;
+  }
   toast("Plot " + h.no + ": " + v + " saved");
   if (go === "next") {
     const sold = soldHouses(); const i = sold.findIndex(x => x.id === hid);
@@ -1470,6 +1490,8 @@ document.addEventListener("click", async e => {
     case "rf": S.rfilter = t.dataset.v; render(true); break;
     case "bf": S.bfilter = t.dataset.v; render(true); break;
     case "ifilter": S.ifilter = t.dataset.v; render(true); break;
+    case "readNext": { const m2 = S.readMonth, sold = soldHouses(), i = sold.findIndex(x => x.id === id); const nxt = sold.slice(i + 1).concat(sold.slice(0, i)).find(x => x.id !== id && readingOf(x.id, m2) == null); if (nxt) readingModal(nxt.id); else { toast("All readings are done ✓"); closeModal(); } break; }
+    case "regenFor": { closeModal(); S.billMonth = t.dataset.m; S.view = "bills"; render(true); const rb = document.querySelector('[data-a="regen"]'); if (rb) rb.click(); break; }
     case "theme": { const v = t.dataset.v; if (await write(() => D.saveSettings(Object.assign({}, st(), { theme: v })))) toast("Colours changed"); break; }
     case "themeCustom": { const v = ($("#tcustom") || {}).value; if (/^#[0-9a-f]{6}$/i.test(v || "") && await write(() => D.saveSettings(Object.assign({}, st(), { theme: v.toLowerCase() })))) toast("Colours changed"); break; }
     case "chat": chatModal(id); break;
