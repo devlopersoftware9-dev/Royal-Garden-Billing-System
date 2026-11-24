@@ -158,6 +158,12 @@ label.f>span{display:block;font-size:13px;color:var(--mute);margin-bottom:5px;fo
 .rd-sub{text-align:center;color:var(--mute);margin-bottom:12px}
 .prevbox{display:flex;justify-content:space-around;text-align:center;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:12px}
 .prevbox span{display:block;font-size:12px;color:var(--mute)}
+.ichips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.ichips .chip.on{background:var(--amb);border-color:var(--amb);color:#fff}
+details.issue{border:1px dashed #e3c48f;background:#fffaf0;border-radius:12px;padding:10px 12px;margin:0 0 12px}
+details.issue summary{cursor:pointer;font-weight:600;color:var(--amb)}
+details.issue textarea{width:100%}
+.badge.b-issue{background:var(--amb2);color:var(--amb)}
 .prevbox b{font-size:20px}
 .reader main{padding-bottom:calc(30px + var(--sab))}
 @media(min-width:900px){.reader .appbar.mob{display:flex}.reader main{max-width:720px}}
@@ -268,7 +274,7 @@ const S = {
   settings: null, settingsExists: false, houses: [], housesExists: false,
   bills: {}, billRuns: {}, billDocs: {}, readings: {}, proofs: [], users: [], msgs: [], chat: null,
   ready: { s: false, h: false }, slow: false, writeDenied: false,
-  view: "home", q: "", hfilter: "all", rfilter: "pending", billMonth: null, readMonth: curMonth(), bfilter: "all", lfilter: "all",
+  view: "home", q: "", hfilter: "all", rfilter: "pending", billMonth: null, readMonth: curMonth(), bfilter: "all", lfilter: "all", issues: [], rview: "readings", isf: "open",
 };
 const st = () => Object.assign({}, DEF, S.settings || {});
 const soldHouses = () => S.houses.filter(h => h.sold).sort(hsort);
@@ -327,11 +333,14 @@ function subscribeAdmin() {
   listen(collection(fs, "users"), q => { S.users = q.docs.map(d => Object.assign({ uid: d.id }, d.data())); });
   listen(doc(fs, "private", "email"), d => { S.mail = d.exists() ? d.data() : {}; });
   listen(query(collection(fs, "messages"), orderBy("at", "desc"), limit(800)), q => { S.msgs = q.docs.map(d => Object.assign({ id: d.id }, d.data())); refreshChat(); });
+  listenIssues();
 }
+function listenIssues() { listen(query(collection(fs, "meterIssues"), orderBy("at", "desc"), limit(500)), q => { S.issues = q.docs.map(d => Object.assign({ id: d.id }, d.data())); }); }
 function subscribeReader() {
   S.ready = { s: false, h: false }; startSlowTimer(); subscribeCommon();
   listen(collection(fs, "houses"), q => { S.housesExists = !q.empty; S.houses = q.docs.map(d => Object.assign({ id: d.id }, d.data())); }, "h");
   listen(query(collection(fs, "readings"), orderBy("month", "desc"), limit(6)), q => { S.readings = docsToMap(q); });
+  listenIssues();
 }
 function subscribeResident() {
   const hid = S.me.hid; S.ready = { s: false, h: false }; startSlowTimer(); subscribeCommon();
@@ -434,6 +443,9 @@ const D = {
   createProofWithId: (id, p) => setDoc(doc(fs, "proofs", id), p),
   sendMsg: m => setDoc(doc(collection(fs, "messages")), m),
   updateMsg: (id, f) => updateDoc(doc(fs, "messages", id), f),
+  addIssue: (h, m, iss) => setDoc(doc(collection(fs, "meterIssues")), { hid: h.id, no: h.no, street: h.street || "", meter: h.meter || "", owner: h.owner || "", month: m, tags: iss.tags, text: iss.text, status: "open", at: new Date().toISOString(), uid: S.uid, by: S.me.name || S.me.username || "", byRole: S.me.role }),
+  setIssue: (id, f) => updateDoc(doc(fs, "meterIssues", id), f),
+  delIssue: id => deleteDoc(doc(fs, "meterIssues", id)),
   async markSeen(ids, field) { if (!ids.length) return; const b = writeBatch(fs); ids.slice(0, 450).forEach(id => b.update(doc(fs, "messages", id), { [field]: true })); await b.commit(); },
   async reviewProof(p, approve, note) {
     const b = writeBatch(fs);
@@ -529,16 +541,16 @@ function viewLogin() {
 
 /* ---- ADMIN shell ---- */
 const NAV = [["home", "Dashboard", "home"], ["houses", "Plots", "plots"], ["readings", "Readings", "readings"], ["bills", "Bills", "bills"], ["pending", "Pending", "pending"]];
-const TITLES = { home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings", logins: "Logins", inbox: "Inbox", colors: "Color Scheme", creport: "Complaints Report" };
+const TITLES = { issues: "Meter Issues", home: "Dashboard", houses: "Plots", readings: "Meter Readings", bills: "Bills", pending: "Pending Payments", settings: "Settings", logins: "Logins", inbox: "Inbox", colors: "Color Scheme", creport: "Complaints Report" };
 function viewAdmin() {
   const s = st();
   let body;
   if (!S.settingsExists || !S.housesExists) { if (S.view !== "settings") body = viewSetup(); }
-  if (!body) body = ({ home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings, logins: vLogins, inbox: vInbox, colors: vColors, creport: vCReport }[S.view] || vHome)();
+  if (!body) body = ({ issues: vIssues, home: vHome, houses: vHouses, readings: vReadings, bills: vBills, pending: vPending, settings: vSettings, logins: vLogins, inbox: vInbox, colors: vColors, creport: vCReport }[S.view] || vHome)();
   const pc = S.proofs.length;
   const ic = unreadAdmin();
-  const navBtn = ([k, t, i]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(i)}<span>${t}${k === "pending" && pc ? ` <span class="badge b-unpaid">${pc}</span>` : ""}${k === "inbox" && ic ? ` <span class="badge b-unpaid">${ic}</span>` : ""}</span></button>`;
-  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["inbox", "Inbox", "chat"])}${navBtn(["creport", "Complaints report", "report"])}${navBtn(["logins", "Logins", "users"])}${navBtn(["colors", "Colors", "palette"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
+  const navBtn = ([k, t, i]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(i)}<span>${t}${k === "pending" && pc ? ` <span class="badge b-unpaid">${pc}</span>` : ""}${k === "inbox" && ic ? ` <span class="badge b-unpaid">${ic}</span>` : ""}${k === "issues" && openIssues().length ? ` <span class="badge b-issue">${openIssues().length}</span>` : ""}</span></button>`;
+  return `<aside class="side"><div class="brand">${esc(s.name)}<small>Water &amp; Maintenance Billing</small></div><nav>${NAV.map(navBtn).join("")}${navBtn(["issues", "Meter issues", "readings"])}${navBtn(["inbox", "Inbox", "chat"])}${navBtn(["creport", "Complaints report", "report"])}${navBtn(["logins", "Logins", "users"])}${navBtn(["colors", "Colors", "palette"])}${navBtn(["settings", "Settings", "settings"])}</nav><nav class="foot"><button data-a="toReader">${icon("readings")}<span>Open reader view</span></button><button data-a="logout">${icon("logout")}<span>Log out</span></button></nav></aside>
   <header class="appbar mob"><div class="t"><b>${esc(TITLES[S.view] || s.name)}</b><small>${esc(s.name)}</small></div><button class="ibtn ${S.view === "inbox" ? "on" : ""}" data-a="tab" data-v="inbox" aria-label="Inbox">${icon("chat")}${ic ? `<span class="dot">${ic}</span>` : ""}</button><button class="ibtn ${S.view === "logins" ? "on" : ""}" data-a="tab" data-v="logins" aria-label="Logins">${icon("users")}</button><button class="ibtn ${S.view === "colors" ? "on" : ""}" data-a="tab" data-v="colors" aria-label="Colors">${icon("palette")}</button><button class="ibtn ${S.view === "settings" ? "on" : ""}" data-a="tab" data-v="settings" aria-label="Settings">${icon("settings")}</button></header>
   <main><div class="pagehead"><h1>${esc(TITLES[S.view] || "")}</h1></div>${S.slow ? `<div class="note">Some data has not loaded yet; what you see may be out of date.</div>` : ""}${body}</main>
   <nav class="bnav">${NAV.map(([k, t, ic]) => `<button class="${S.view === k ? "on" : ""}" data-a="tab" data-v="${k}">${icon(ic)}<span>${t === "Dashboard" ? "Home" : t}${k === "pending" && pc ? " (" + pc + ")" : ""}</span></button>`).join("")}</nav>`;
@@ -573,7 +585,7 @@ function vHome() {
   <div class="stat"><span>Readings · ${mLabel(cm)}</span><b>${done}/${sold.length}</b><em>${sold.length - done} remaining</em></div>
   <div class="stat"><span>Collected${lm ? " · " + mLabel(lm) : ""}</span><b style="color:var(--grn)">${money(coll)}</b><em>${pct}% of ${money(billed)}</em></div>
   <div class="stat"><span>Total outstanding</span><b style="color:var(--red)">${money(allPend)}</b><em>${pendN} unpaid bills</em></div>
-  </div>${S.proofs.length ? `<div class="note row"><span class="sp">${S.proofs.length} payment(s) submitted by residents are waiting for your approval.</span><button class="btn sm" data-a="tab" data-v="pending">Review</button></div>` : ""}
+  </div>${openIssues().length ? `<div class="note row"><span class="sp">⚠ ${openIssues().length} meter(s) need repair (noted by the meter reader).</span><button class="btn sm" data-a="tab" data-v="issues">View</button></div>` : ""}${S.proofs.length ? `<div class="note row"><span class="sp">${S.proofs.length} payment(s) submitted by residents are waiting for your approval.</span><button class="btn sm" data-a="tab" data-v="pending">Review</button></div>` : ""}
   <div class="actions"><button class="btn pri" data-a="tab" data-v="bills">${icon("bills")} Bills</button><button class="btn" data-a="tab" data-v="readings">${icon("readings")} Readings</button><button class="btn" data-a="tab" data-v="pending">${icon("pending")} Pending</button><button class="btn" data-a="toReader">Reader view</button></div>
   <div class="cols">
   ${lb ? `<div class="card"><h2>Latest bill run · ${mLabel(lm)}</h2><div class="bar" style="margin-bottom:12px"><i style="width:${pct}%"></i></div><div class="kv"><span>Total billed</span><b>${money(billed)}</b></div><div class="kv"><span>Collected</span><b style="color:var(--grn)">${money(coll)}</b></div><div class="kv"><span>Outstanding</span><b style="color:var(--red)">${money(pend)}</b></div><div class="kv"><span>Paid / unpaid bills</span><b>${paidN} / ${pendN}</b></div><div class="kv"><span>Due date</span><b>${fmtDate(lb.dueDate)}</b></div></div>`
@@ -614,9 +626,10 @@ function vReadings() {
   const bill = S.bills[m];
   const changed = bill ? sold.filter(h => bill.b && bill.b[h.id] && (bill.b[h.id].curr ?? null) !== readingOf(h.id, m)).length : 0;
   return progressCard(m, doneN, sold.length) +
+  (openIssues().length ? `<div class="note row"><span class="sp">⚠ ${openIssues().length} meter(s) need repair.</span><button class="btn sm" data-a="tab" data-v="issues">Meter issues</button></div>` : "") +
   (changed ? `<div class="note">Bills for ${mLabel(m)} were already generated, but ${changed} reading(s) were added or changed afterwards. Use "Regenerate" on the Bills tab.</div>` : "") +
   `<div class="toolbar"><input id="q" type="search" placeholder="Search plot no. or name…" value="${esc(S.q)}">${rChips()}</div>
-  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>Previous: ${x.prev}${x.cur != null ? ` → Current: ${x.cur} · <b>${r2(x.cur - x.prev)} units</b>` : ""}${x.e && x.e.at ? " · " + fmtDate(x.e.at.slice(0, 10)) + (x.e.by === "reader" ? " (reader)" : "") : ""}${x.e && x.e.fixed ? ` · <b style="color:var(--amb)">corrected (was ${esc(x.e.old)})</b>` : ""}</small></div>${x.cur != null ? (x.cur < x.prev ? '<span class="badge b-unpaid">Lower!</span>' : '<span class="badge b-paid">Done</span>') : '<span class="badge b-no">Remaining</span>'}</div>`).join("") || `<div class="empty">${sold.length ? "No plots match this filter" : "Mark plots as sold on the Plots tab first"}</div>`}</div>`;
+  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${esc(x.h.owner || "—")}</b><small>Previous: ${x.prev}${x.cur != null ? ` → Current: ${x.cur} · <b>${r2(x.cur - x.prev)} units</b>` : ""}${x.e && x.e.at ? " · " + fmtDate(x.e.at.slice(0, 10)) + (x.e.by === "reader" ? " (reader)" : "") : ""}${x.e && x.e.fixed ? ` · <b style="color:var(--amb)">corrected (was ${esc(x.e.old)})</b>` : ""}${issueFlag(x.h.id)}</small></div>${x.cur != null ? (x.cur < x.prev ? '<span class="badge b-unpaid">Lower!</span>' : '<span class="badge b-paid">Done</span>') : '<span class="badge b-no">Remaining</span>'}</div>`).join("") || `<div class="empty">${sold.length ? "No plots match this filter" : "Mark plots as sold on the Plots tab first"}</div>`}</div>`;
 }
 
 /* ---- Bills ---- */
@@ -698,14 +711,60 @@ function vSettings() {
   <div class="card"><h2>Backup</h2><p class="muted" style="margin-top:0">Download all data (plots, readings, bills) as one JSON file.</p><button class="btn" data-a="backup">Download backup</button></div>`;
 }
 
+/* ---- Meter issues (noted by the reader while taking readings) ---- */
+const ISSUE_TAGS = ["Meter leaking", "Pipe leaking", "Meter broken", "Glass broken / can't read", "Meter not moving", "No meter", "Couldn't reach the meter"];
+const openIssues = hid => (S.issues || []).filter(x => x.status !== "fixed" && (!hid || x.hid === hid));
+const issueText = i => [].concat(i.tags || [], i.text ? [i.text] : []).join(" · ") || "Problem";
+const issueFlag = hid => { const o = openIssues(hid); return o.length ? ` · <b style="color:var(--amb)">⚠ ${esc(issueText(o[0]))}${o.length > 1 ? " (+" + (o.length - 1) + ")" : ""}</b>` : ""; };
+function openIssueNote(hid) { const o = openIssues(hid); return o.length ? `<div class="note" style="font-size:14px">⚠ <b>Needs repair:</b> ${o.map(i => esc(issueText(i)) + " <span class=\"muted\">(" + fmtDate(String(i.at).slice(0, 10)) + ")</span>").join("<br>")}</div>` : ""; }
+function issueFields(open) {
+  return `<details class="issue" ${open ? "open" : ""}><summary>⚠ Meter problem? Add a note (optional)</summary>
+  <div class="ichips">${ISSUE_TAGS.map(t => `<button type="button" class="chip" data-a="itag">${esc(t)}</button>`).join("")}</div>
+  <textarea name="issue" rows="2" placeholder="e.g. water leaking from the meter joint"></textarea></details>`;
+}
+function readIssue(form) {
+  const tags = [...form.querySelectorAll(".ichips .chip.on")].map(b => b.textContent.trim());
+  const text = String((form.issue && form.issue.value) || "").trim();
+  return tags.length || text ? { tags, text } : null;
+}
+function issueModal(hid) {
+  const h = S.houses.find(x => x.id === hid); if (!h) return;
+  openModal(`<h3>Meter problem · Plot ${esc(h.no)}<button class="x" data-a="close">×</button></h3>
+  <div class="rd-sub">${showOwner() && h.owner ? esc(h.owner) + " · " : ""}${h.street ? "Street " + esc(h.street) : ""}${h.meter ? " · Meter " + esc(h.meter) : ""}</div>
+  ${openIssueNote(hid)}<form data-f="issue" data-id="${esc(hid)}">${issueFields(true)}<button class="btn pri block">Save note</button></form>`);
+}
+function readerTabs() {
+  const n = openIssues().length;
+  return `<div class="chips" style="margin-bottom:12px"><button class="chip ${S.rview !== "issues" ? "on" : ""}" data-a="rview" data-v="readings">Readings</button><button class="chip ${S.rview === "issues" ? "on" : ""}" data-a="rview" data-v="issues">⚠ Meter issues${n ? " (" + n + ")" : ""}</button></div>`;
+}
+function issueList(f) {
+  let list = (S.issues || []).slice().sort((a, b) => hsort({ no: a.no }, { no: b.no }) || String(b.at).localeCompare(String(a.at)));
+  if (f === "open") list = list.filter(i => i.status !== "fixed"); else if (f === "fixed") list = list.filter(i => i.status === "fixed");
+  return list;
+}
+function vIssues() {
+  const f = S.isf || "open", nOpen = openIssues().length, adm = S.mode === "admin";
+  let list = issueList(f); const q = S.q.trim().toLowerCase();
+  if (q) list = list.filter(i => (i.no + " " + (showOwner() ? i.owner || "" : "") + " " + (i.meter || "") + " " + issueText(i)).toLowerCase().includes(q));
+  return `<div class="info">Problems the meter reader noted while taking readings (leaks, broken meters…). Mark each one <b>repaired</b> once it is fixed.</div>
+  <div class="toolbar"><input id="q" type="search" placeholder="Search plot, meter or problem…" value="${esc(S.q)}"><div class="chips">${[["open", "Needs repair (" + nOpen + ")"], ["fixed", "Repaired"], ["all", "All"]].map(([k, t]) => `<button class="chip ${f === k ? "on" : ""}" data-a="isf" data-v="${k}">${t}</button>`).join("")}</div>${nOpen ? `<button class="btn sm" data-a="issPrint">Print repair list</button>` : ""}</div>
+  <div class="list">${list.map(i => `<div class="item"><div class="hno">${esc(i.no)}</div><div class="m"><b style="white-space:normal">${esc(issueText(i))}</b><small style="white-space:normal">${showOwner() && i.owner ? esc(i.owner) + " · " : ""}${i.street ? "Street " + esc(i.street) + " · " : ""}${i.meter ? "Meter " + esc(i.meter) + " · " : ""}${fmtAt(i.at)}${i.by ? " · by " + esc(i.by) : ""}${i.status === "fixed" ? `<br><span style="color:var(--grn)">Repaired ${i.fixedAt ? fmtDate(String(i.fixedAt).slice(0, 10)) : ""}${i.fixedBy ? " by " + esc(i.fixedBy) : ""}</span>` : ""}</small></div>
+  <div style="text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end">${i.status === "fixed" ? `<span class="badge b-paid">Repaired</span>${adm ? `<button class="btn sm" data-a="issOpen" data-id="${esc(i.id)}">Reopen</button>` : ""}` : `<span class="badge b-issue">Needs repair</span><button class="btn sm pri" data-a="issFix" data-id="${esc(i.id)}">Mark repaired</button>`}${adm ? `<button class="btn sm red" data-a="issDel" data-id="${esc(i.id)}">Delete</button>` : ""}</div></div>`).join("") || `<div class="empty">${f === "open" ? "No meters need repair ✓" : "Nothing here yet"}</div>`}</div>`;
+}
+function issPrint() {
+  const list = issueList("open"); const w = window.open("", "_blank"); if (!w) return toast("Allow pop-ups to print");
+  w.document.write(`<html><head><title>Meter repair list</title><style>body{font:14px Arial;padding:16px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:7px;text-align:left;vertical-align:top}th{background:#eee}</style></head><body><h2>${esc(st().name)} — Meter repair list</h2><p>${list.length} meter(s) need repair · printed ${fmtDate(todayISO())}</p><table><tr><th>Plot</th><th>Street</th><th>Owner</th><th>Meter</th><th>Problem</th><th>Noted on</th><th>Done ✓</th></tr>${list.map(i => `<tr><td><b>${esc(i.no)}</b></td><td>${esc(i.street || "")}</td><td>${esc(i.owner || "")}</td><td>${esc(i.meter || "")}</td><td>${esc(issueText(i))}</td><td>${fmtDate(String(i.at).slice(0, 10))}</td><td></td></tr>`).join("")}</table><script>print()<\/script></body></html>`); w.document.close();
+}
+
 /* ---- READER ---- */
 function viewReader() {
   const m = S.readMonth, { sold, list, doneN } = readingRows(m);
   return `<header class="appbar mob">${S.owner ? `<button class="ibtn" data-a="toAdmin" aria-label="Back">${icon("back")}</button>` : ""}<div class="t"><b>Meter Reading</b><small>${esc(st().name)}</small></div>${!S.owner ? `<button class="ibtn" data-a="logout" aria-label="Log out">${icon("logout")}</button>` : ""}</header>
   <main>${S.writeDenied ? `<div class="err">Your readings are not being saved. Please contact the admin.</div>` : ""}
+  ${readerTabs()}${S.rview === "issues" ? vIssues() : `
   ${progressCard(m, doneN, sold.length)}
   <div class="toolbar"><input id="q" type="search" inputmode="search" placeholder="Search plot number…" value="${esc(S.q)}" style="font-size:18px">${rChips()}</div>
-  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${showOwner() ? esc(x.h.owner || "Plot " + x.h.no) : "Plot " + esc(x.h.no)}</b><small>${x.h.street ? "Street " + esc(x.h.street) : ""}${x.h.meter ? (x.h.street ? " · " : "") + "Meter " + esc(x.h.meter) : ""}${showPrev() ? ((x.h.street || x.h.meter) ? " · " : "") + "Previous: " + x.prev : ""}${x.cur != null ? " · Entered: " + x.cur : ""}</small></div>${x.cur != null ? '<span class="badge b-paid">✓ Done</span>' : '<span class="badge b-no">Remaining</span>'}</div>`).join("") || `<div class="empty">${S.rfilter === "pending" && sold.length ? "All readings are done ✓" : "No plots found"}</div>`}</div></main>`;
+  <div class="list">${list.map(x => `<div class="item" data-a="reading" data-id="${esc(x.h.id)}"><div class="hno">${esc(x.h.no)}</div><div class="m"><b>${showOwner() ? esc(x.h.owner || "Plot " + x.h.no) : "Plot " + esc(x.h.no)}</b><small>${x.h.street ? "Street " + esc(x.h.street) : ""}${x.h.meter ? (x.h.street ? " · " : "") + "Meter " + esc(x.h.meter) : ""}${showPrev() ? ((x.h.street || x.h.meter) ? " · " : "") + "Previous: " + x.prev : ""}${x.cur != null ? " · Entered: " + x.cur : ""}${issueFlag(x.h.id)}</small></div>${x.cur != null ? '<span class="badge b-paid">✓ Done</span>' : '<span class="badge b-no">Remaining</span>'}</div>`).join("") || `<div class="empty">${S.rfilter === "pending" && sold.length ? "All readings are done ✓" : "No plots found"}</div>`}</div>`}</main>`;
 }
 
 
@@ -1069,13 +1128,16 @@ function readingModal(hid) {
   <div class="rd-plot">Plot ${esc(h.no)}</div>
   <div class="rd-sub">${showOwner() && h.owner ? esc(h.owner) : ""}${h.street ? (showOwner() && h.owner ? " · " : "") + "Street " + esc(h.street) : ""}${h.meter ? " · Meter " + esc(h.meter) : ""}</div>
   ${sp ? `<div class="prevbox"><div><span>Previous reading</span><b>${prev}</b></div><div><span>Units</span><b id="runits">${cur != null ? r2(cur - prev) : "—"}</b></div></div>` : ""}
+  ${openIssueNote(hid)}
   ${locked ? `<div class="info">Reading entered: <b>${cur}</b>${e && e.at ? " on " + fmtDate(e.at.slice(0, 10)) : ""}${was}.<br>If it is wrong, ask the admin to correct it.</div>
-  <div class="row"><button class="btn pri" data-a="readNext" data-id="${esc(hid)}" style="flex:2">Next plot</button><button class="btn" data-a="close" style="flex:1">Close</button></div>`
+  <div class="row"><button class="btn pri" data-a="readNext" data-id="${esc(hid)}" style="flex:2">Next plot</button><button class="btn" data-a="close" style="flex:1">Close</button></div>
+  <div class="row" style="margin-top:8px"><button class="btn block" data-a="issueAdd" data-id="${esc(hid)}" style="color:var(--amb)">⚠ Note a meter problem</button></div>`
   : `${fix ? `<div class="note">Current reading: <b>${cur}</b>${e && e.at ? " · " + fmtDate(e.at.slice(0, 10)) + (e.by === "reader" ? " by the reader" : "") : ""}${was}.<br>Enter the correct reading below.${billed ? ` Bills for ${mLabel(m)} are already made, so you will need to regenerate them.` : ""}</div>` : ""}
   <form data-f="reading" data-id="${esc(hid)}">
   <label class="f"><span>${fix ? "Correct meter reading" : "New meter reading"}</span><input id="rv" class="readin" type="number" inputmode="decimal" step="0.01" name="v" value="${cur != null ? cur : ""}" placeholder="0"></label>
   ${fix ? `<label class="f"><span>Reason (optional)</span><input type="text" name="note" placeholder="e.g. reader typed 1520 instead of 1250"></label>` : ""}
   <div id="rinfo"></div>
+  ${fix ? "" : issueFields()}
   <div class="row">${fix ? `<button class="btn pri" name="go" value="close" style="flex:2">Save correction</button>` : `<button class="btn pri" name="go" value="next" style="flex:2">Save &amp; next plot</button><button class="btn" name="go" value="close" style="flex:1">Save</button>`}${sup && cur != null ? `<button type="button" class="btn red" data-a="delReading" data-id="${esc(hid)}">Delete</button>` : ""}</div></form>`}`);
   if (locked) return;
   const inp = $("#rv"), info = $("#rinfo"), uel = $("#runits");
@@ -1090,6 +1152,14 @@ function readingModal(hid) {
 }
 async function saveReading(form, go) {
   const hid = form.dataset.id, m = S.readMonth; const raw = form.v.value;
+  const iss = readIssue(form);
+  if (raw === "" && iss) {
+    const h0 = S.houses.find(x => x.id === hid);
+    if (!(await write(() => D.addIssue(h0, m, iss)))) return;
+    toast("Plot " + h0.no + ": meter problem noted");
+    if (go === "next") { const sold = soldHouses(), i = sold.findIndex(x => x.id === hid); const nxt = sold.slice(i + 1).concat(sold.slice(0, i)).find(x => x.id !== hid && readingOf(x.id, m) == null); if (nxt) { readingModal(nxt.id); return; } }
+    closeModal(); return;
+  }
   if (raw === "" || !isFinite(+raw)) return toast("Enter the reading");
   const v = num(raw); const h = S.houses.find(x => x.id === hid); const prev = prevReading(h, m);
   if (v < prev && !form.dataset.ok) { form.dataset.ok = "1"; toast("The reading is lower than expected. Tap Save again if it is correct."); return; }
@@ -1100,6 +1170,7 @@ async function saveReading(form, go) {
   if (cur != null) Object.assign(entry, { fixed: true, old: old && old.fixed ? old.old : cur, oldBy: (old && old.by) || "", note: String((form.note && form.note.value) || "").trim() });
   const ok = await write(() => D.saveReading(m, hid, entry));
   if (!ok) return;
+  if (iss && await write(() => D.addIssue(h, m, iss))) toast("Meter problem noted for plot " + h.no);
   if (cur != null) {
     const billed = S.bills[m] && S.bills[m].b && S.bills[m].b[hid], latest = m === latestBillMonth();
     if (billed) { openModal(`<h3>Reading corrected<button class="x" data-a="close">×</button></h3><p>Plot <b>${esc(h.no)}</b>: ${cur} → <b>${v}</b>.</p>${latest ? `<p>Bills for <b>${mLabel(m)}</b> were already made. Regenerate them so the bill uses the corrected reading. Payments and fines are kept.</p><div class="row"><button class="btn pri" data-a="regenFor" data-m="${m}">Regenerate ${mLabel(m)} bills</button><button class="btn" data-a="close">Later</button></div>` : `<p>The ${mLabel(m)} bills are already closed, so they stay as they are. The corrected reading will be used as the "previous reading" for the next month.</p><button class="btn pri block" data-a="close">OK</button>`}`); return; }
@@ -1550,6 +1621,14 @@ document.addEventListener("click", async e => {
     case "close": closeModal(); break;
     case "hf": S.hfilter = t.dataset.v; render(true); break;
     case "rf": S.rfilter = t.dataset.v; render(true); break;
+    case "itag": t.classList.toggle("on"); break;
+    case "rview": S.rview = t.dataset.v; S.q = ""; render(true); window.scrollTo(0, 0); break;
+    case "isf": S.isf = t.dataset.v; render(true); break;
+    case "issueAdd": issueModal(id); break;
+    case "issPrint": issPrint(); break;
+    case "issFix": if (await write(() => D.setIssue(id, { status: "fixed", fixedAt: new Date().toISOString(), fixedBy: S.me.name || S.me.username || "" }))) toast("Marked as repaired"); break;
+    case "issOpen": if (await write(() => D.setIssue(id, { status: "open", fixedAt: deleteField(), fixedBy: deleteField() }))) toast("Reopened"); break;
+    case "issDel": if (await ask("Delete this note?", "It will be removed from the meter issues list.", "Delete", true)) { if (await write(() => D.delIssue(id))) toast("Deleted"); } break;
     case "bf": S.bfilter = t.dataset.v; render(true); break;
     case "ifilter": S.ifilter = t.dataset.v; render(true); break;
     case "crp": S.crp = t.dataset.v; render(true); break;
@@ -1707,6 +1786,7 @@ document.addEventListener("submit", async e => {
     if (await write(() => D.saveSettings(s))) toast("Settings saved");
   } else if (k === "house") saveHouse(f);
   else if (k === "reading") saveReading(f, (e.submitter && e.submitter.value) || "next");
+  else if (k === "issue") { const iss = readIssue(f); if (!iss) return toast("Choose a problem or write a note"); const h = S.houses.find(x => x.id === f.dataset.id); if (await write(() => D.addIssue(h, S.readMonth, iss))) { closeModal(); toast("Plot " + h.no + ": meter problem noted"); } }
   else if (k === "pay") savePay(f);
   else if (k === "fine") { const m = f.dataset.m, id = f.dataset.id; const amt = num(fd.get("amt")); if (amt <= 0) return; if (await setFine(m, id, num(S.bills[m].b[id].fine) + amt)) { toast("Fine added"); setTimeout(() => billModal(m, id), 150); } }
   else if (k === "bulkFine") {

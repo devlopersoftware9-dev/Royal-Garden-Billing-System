@@ -76,6 +76,21 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Meter problems the reader notes while taking readings (leaks, broken meters).
+    // Readers can add notes and mark them repaired; only the admin can reopen or delete.
+    match /meterIssues/{id} {
+      allow read: if isAdmin() || isReader();
+      allow create: if isAdmin()
+        || (isReader()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.status == 'open');
+      allow update: if isAdmin()
+        || (isReader()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'fixedAt', 'fixedBy'])
+          && request.resource.data.status == 'fixed');
+      allow delete: if isAdmin();
+    }
+
     // Bill run info (month, due date) — no personal data
     match /billRuns/{month} {
       allow read: if hasRole();
